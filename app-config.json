@@ -1,5 +1,5 @@
 {
-	"command": "echo Please specify the start-up command in the app-config.json file under the key command",
+	"command": "nodemon server.js",
 	"build_path": "C:\\Users\\schai\\Desktop\\Freelancer\\nodejs-sports-backend",
 	"stack": "node18",
 	"env_variables": {},
