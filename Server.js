@@ -1,9 +1,15 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import { connectDB } from "./Model/Model.js";
-import router from './View/UserViews.js';
+import { connectDB } from "./Model/ConnectDB.js";
+import authRouter from './View/authView.js';
+import userRouter from './View/UserViews.js';
+import postRouter from './View/PostView.js';
+import path from "path";
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const PORT = process.X_ZOHO_CATALYST_LISTEN_PORT || 4500;
 
@@ -12,9 +18,15 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(bodyParser.json());
+app.use(express.static(__dirname));
 
 
-app.use('/api', router);
+app.use('/api/auth', authRouter);
+
+
+app.use('/api/user', userRouter);
+app.use('/api/post', postRouter);
+
 
 app.listen(PORT, async() => {
     try {

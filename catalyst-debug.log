@@ -1,0 +1,48 @@
+[debug] [2024-11-18T14:52:34.617Z] : 
+[debug] [2024-11-18T14:52:34.619Z] : ----------------------------------------------------------------------
+[debug] [2024-11-18T14:52:34.620Z] : Command:      C:\Program Files\nodejs\node.exe C:\Users\schai\AppData\Roaming\npm\node_modules\zcatalyst-cli\lib\bin\catalyst.js deploy
+[debug] [2024-11-18T14:52:34.620Z] : CLI Version:  1.17.6
+[debug] [2024-11-18T14:52:34.620Z] : Platform:     win32
+[debug] [2024-11-18T14:52:34.620Z] : Node Version: v20.8.1
+[debug] [2024-11-18T14:52:34.621Z] : Time:         Mon Nov 18 2024 20:22:34 GMT+0530 (India Standard Time)
+[debug] [2024-11-18T14:52:34.621Z] : ----------------------------------------------------------------------
+[debug] [2024-11-18T14:52:34.621Z] : 
+[debug] [2024-11-18T14:52:35.949Z] : > authorizing via signed-in user option
+[debug] [2024-11-18T14:52:35.950Z] : > command requires scopes: ["ZohoCatalyst.projects.ALL","ZohoCatalyst.functions.ALL","ZohoCatalyst.webapp.ALL","ZohoCatalyst.appsail.Update"]
+[debug] [2024-11-18T14:52:35.968Z] : >>>> HTTP REQUEST : GET https://api.catalyst.zoho.in/baas/v1/project/11220000000007022 
+
+[debug] [2024-11-18T14:52:47.253Z] : <<<< HTTP RESPONSE : 200
+Response Headers: {"server":"ZGS","date":"Mon, 18 Nov 2024 14:52:48 GMT","content-type":"application/vnd.catalyst.v2+json","transfer-encoding":"chunked","connection":"keep-alive","set-cookie":["zalb_3a750b85f1=99131cfabfda186b4fe68a16fb8fedd6; Path=/; Secure; HttpOnly","ZD_CSRF_TOKEN=4b82575b-a87b-49ec-b262-0db0f40a4d40;path=/;SameSite=None;Secure;priority=high","_zcsr_tmp=4b82575b-a87b-49ec-b262-0db0f40a4d40;path=/;SameSite=Strict;Secure;priority=high"],"x-content-type-options":"nosniff","x-xss-protection":"1","cache-control":"private,no-cache,no-store,max-age=0,must-revalidate","pragma":"no-cache","expires":"Thu, 01 Jan 1970 00:00:00 GMT","x-frame-options":"DENY","strict-transport-security":"max-age=63072000"}
+
+[debug] [2024-11-18T14:52:47.259Z] : >>>> HTTP REQUEST : GET https://api.catalyst.zoho.in/baas/v1/project/11220000000007022/environment 
+
+[debug] [2024-11-18T14:52:47.305Z] : <<<< HTTP RESPONSE : 200
+Response Headers: {"server":"ZGS","date":"Mon, 18 Nov 2024 14:52:48 GMT","content-type":"application/vnd.catalyst.v2+json","transfer-encoding":"chunked","connection":"keep-alive","set-cookie":["zalb_3a750b85f1=7c58023b2365c117e2ff9b6feb09efa2; Path=/; Secure; HttpOnly","ZD_CSRF_TOKEN=35fc7182-ebd0-450e-8be7-8b80b639f528;path=/;SameSite=None;Secure;priority=high","_zcsr_tmp=35fc7182-ebd0-450e-8be7-8b80b639f528;path=/;SameSite=Strict;Secure;priority=high"],"x-content-type-options":"nosniff","x-xss-protection":"1","cache-control":"private,no-cache,no-store,max-age=0,must-revalidate","pragma":"no-cache","expires":"Thu, 01 Jan 1970 00:00:00 GMT","x-frame-options":"DENY","strict-transport-security":"max-age=63072000"}
+
+[debug] [2024-11-18T15:09:03.471Z] : 
+[debug] [2024-11-18T15:09:03.480Z] : ----------------------------------------------------------------------
+[debug] [2024-11-18T15:09:03.481Z] : Command:      C:\Program Files\nodejs\node.exe C:\Users\schai\AppData\Roaming\npm\node_modules\zcatalyst-cli\lib\bin\catalyst.js serve
+[debug] [2024-11-18T15:09:03.481Z] : CLI Version:  1.17.6
+[debug] [2024-11-18T15:09:03.481Z] : Platform:     win32
+[debug] [2024-11-18T15:09:03.482Z] : Node Version: v20.8.1
+[debug] [2024-11-18T15:09:03.482Z] : Time:         Mon Nov 18 2024 20:39:03 GMT+0530 (India Standard Time)
+[debug] [2024-11-18T15:09:03.482Z] : ----------------------------------------------------------------------
+[debug] [2024-11-18T15:09:03.482Z] : 
+[debug] [2024-11-18T15:09:04.923Z] : > authorizing via signed-in user option
+[debug] [2024-11-18T15:09:04.923Z] : > command requires scopes: ["ZohoCatalyst.projects.ALL","ZohoCatalyst.functions.ALL","ZohoCatalyst.functions.EXECUTE","ZohoCatalyst.webapp.ALL","ZohoCatalyst.pdfshot.execute","ZohoCatalyst.authentication.CREATE"]
+[debug] [2024-11-18T15:09:04.942Z] : >>>> HTTP REQUEST : GET https://api.catalyst.zoho.in/baas/v1/project/11220000000007022 
+
+[debug] [2024-11-18T15:09:16.256Z] : <<<< HTTP RESPONSE : 200
+Response Headers: {"server":"ZGS","date":"Mon, 18 Nov 2024 15:09:17 GMT","content-type":"application/vnd.catalyst.v2+json","transfer-encoding":"chunked","connection":"keep-alive","set-cookie":["zalb_3a750b85f1=99131cfabfda186b4fe68a16fb8fedd6; Path=/; Secure; HttpOnly","ZD_CSRF_TOKEN=d569310b-cd0a-49f4-99be-d39a9969e71e;path=/;SameSite=None;Secure;priority=high","_zcsr_tmp=d569310b-cd0a-49f4-99be-d39a9969e71e;path=/;SameSite=Strict;Secure;priority=high"],"x-content-type-options":"nosniff","x-xss-protection":"1","cache-control":"private,no-cache,no-store,max-age=0,must-revalidate","pragma":"no-cache","expires":"Thu, 01 Jan 1970 00:00:00 GMT","x-frame-options":"DENY","strict-transport-security":"max-age=63072000"}
+
+[debug] [2024-11-18T15:09:16.261Z] : >>>> HTTP REQUEST : GET https://api.catalyst.zoho.in/baas/v1/project/11220000000007022/environment 
+
+[debug] [2024-11-18T15:09:16.314Z] : <<<< HTTP RESPONSE : 200
+Response Headers: {"server":"ZGS","date":"Mon, 18 Nov 2024 15:09:17 GMT","content-type":"application/vnd.catalyst.v2+json","transfer-encoding":"chunked","connection":"keep-alive","set-cookie":["zalb_3a750b85f1=7c58023b2365c117e2ff9b6feb09efa2; Path=/; Secure; HttpOnly","ZD_CSRF_TOKEN=a0bb2dd8-5930-4c0f-aa72-82531af3d832;path=/;SameSite=None;Secure;priority=high","_zcsr_tmp=a0bb2dd8-5930-4c0f-aa72-82531af3d832;path=/;SameSite=Strict;Secure;priority=high"],"x-content-type-options":"nosniff","x-xss-protection":"1","cache-control":"private,no-cache,no-store,max-age=0,must-revalidate","pragma":"no-cache","expires":"Thu, 01 Jan 1970 00:00:00 GMT","x-frame-options":"DENY","strict-transport-security":"max-age=63072000"}
+
+[debug] [2024-11-18T15:09:16.775Z] : http port : '3000' is not available. Hence port '3001' will be used instead.
+[debug] [2024-11-18T15:09:16.785Z] : No basic functions to add
+[info] [2024-11-18T15:09:17.027Z] : 
+[info] [2024-11-18T15:09:17.028Z] :  >>>>>>>>>>>>>> AppSail <<<<<<<<<<<<<< 
+[info] [2024-11-18T15:09:17.029Z] : i AppSail: http://localhost:3001
+[info] [2024-11-18T15:09:17.029Z] : 
