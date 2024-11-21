@@ -17,14 +17,10 @@ export const signUp = async (req,res) => {
 
         const encryptedPassword = await bcrypt.hash(Password, 10);
         console.log(`Step 2 Completed: Password encrypted`);
-        const verficationCode = Math.floor(100000+ Math.random()*900000).toString();
 
+        const code = Math.floor(100000+ Math.random()*900000).toString();
         const uniqueId = nanoid();
-        const isUniq = await UserDetails.findOne({ uuid: uniqueId });
-        console.log("status", isUniq ? "true" : "false");
-        console.log("status", isUniq ? true : false);
-        console.log(uniqueId)
-
+    
         const newUser = new UserDetails(
             {
             uuid: uniqueId,
@@ -32,55 +28,54 @@ export const signUp = async (req,res) => {
             Last_Name: lastName,
             Email_ID: Email,
             Password: encryptedPassword,
-            verficationCode,
+            verificationCode: code,
         });
 
-        await newUser.save();
-        console.log(newUser)
-        if(newUser.uuid === null){
-            console.log("Null is Error")
-        }
-        console.log(`Step 3 Completed: User saved to database ${newUser.uuid}`);
-
-    const isVerified = await emailConfig({verficationCode, Email});
-    if (!isVerified) {
+    const isEmailSent  = await emailConfig({code, Email});
+    if (!isEmailSent ) {
         return res.status(500).json({ status: false, message: "User created but email sending failed" });
       }
 
-    console.log(`Step 4 Completed: Verification email sent`);
-    const sendInfo = await UserDetails.findOne({ uuid: uniqueId }).select("uuid");
-      console.log(sendInfo)
+    await newUser.save();
+
+    const sendInfo = await UserDetails.findOne({ uuid: uniqueId }).select("uuid verificationCode");
+     
     res.status(201).json({status: true, message: "Successfull", sendInfo});
     
     } catch (error) {
-        console.log(error)
+        console.error("Sign-up error:", error);
         res.status(500).json({status: false, message: "User creation failed", error: error.message});
     }
 };
 
-
 export const login = async (req,res) => {
-    const {Email, Password} = req.body;
+    const {Email, Password, code } = req.body;
     try {
 
-        const user = await UserDetails.findOne({ E_ID: Email});
+        const user = await UserDetails.findOne({Email_ID: Email});
        
         if(!user){
-            return res.status(400).json({status: false, message: "Email not found, Create new"})
+            return res.status(400).json({status: false, message: "Email not found, Please sign up."})
         }
 
-        const encryptPassword = await bcrypt.compare(Password, user.PW);
+        const isPasswordValid  = await bcrypt.compare(Password, user.Password);
         
-        if(!encryptPassword){
+        if(!isPasswordValid ){
             return  res.status(400).json({status: false, message: "Invalid Password"});
         }
 
+        if(user.verificationCode != code){
+            return res.status(400).json({status: false, message: "Incorrect Verfication Code"})
+        }
+
+        await UserDetails.findByIdAndUpdate(user._id, { isVerified: true });
+
         const sendInfo = await UserDetails.findOne({ uuid: user.uuid }).select("uuid _id");
         
-        res.status(201).json({status: true, message: "login Successfully",sendInfo });
+        res.status(200).json({status: true, message: "login Successfully", sendInfo });
     
     } catch (error) {
-        
+        console.error("Login error:", error);
         res.status(500).json({status: false, message: "login failed", error: error.message})
     }
 };
@@ -88,33 +83,48 @@ export const login = async (req,res) => {
 export const forgetPassword = async (req, res) => {
     const {Email} = req.body;
     try {
-
-        const isValidEmail = await UserDetails.findOne({E_ID: Email});
+        const isValidEmail = await UserDetails.findOne({Email_ID: Email});
 
         if(!isValidEmail){
             return res.status(400).json({status: true, message: "InValidemail"});
         }
 
-        const verficationCode = Math.floor(100000+ Math.random()*900000).toString();
+        const code = Math.floor(100000+ Math.random()*900000).toString();
 
-        await UserDetails.findOneAndUpdate({E_ID: Email }, { verficationCode });
+        await UserDetails.findOneAndUpdate({Email_ID: Email }, { verificationCode: code });
 
-        await emailConfig(verficationCode)
+        const isEmailSent = await emailConfig({ code, Email });
+        if (!isEmailSent) {
+        return res.status(500).json({ status: false, message: "Failed to send email" });
+        }
+
+        const sendInfo = await UserDetails.findOne({ uuid: isValidEmail.uuid }).select("uuid");
+        res.status(200).json({status: true, message: "mailSended", sendInfo });
 
     } catch (error) {
-        res.status(500).json({status: false, message: "Reset-Password Causes Error", error: error.message})
+        console.error("Forget password error:", error);
+        res.status(500).json({status: false, message: "Forget password failed", error: error.message})
     }
 };
 
 export const resetPassword = async (req, res) => {
-    const {verificationCode, password} = req.body;
+    const {uuid, code, Password} = req.body;
     try {
-        const user = await UserDetails.findOne({verificationCode});
-        
-        const encryptPassword = await bcrypt.hash(password, 10);
-        await Model.findByIdAndUpdate(user._id, { PW: encryptPassword, verificationCode: '' });
-        res.status(200).json({status: true, message: "Verification Succeffully"});
+        const user = await UserDetails.findOne({uuid});
+        if(!user){
+            return res.status(400).json({status: false, message: "User not found" })
+        }
+
+        if(user.verificationCode != code){
+            return res.status(400).json({status: false, message: "Incorrect Verfication Code"})
+        }
+
+        const encryptPassword = await bcrypt.hash(Password, 10);
+        await UserDetails.findByIdAndUpdate(user._id, { Password: encryptPassword});
+
+        res.status(200).json({status: true, message: "Password reset successfully"});
     } catch (error) {
+        console.error("Reset password error:", error);
         res.status(500).json({status: false, message: "Reset-Password Causes Error", error: error.message})
     }
 };

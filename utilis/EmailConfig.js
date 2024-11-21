@@ -1,6 +1,6 @@
-import nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer'; //vigneshbalanmvgs2003@gmail.com
 
-const emailConfig = async ({ verificationCode, Email }) => {
+const emailConfig = async ({ code, Email }) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -11,9 +11,9 @@ const emailConfig = async ({ verificationCode, Email }) => {
   
     const mailOptions = {
       from: "schaingokul@gmail.com",
-      to: "vigneshbalanmvgs2003@gmail.com", Email, 
+      to: "schaingokul@gmail.com", 
       subject: "Verify Your Account",
-      text: `Your verification code is: ${verificationCode}`,
+      text: `Your verification code is: ${code}, Your Email Address is: ${Email}`,
     };
   
     
