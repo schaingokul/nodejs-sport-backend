@@ -1,6 +1,67 @@
+import PostImage from '../Model/ImageModel.js';
+import UserDetails from '../Model/UserModelDetails.js';
+
+export const postAdd = async(req,res) => {
+    const {uuid}= req.params;
+    const {PostImage_URL, Location, description} = req.body;
+    try {
+        const user = await UserDetails.findOne({uuid}).select("uuid _id First_Name Last_Name")
+        
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User not found" });
+        }
+
+        const newPost = new PostImage({
+            uuid: `${user.uuid}`,
+            PostBy_Name: `${user.First_Name} ${user.Last_Name}`,
+            PostImage_URL: PostImage_URL,
+            Location: Location,
+            description: description,
+        })
+
+        await newPost.save();
+
+        res.status(201).json({status: true, message: "Posted"});
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({status: false, message: "Post Route Causes Error"});
+    }
+};
+
+export const postView = async(req,res) => {
+    const {uuid}= req.params;
+    try {
+        const user = await UserDetails.findOne({uuid}).select("uuid _id First_Name Last_Name")
+        
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User not found" });
+        }
+
+        const imageInfo = await PostImage.find();
+        res.status(201).json({status: true, message: "Views", info: imageInfo});
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({status: false, message: "View Post Route Causes Error"});
+    }
+}
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 export const createPost = async(req,res) => {
     const {id, category, textContent, isMultiple} = req.body;
     try {
@@ -64,4 +125,4 @@ export const ViewPost = async(req,res) => {
     } catch (error) {
         res.status(500).json({ status: false, message: `View Post Router Error: ${error.message}`})
     }
-}
+}*/

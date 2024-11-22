@@ -15,6 +15,20 @@ export const userInfoSchema = new mongoose.Schema(
   { _id: false } // _id: false so it doesn't create a separate _id for this subdocument
 );
 
+
+// certificate Information Subdocument Schema
+/*export const certificateInfoSchema = new mongoose.Schema(
+  {
+    Occasion: { type: String },
+    Month_Year: { type: String, required: true }, 
+    Upload_certificate: { type: String }, 
+    Upload_Photos:{type: String}
+  },
+  { _id: true } // Create an internal `_id` for this subdocument
+);
+*/
+
+
 // Sports Information Subdocument Schema
 export const sportInfoSchema = new mongoose.Schema(
   {
@@ -25,6 +39,7 @@ export const sportInfoSchema = new mongoose.Schema(
     Matches: { type: String, required: true , min: 0 }, // Matches Played
     Video_ImgURL: { type: String }, // Video URL
     isActive: { type: Boolean, default: false }, // Active State
+    
   },
   { _id: true } // Create an internal `_id` for this subdocument
 );

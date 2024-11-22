@@ -19,12 +19,14 @@ export const viewUserProfile = async(req,res) => {
                 Email_ID: user.Email_ID,
                 First_Name: user.First_Name,
                 Last_Name: user.Last_Name,
+                uuid: user.uuid,
                 userInfo,
             }
             : {
                 Email_ID: user.Email_ID,
                 First_Name: user.First_Name,
                 Last_Name: user.Last_Name,
+                uuid: user.uuid,
             };
 
         console.log(`Step 3: Constructed UI: ${JSON.stringify(UI)}`);
@@ -165,5 +167,5 @@ export const sportsClear = async(req, res) => {
     } catch (error) {
         res.status(500).json({status: false, message: "Updates Causes Route Error"});
     }
-}
+};
 

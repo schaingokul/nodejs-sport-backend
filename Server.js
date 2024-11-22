@@ -23,8 +23,7 @@ app.use(express.static(__dirname));
 
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
-
-app.use('/api/post', postRouter);
+app.use('/api/user', postRouter);
 
 
 app.listen(PORT, async() => {

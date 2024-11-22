@@ -1,4 +1,14 @@
 import express from 'express';
+import {postAdd, postView} from '../Controller/PostController.js';
+
+const router = express.Router();
+
+router.post("/post/:uuid", postAdd);
+router.get("/view/:uuid", postView);
+
+
+/*
+
 import { createPost, ViewPost } from '../Controller/PostController.js';
 import multer from "multer";
 import path from "path";
@@ -29,8 +39,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({storage: storage});
 
-
 router.post("/createpost", upload.fields([{ name: 'image', maxCount: 10 },{ name: 'videos', maxCount: 5 }]), createPost);
-router.get("/viewpost", ViewPost);
+router.get("/viewpost", ViewPost);*/
 
 export default router;
