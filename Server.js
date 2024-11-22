@@ -3,7 +3,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import { connectDB } from "./Model/ConnectDB.js";
 import authRouter from './View/authView.js';
-import userRouter from './View/UserViews.js';
+import userRouter from './View/userView.js';
 import postRouter from './View/PostView.js';
 import path from "path";
 import { fileURLToPath } from 'url';
@@ -22,9 +22,8 @@ app.use(express.static(__dirname));
 
 
 app.use('/api/auth', authRouter);
-
-
 app.use('/api/user', userRouter);
+
 app.use('/api/post', postRouter);
 
 

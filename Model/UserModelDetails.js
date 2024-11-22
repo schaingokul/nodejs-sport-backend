@@ -20,9 +20,9 @@ export const sportInfoSchema = new mongoose.Schema(
   {
     Sports_ImgURL: { type: String }, // Sports Image URL
     Sports_Name: { type: String, required: true }, // Game's Sports Name
-    Year_Playing: { type: String, required: true }, // Years of Experience
+    Year_Playing: { type: String, required: true, min: 0  }, // Years of Experience
     BestAt: { type: String, required: true }, // Best Position
-    Matches: { type: String, required: true }, // Matches Played
+    Matches: { type: String, required: true , min: 0 }, // Matches Played
     Video_ImgURL: { type: String }, // Video URL
     isActive: { type: Boolean, default: false }, // Active State
   },
@@ -39,7 +39,7 @@ const userDetailsSchema = new mongoose.Schema(
     Email_ID: { type: String, required: true },
     Password: { type: String, required: true },
     userInfo: userInfoSchema,
-    sportInfo: sportInfoSchema,
+    sportsInfo: [sportInfoSchema],
     isVerified: { type: Boolean, default: false },
     verificationCode: { type: String, default: "N/A" },
   },
