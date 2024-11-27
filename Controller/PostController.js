@@ -2,13 +2,13 @@ import PostImage from '../Model/ImageModel.js';
 import UserDetails from '../Model/UserModelDetails.js';
 
 export const postAdd = async(req,res) => {
-    const {uuid}= req.params;
+    const {uuid}= req.user;
     const {PostImage_URL, Location, description} = req.body;
     try {
         const user = await UserDetails.findOne({uuid}).select("uuid _id First_Name Last_Name")
         
         if (!user) {
-            return res.status(404).json({ status: false, message: "User not found" });
+            return res.status(200).json({ status: false, message: "User not found" });
         }
 
         const newPost = new PostImage({
@@ -24,34 +24,35 @@ export const postAdd = async(req,res) => {
         res.status(201).json({status: true, message: "Posted"});
     } catch (error) {
         console.log(error)
-        res.status(500).json({status: false, message: "Post Route Causes Error"});
+        res.status(200).json({status: false, message: "Post Route Causes Error"});
     }
 };
 
 export const postView = async(req,res) => {
-    
+    const {uuid} = req.user;
     try {
         
         const user = await UserDetails.findOne({uuid}).select("uuid _id First_Name Last_Name");
         
         if (!user) {
-            return res.status(404).json({ status: false, message: "User not found" });
+            return res.status(200).json({ status: false, message: "User not found" });
         }
 
         const imageInfo = await PostImage.find();
-        res.status(201).json({status: true, message: "Views", info: imageInfo});
+        res.status(200).json({status: true, message: "Views", info: imageInfo});
     } catch (error) {
-        console.log(error)
-        res.status(500).json({status: false, message: "View Post Route Causes Error"});
+        console.log(error.message)
+        res.status(200).json({status: false, message: "View Post Route Causes Error"});
     }
 };
 
 export const postLike = async(req,res) => {
-    const {uuid, id} = req.params;
+    const {id} = req.params;
+    const {uuid} = req.user;
     try {
         const post = await PostImage.findById(id);
         if (!post) {
-            return res.status(404).json({ status: false, message: "Post not found" });
+            return res.status(200).json({ status: false, message: "Post not found" });
         }
 
         const likeIndex = post.Likes.findIndex((like) => like.LikedBy_id === uuid);
@@ -70,17 +71,18 @@ export const postLike = async(req,res) => {
         res.status(201).json({ status: true, message: "Liked", Data: post });
     } catch (error) {
         console.log(error)
-        res.status(500).json({status: false, message: "Like Post Route Causes Error"});
+        res.status(200).json({status: false, message: "Like Post Route Causes Error"});
     }
  };
 
  export const postComment = async(req,res) => {
-    const {uuid, id } = req.params;
+    const {id} = req.params;
+    const {uuid} = req.user;
     const {comment} = req.body;
     try {
         const post = await PostImage.findById(id);
         if (!post) {
-            return res.status(404).json({ status: false, message: "Post not found" });
+            return res.status(200).json({ status: false, message: "Post not found" });
         }
         
         post.Comments.push({
@@ -94,7 +96,7 @@ export const postLike = async(req,res) => {
         res.status(201).json({ status: true, message: "Added Comments", Data: post });
     } catch (error) {
         console.log(error)
-        res.status(500).json({status: false, message: "Like Post Route Causes Error"});
+        res.status(200).json({status: false, message: "Like Post Route Causes Error"});
     }
  }
 
