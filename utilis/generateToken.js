@@ -16,7 +16,8 @@ export const generateToken = ({id, uuid, Email_ID}, res) => {
         return token;
     } catch (error) {
         console.error("Error generating token:", error.message);
-        throw new Error("Token Causes error");
+        // throw new Error("Token Causes error");
+        return res.status(200).json({status: false, message: "Token Causes error"})
     }
 };
 
