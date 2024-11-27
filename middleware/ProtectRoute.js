@@ -10,7 +10,8 @@ const protectRoute = async (req, res, next) => {
         console.log("Generate_Token: ", token);
 
 		if (!token) {
-			throw new ErrorHandler(401, "Unauthorized: No token provided");
+			return res.status(200).json({status: false, message: "Unauthorized: No token provided"})
+			// throw new ErrorHandler(401, "Unauthorized: No token provided");
 		}
 
 		const decoded = jwt.verify(token, JWT_SECRET);
@@ -26,7 +27,8 @@ const protectRoute = async (req, res, next) => {
 		next();
 	} catch (err) {
 		console.log("protectRoute: ",err.message);
-		throw new ErrorHandler(400, "Unauthorized: Invalid token");
+		return res.status(200).json({status: false, message: "protectRoute"})
+		//throw new ErrorHandler(400, "Unauthorized: Invalid token");
 	}
 };
 
