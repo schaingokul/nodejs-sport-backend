@@ -29,9 +29,10 @@ export const postAdd = async(req,res) => {
 };
 
 export const postView = async(req,res) => {
-    const {uuid}= req.params;
+    
     try {
-        const user = await UserDetails.findOne({uuid}).select("uuid _id First_Name Last_Name")
+        
+        const user = await UserDetails.findOne({uuid}).select("uuid _id First_Name Last_Name");
         
         if (!user) {
             return res.status(404).json({ status: false, message: "User not found" });
@@ -43,7 +44,59 @@ export const postView = async(req,res) => {
         console.log(error)
         res.status(500).json({status: false, message: "View Post Route Causes Error"});
     }
-}
+};
+
+export const postLike = async(req,res) => {
+    const {uuid, id} = req.params;
+    try {
+        const post = await PostImage.findById(id);
+        if (!post) {
+            return res.status(404).json({ status: false, message: "Post not found" });
+        }
+
+        const likeIndex = post.Likes.findIndex((like) => like.LikedBy_id === uuid);
+
+        if (likeIndex !== -1) {
+           
+            post.Likes.splice(likeIndex, 1);
+            await post.save();
+            return res.status(200).json({ status: true, message: "Like removed", Data: post });
+        }
+
+        post.Likes.push({ LikedBy_id: uuid }); 
+        await post.save();
+
+        console.log(`Login_Id ${uuid} liked post id ${id}`);
+        res.status(201).json({ status: true, message: "Liked", Data: post });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({status: false, message: "Like Post Route Causes Error"});
+    }
+ };
+
+ export const postComment = async(req,res) => {
+    const {uuid, id } = req.params;
+    const {comment} = req.body;
+    try {
+        const post = await PostImage.findById(id);
+        if (!post) {
+            return res.status(404).json({ status: false, message: "Post not found" });
+        }
+        
+        post.Comments.push({
+            commentBy_id: uuid, 
+            comment: comment, 
+        });
+        
+        await post.save();
+
+        console.log(`Login_Id ${uuid} Comment post id ${id}`);
+        res.status(201).json({ status: true, message: "Added Comments", Data: post });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({status: false, message: "Like Post Route Causes Error"});
+    }
+ }
 
 
 

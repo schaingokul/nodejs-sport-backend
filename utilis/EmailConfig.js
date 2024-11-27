@@ -16,7 +16,6 @@ const emailConfig = async ({ code, Email }) => {
       text: `Your verification code is: ${code}, Your Email Address is: ${Email}`,
     };
   
-    
     return new Promise((resolve, reject) => {
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const CommentSchema = new mongoose.Schema(
   {
-    comment_id: { type: String },
+    commentBy_id: { type: String },
     comment: { type: String },
     createdAt: { type: Date, default: Date.now }, 
   },
@@ -11,12 +11,11 @@ const CommentSchema = new mongoose.Schema(
 
 const LikesSchema = new mongoose.Schema(
   {
-    Like_id: { type: String },
+    LikedBy_id: { type: String },
     createdAt: { type: Date, default: Date.now }, 
   },
   { _id: false } 
 );
-
 
 const ImageSchema = new mongoose.Schema(
   {
@@ -24,7 +23,7 @@ const ImageSchema = new mongoose.Schema(
     PostBy_Name: { type: String },
     PostImage_URL: {type: String, required: true},
     Location: { type: String, required: true },
-    Like: [LikesSchema],
+    Likes: [LikesSchema],
     Comments: [CommentSchema],
     description: { type: String, required: true },
   },

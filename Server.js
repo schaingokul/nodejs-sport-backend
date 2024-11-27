@@ -20,11 +20,13 @@ app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.static(__dirname));
 
-
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/user', postRouter);
 
+app.get('/', (req,res) => {
+    res.status(200).json("Connected")
+});
 
 app.listen(PORT, async() => {
     try {
@@ -34,5 +36,3 @@ app.listen(PORT, async() => {
         console.log(`Server is not connected to PORT: ${error.message}`);
     }
 });
-
-

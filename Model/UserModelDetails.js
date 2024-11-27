@@ -45,6 +45,24 @@ export const sportInfoSchema = new mongoose.Schema(
 );
 
 
+const followingSchema = new mongoose.Schema(
+  {
+    followingBy_id: { type: String },//username,profilepic
+    createdAt: { type: Date, default: Date.now }, 
+  },
+  { _id: false } 
+);
+
+
+const followerSchema = new mongoose.Schema(
+  {
+    follwersBy_id: { type: String },
+    createdAt: { type: Date, default: Date.now }, 
+  },
+  { _id: false } 
+);
+
+
 // Main User Schema
 const userDetailsSchema = new mongoose.Schema(
   {
@@ -55,6 +73,8 @@ const userDetailsSchema = new mongoose.Schema(
     Password: { type: String, required: true },
     userInfo: userInfoSchema,
     sportsInfo: [sportInfoSchema],
+    following: [followingSchema],
+    followers: [followerSchema],
     isVerified: { type: Boolean, default: false },
     verificationCode: { type: String, default: "N/A" },
   },

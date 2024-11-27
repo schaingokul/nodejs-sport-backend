@@ -1,10 +1,13 @@
 import express from 'express';
-import {postAdd, postView} from '../Controller/PostController.js';
+import {postAdd, postView, postLike, postComment} from '../Controller/PostController.js';
+import protectRoute from '../middleware/ProtectRoute.js';
 
 const router = express.Router();
 
 router.post("/post/:uuid", postAdd);
-router.get("/view/:uuid", postView);
+router.get("/view",protectRoute,  postView);
+router.post("/like/:uuid/:id", postLike);
+router.post("/comment/:uuid/:id", postComment);
 
 
 /*
