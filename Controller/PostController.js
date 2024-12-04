@@ -1,50 +1,101 @@
 import PostImage from '../Model/ImageModel.js';
 import UserDetails from '../Model/UserModelDetails.js';
 
-export const postAdd = async(req,res) => {
-    const {uuid}= req.user;
-    const {PostImage_URL, Location, description} = req.body;
+export const postAdd = async (req, res) => {
+    const { uuid } = req.user;
+    const { Location, description } = req.body;
+
     try {
-        const user = await UserDetails.findOne({uuid}).select("uuid _id First_Name Last_Name")
-        
+        const user = await UserDetails.findOne({ uuid }).select("uuid _id First_Name Last_Name myPostKeys");
         if (!user) {
             return res.status(200).json({ status: false, message: "User not found" });
         }
 
-        const newPost = new PostImage({
-            uuid: `${user.uuid}`,
-            PostBy_Name: `${user.First_Name} ${user.Last_Name}`,
-            PostImage_URL: PostImage_URL,
-            Location: Location,
-            description: description,
-        })
+         let PostImage_URL = [];
+         let videoImageURL = [];
 
-        await newPost.save();
+         if (req?.files?.PostImage_URL && req.files.PostImage_URL.length > 0) {
+            PostImage_URL = req.files.PostImage_URL.map(file => `http://localhost:4500/uploads/images/${file.filename}`);
+         }
 
-        res.status(201).json({status: true, message: "Posted"});
+         if (req?.files?.videoImageURL && req.files.videoImageURL.length > 0) {
+            videoImageURL = req.files.videoImageURL.map(file => `http://localhost:4500/uploads/videos/${file.filename}`);
+         }
+
+         const postCount = await PostImage.countDocuments(); 
+         let postKey = postCount + 1;
+ 
+         const addPost = {
+             P_Id: `post_${postKey}`,
+             PostBy_Name: `${user.First_Name} ${user.Last_Name}`,
+             Location: Location,
+             description: description,
+         };
+
+         if (PostImage_URL.length > 0) {
+            addPost.PostImage_URL = PostImage_URL;
+        } else if (videoImageURL.length > 0) {
+            addPost.Video_ImgURLs = videoImageURL;
+        }
+
+         const newPost = new PostImage(addPost);
+         await newPost.save(); 
+
+         if (Array.isArray(user.myPostKeys)) {
+            user.myPostKeys.push(newPost.P_Id);
+            await user.save();
+        }
+
+        res.status(201).json({ status: true, message: "Posts added successfully!", info: addPost});
+
     } catch (error) {
-        console.log(error)
-        res.status(200).json({status: false, message: "Post Route Causes Error"});
+        console.log(error);
+        res.status(500).json({ status: false, message: "An error occurred while posting" });
     }
 };
+
 
 export const postView = async(req,res) => {
     const {uuid} = req.user;
     try {
-        
-        const user = await UserDetails.findOne({uuid}).select("uuid _id First_Name Last_Name");
+        const user = await UserDetails.findOne({uuid}).select("uuid _id First_Name Last_Name myPostKeys");
         
         if (!user) {
             return res.status(200).json({ status: false, message: "User not found" });
         }
-
-        const imageInfo = await PostImage.find();
-        res.status(200).json({status: true, message: "Views", info: imageInfo});
+        console.log("PostImages", user.myPostKeys)
+        const get= user.myPostKeys;
+        const imageInfo = await PostImage.find()
+        const filteredPosts = imageInfo.filter(post => get.includes(post.P_Id));
+        console.log(filteredPosts)
+        res.status(200).json({status: true, message: "Views", info: filteredPosts});
     } catch (error) {
         console.log(error.message)
         res.status(200).json({status: false, message: "View Post Route Causes Error"});
     }
 };
+
+
+export const postCurrentView = async(req,res) => {
+    const {uuid} = req.user;
+    const {id} = req.params;
+    try {
+        const user = await UserDetails.findOne({uuid}).select("uuid _id First_Name Last_Name myPostKeys");
+        
+        if (!user) {
+            return res.status(200).json({ status: false, message: "User not found" });
+        }
+        console.log("PostImages", user.myPostKeys)
+        
+        const filteredPosts = await PostImage.find({P_Id: id})
+        console.log(filteredPosts)
+        res.status(200).json({status: true, message: "Views", info: filteredPosts});
+    } catch (error) {
+        console.log(error.message)
+        res.status(200).json({status: false, message: "View Post Route Causes Error"});
+    }
+};
+
 
 export const postLike = async(req,res) => {
     const {id} = req.params;
@@ -80,7 +131,7 @@ export const postLike = async(req,res) => {
     const {uuid} = req.user;
     const {comment} = req.body;
     try {
-        const post = await PostImage.findById(id);
+        const post = await PostImage.findOne({id});
         if (!post) {
             return res.status(200).json({ status: false, message: "Post not found" });
         }

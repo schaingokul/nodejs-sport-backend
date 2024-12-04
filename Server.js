@@ -7,6 +7,8 @@ import userRouter from './View/userView.js';
 import postRouter from './View/PostView.js';
 import path from "path";
 import { fileURLToPath } from 'url';
+import machineRoute from './Model/IndustrialModel/machineRoute.js'
+import TeamRouter from './View/TeamView.js'
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,12 +22,17 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.static(__dirname));
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files (images, videos, etc.)
+app.use('/', express.static(path.join(__dirname, 'Uploads')));
 
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/user', postRouter);
+app.use('/api/team', TeamRouter);
 
-
+app.use('/machine', machineRoute);
 
 app.listen(PORT, async() => {
     try {
@@ -35,5 +42,3 @@ app.listen(PORT, async() => {
         console.log(`Server is not connected to PORT: ${error.message}`);
     }
 });
-
-

@@ -15,36 +15,34 @@ export const userInfoSchema = new mongoose.Schema(
   { _id: false } // _id: false so it doesn't create a separate _id for this subdocument
 );
 
-
 // certificate Information Subdocument Schema
-/*export const certificateInfoSchema = new mongoose.Schema(
+export const certificateInfoSchema = new mongoose.Schema(
   {
     Occasion: { type: String },
     Month_Year: { type: String, required: true }, 
-    Upload_certificate: { type: String }, 
-    Upload_Photos:{type: String}
+    Upload_certificate: [{ type: String }], 
+    Upload_Photos:[{type: String}]
   },
   { _id: true } // Create an internal `_id` for this subdocument
 );
-*/
-
 
 // Sports Information Subdocument Schema
 export const sportInfoSchema = new mongoose.Schema(
   {
-    Sports_ImgURL: { type: String }, // Sports Image URL
-    Sports_Name: { type: String, required: true }, // Game's Sports Name
+    Sports_ProfileImage_URL: { type: String },
+    Sports_PostImage_URL: { type: [String] }, // Sports Image URL
+    Sports_Name: { type: String, required: true, set: (value) => value.toLowerCase() }, // Game's Sports Name
     Year_Playing: { type: String, required: true, min: 0  }, // Years of Experience
     BestAt: { type: String, required: true }, // Best Position
     Matches: { type: String, required: true , min: 0 }, // Matches Played
-    Video_ImgURL: { type: String }, // Video URL
-    isActive: { type: Boolean, default: false }, // Active State
-    
+    Sports_videoImageURL: { type: [String] }, // Video URL
+    isActive: { type: Boolean, default: false },
+    Certificate: certificateInfoSchema // Active State
   },
   { _id: true } // Create an internal `_id` for this subdocument
 );
 
-
+// following Information Subdocument Schema
 const followingSchema = new mongoose.Schema(
   {
     followingBy_id: { type: String },//username,profilepic
@@ -53,7 +51,7 @@ const followingSchema = new mongoose.Schema(
   { _id: false } 
 );
 
-
+// follower Information Subdocument Schema
 const followerSchema = new mongoose.Schema(
   {
     follwersBy_id: { type: String },
@@ -62,6 +60,33 @@ const followerSchema = new mongoose.Schema(
   { _id: false } 
 );
 
+const playersListSchema = mongoose.Schema({
+  Player_id:{type : String, required :true},
+  Position: {type : String, required :true},
+  status: {type : String, enum: ["Accept" ,"Reject", "N/A"], default: "N/A"},
+  },
+  { _id: false }
+);
+
+const TeamBuildSchema = mongoose.Schema({
+  createdBy: {type : String, required: true},
+  Team_Name: {type : String, required :true},
+  Sports_Name:{type : String, required :true},
+  TotalPlayers:{type : String, required :true, default: "0"},
+  playersList:[playersListSchema]
+},
+{ _id: true });
+
+
+const PlayForSchema = mongoose.Schema({
+  createdBy: {type : String, required: true},
+  Team_Id: {type : String, required: true},
+  Team_Name: {type : String, required :true},
+  Sports_Name:{type : String, required :true},
+  TotalPlayers:{type : String, required :true},
+  playersList:[]
+},
+{ _id: false });
 
 // Main User Schema
 const userDetailsSchema = new mongoose.Schema(
@@ -75,8 +100,12 @@ const userDetailsSchema = new mongoose.Schema(
     sportsInfo: [sportInfoSchema],
     following: [followingSchema],
     followers: [followerSchema],
+    myPostKeys: [{type: String}],     
+    MyTeamBuild: [TeamBuildSchema],
+    PlayFor: [PlayForSchema],
     isVerified: { type: Boolean, default: false },
     verificationCode: { type: String, default: "N/A" },
+    IsDeactivated: { type: Boolean, default: false }
   },
   { timestamps: true }
 );

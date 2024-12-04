@@ -1,0 +1,53 @@
+
+
+SportsPerson
+    Auth
+        Signup  // {{Port}}/api/auth/signup 
+                // {"firstName": "gokul", "lastName": "gokul","Email": "schaingokul@gmail.com", "Password": "1234567891"}
+        Login   // {{Port}}/api/auth/login 
+                // { "Email": "schaingokul@gmail.com", "Password": "1234567891", "code": "228564"}
+        forgotPassword //{{Port}}/api/auth/forget_password 
+                // {"Email": "User11@gmail.com"}
+        resetPassword //{{Port}}/api/auth/reset_password 
+                // { "code": "523843", "Password": "1234567890"}
+    
+    userInfo
+        ViewUserProfile //{{Port}}/api/user/profile
+        SaveUserProfile // {{Port}}/api/user/profile_save 
+                // {"Nickname": "JohnDoe", "Phone_Number": "9876543210", "Date_of_Birth": "1990-01-01", "Gender": "Male", "Education": { "school": [ "High School A" ], "college": ["University A" ]}, "Work": "Software Engineer", "Club": "Tech Club"}
+                // IMPORT PROFILE PIC
+    
+    userPost
+        CreatePost
+                // {"PostImage_URL":"https://placehold.co/300x300/pink/orange?text=Post+Image+1" ,"Location":"Madurai","description": "This is My Second Description"}
+
+                    "Storage": [
+                        {"post_1": 
+                            {
+                                "PostBy_Name": "John Doe",
+                                "PostImage_URL": "/uploads/image1.jpg",
+                                "Location": "New York",
+                                "description": "Single Image Upload"
+                            } 
+                        },
+                        {"post_2": 
+                            {
+                            "PostBy_Name": "John Doe",
+                            "PostImage_URL": "/uploads/image1.jpg",
+                            "Location": "New York",
+                            "description": "Single Image Upload"
+                            } 
+                        }
+                    ]
+
+
+"Email": "schaingokul1@gmail.com", "_id": "675047bc2d9eb36119e03d8f", "uuid": "sTKKJVUcyQEwTFi3RMKmd",
+"Email": "schaingokul2@gmail.com", "_id": "675047c52d9eb36119e03d92", "uuid": "Jy9Jt5LKDyv9XaWX8FYMY",
+"Email": "schaingokul3@gmail.com","_id": "6750486a2d9eb36119e03d95", "uuid": "t80PJU5fUC-cvUnm7o33f",
+"Email": "schaingokul4@gmail.com","_id": "675048732d9eb36119e03d98", "uuid": "HVCasezrpV7ptTv1VIxMK",
+
+
+
+
+
+

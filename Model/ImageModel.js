@@ -17,35 +17,19 @@ const LikesSchema = new mongoose.Schema(
   { _id: false } 
 );
 
-const ImageSchema = new mongoose.Schema(
-  {
-    uuid: { type: String },
+const ImageDetailsSchema = new mongoose.Schema({
+    P_Id: { type: String, required: true, unique: true },
     PostBy_Name: { type: String },
-    PostImage_URL: {type: String, required: true},
+    PostImage_URL: { type: [String] },
+    PostVideo_URL: { type: [String] },
     Location: { type: String, required: true },
     Likes: [LikesSchema],
     Comments: [CommentSchema],
-    description: { type: String, required: true },
-  },
-  { timestamps: true } 
+    description: { type: String, required: true }
+},{ timestamps: true }      
 );
 
-const ImageModel = mongoose.model("postImage", ImageSchema);
+
+const ImageModel = mongoose.model("postImage", ImageDetailsSchema);
 
 export default ImageModel;
-
-/*
-const postSchema = new mongoose.Schema({
-    userid: { type: String, required: true },
-    textContent: { type: String, required: true },
-    category: { type: String, required: true },
-    isMultiple: { type: Boolean },
-    image: [{
-        data: Buffer,
-        contentType: String
-    }],
-    videos: [String],
-})
-
-PostModel = mongoose.model("post", postSchema);
-*/

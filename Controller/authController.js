@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs';
 import emailConfig from '../utilis/EmailConfig.js';
 import { nanoid } from 'nanoid';
 import { generateToken } from '../utilis/generateToken.js';
-import { ErrorHandler } from '../utilis/ErrorHandlingMiddleware.js';
 
 
 export const signUp = async (req,res, next) => {
@@ -39,7 +38,7 @@ export const signUp = async (req,res, next) => {
       }
    
    await newUser.save();
-   console.log(`Step 6 Completed: User saved to database ${newUser.id}`);
+    console.log(`Step 6 Completed: User saved to database ${newUser.id}`);
    
     const token =  generateToken({ id: newUser._id, uuid: newUser.uuid, Email_ID: newUser.Email_ID },res);
 
