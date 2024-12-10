@@ -26,7 +26,7 @@ const ensureCollectionsExist = async (db) => {
     }
 
   } catch (error) {
-    console.error("Error ensuring collections:", error);
+    console.error("Error ensuring collections:", error.message);
   }
 };
 

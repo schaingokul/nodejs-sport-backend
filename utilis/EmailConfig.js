@@ -5,7 +5,7 @@ const emailConfig = async ({ code, Email }) => {
       service: "gmail",
       auth: {
         user: "schaingokul@gmail.com",
-        pass: "sjja hpwf uipx aewp",
+        pass: "jruv vauv oqcd qlbd",
       },
     });
   

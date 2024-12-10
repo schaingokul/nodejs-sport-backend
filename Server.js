@@ -16,7 +16,8 @@ import TeamRouter from './View/TeamView.js'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.X_ZOHO_CATALYST_LISTEN_PORT || 4500 || "147.79.68.157:4500";
+// const PORT = process.X_ZOHO_CATALYST_LISTEN_PORT || 4500 || "147.79.68.157:4500";
+const PORT = "147.79.68.157:4500";
 
 const app = express();
 

@@ -45,7 +45,7 @@ export const signUp = async (req,res, next) => {
     res.status(201).json({ status: true, message: "User registered successfully", data: token });
     
     } catch (error) {
-        console.error("Sign-up error:", error);
+        console.error("Sign-up error:", error.message);
         // next(error.message);
         res.status(200).json({status: false, message: "Sign-up Route error"})
     }
