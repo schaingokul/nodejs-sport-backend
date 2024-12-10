@@ -1,8 +1,6 @@
 import mongoose from "mongoose";
+import { MONGO_URI } from "../env";
 
-// Replace with your MongoDB Atlas URI or local URI
-const MONGO_URI = "mongodb+srv://schaingokul:schaingokul@cluster0.yrr9x.mongodb.net/sportsApp?retryWrites=true&w=majority&appName=Cluster0";
-// const MONGO_URI = "mongodb://127.0.0.1:27017";
 
 // Function to ensure collections exist
 const ensureCollectionsExist = async (db) => {
