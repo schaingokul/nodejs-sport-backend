@@ -84,7 +84,6 @@ const connectDB = async () => {
       { name: "postedByIdIndex", unique: false }
     );
     
-
   } catch (error) {
     console.error("Error connecting to MongoDB or managing indexes:", error.message);
     process.exit(1); // Exit
