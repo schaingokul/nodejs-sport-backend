@@ -47,34 +47,46 @@ const connectDB = async () => {
     const userDetailsCollection = db.collection("userdetails");
     const postImagesCollection = db.collection("postimages");
 
-    // Check and drop existing unique index on userdetails.uuid if it exists
+    // Drop existing unique index on userdetails.uuid if it exists
     const userIndexes = await userDetailsCollection.indexes();
     const userUuidIndex = userIndexes.find((index) => index.name === "uuid_1");
 
     if (userUuidIndex) {
       await userDetailsCollection.dropIndex("uuid_1");
-     // console.log("Dropped existing unique index on userdetails.uuid");
     }
 
     // Create a new unique index on userdetails.uuid
     await userDetailsCollection.createIndex({ uuid: 1 }, { unique: true });
-    //console.log("Created unique index on userdetails.uuid");
 
-    await postImagesCollection.createIndex(
-      { "images.PostBy_Name": 1 },
-      { name: "PostBy_Name_index" }
-    );
-    //console.log("Created index on postimages.images.PostBy_Name");
+    // Ensure postimages collection allows multiple posts by the same user
+    const postIndexes = await postImagesCollection.indexes();
+    
+    // Check if the imageURL index exists and drop it if needed
+    const imageUrlIndex = postIndexes.find((index) => index.name === "imageURLindex");
+    if (imageUrlIndex) {
+      await postImagesCollection.dropIndex("imageURLindex");
+    }
 
-    // Create a new index on postimages.PostBy_uuid (non-unique to allow multiple posts by the same user)
+    // Create a non-unique index on imageURL for faster querying
     await postImagesCollection.createIndex(
-      { "images.PostImage_URL": 1 },
-      { name: "PostImage_URL_index" }
+      { imageURL: 1 },
+      { name: "imageURLindex", unique: false }
     );
-    //console.log("Created index on postimages.images.PostImage_URL");
+    
+    // Ensure the index on postedById is non-unique
+    const postedByIdIndex = postIndexes.find((index) => index.name === "postedById_1");
+    if (postedByIdIndex) {
+      await postImagesCollection.dropIndex("postedById_1");
+    }
+    
+    await postImagesCollection.createIndex(
+      { postedById: 1 },
+      { name: "postedByIdIndex", unique: false }
+    );
+    
 
   } catch (error) {
-    console.error("Error connecting to MongoDB or managing indexes:", error);
+    console.error("Error connecting to MongoDB or managing indexes:", error.message);
     process.exit(1); // Exit
   }
 };

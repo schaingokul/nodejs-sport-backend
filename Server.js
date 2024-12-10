@@ -9,7 +9,9 @@ import path from "path";
 import { fileURLToPath } from 'url';
 import machineRoute from './Model/IndustrialModel/machineRoute.js'
 import TeamRouter from './View/TeamView.js'
-
+// import MessageRoute from './View/ChatView/messageRoute.js'
+// import userAppRoute from './View/ChatView/userAppRoute.js';
+// import {app, server} from './socket/Socket.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +33,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/user', postRouter);
 app.use('/api/team', TeamRouter);
+/*app.use('/api/message', MessageRoute);
+app.use('/api/user', userAppRoute);*/
 
 app.use('/machine', machineRoute);
 

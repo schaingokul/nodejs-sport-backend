@@ -289,3 +289,75 @@ function createHashMap(array, keyField) {
 function findInHashMap(hashMap, id) {
     return hashMap[id] || null;
 }
+
+/*
+Apis Ready to Check 
+Team Creation: Building a Team and Assigning Players
+Team Deletion: Removing a Team and Associated Player Data
+Team Update: Modifying Team Information and Player Assignments
+
+Pending Task
+Player Status: Accept or Decline Team Participation
+*/
+
+export const MyTeams = async (req, res) => {
+    const {id} = req.user
+    try {
+        const userDetails = await UserDetails.findById(id).lean().select("MyTeamBuild");
+        return res.status(200).json({ status: true, message: `MyTeams`, myTeams:userDetails  });
+    } catch (error) {
+        console.log(error.message)
+        return res.status(200).json({ status: false, message: `MyTeams Causes Route Error: ${error.message}` }); 
+    }
+};
+
+export const MyCurrentTeams = async (req, res) => {
+    const {id} = req.user
+    const {teamid} = req.params
+    try {
+        const userDetails = await UserDetails.findOne({_id: id, 'MyTeamBuild._id': teamid }).lean().select("MyTeamBuild");
+        return res.status(200).json({ status: true, message: `MyTeams ${userDetails.MyTeamBuild.Team_Name}`, TeamInfo: userDetails});
+    } catch (error) {
+        console.log(error.message)
+        return res.status(200).json({ status: false, message: `Team PalyerStatus Causes Route Error: ${error.message}` }); 
+    }
+};
+
+export const PlayForStatus = async (req, res) => {
+    const {id} = req.user
+    try {
+        const userDetails = await UserDetails.findById(id).lean().select("PlayFor");
+        return res.status(200).json({ status: true, message: `MyTeams`, TeamsPlayFor: userDetails  });
+    } catch (error) {
+        console.log(error.message)
+        return res.status(200).json({ status: false, message: `Team PalyerStatus Causes Route Error: ${error.message}` }); 
+    }
+}
+
+export const CurrentPlayerStatus = async (req, res) => {
+    const {id} = req.user
+    const {teamid} = req.params
+    try {
+        const userDetails = await UserDetails.findOne({_id: id, 'PlayFor.Team_Id': teamid }).lean().select("PlayFor");
+        const teamDetails = userDetails.PlayFor.find((team) => team.Team_Id.toString() === teamid);
+        return res.status(200).json({ status: true, message: `MyTeams `, TeamInfo: teamDetails});
+    } catch (error) {
+        console.log(error.message)
+        return res.status(200).json({ status: false, message: `Team PalyerStatus Causes Route Error: ${error.message}` }); 
+    }
+};
+
+export const PlayerStatus = async (req, res) => {
+    const { id, uuid } = req.user; // Current user ID and UUID
+    const { teamid } = req.params; // Team ID from request parameters
+
+    try {
+        const Info = await UserDetails.find({ $or: [{ 'MyTeamBuild._id': teamid },{ 'PlayFor.Team_Id': teamid }]}).select("uuid MyTeamBuild PlayFor");
+        console.log(Info)
+        
+        return res.status(200).json({ status: true, message: "Status Updated" ,Info });
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ status: false, message: `Team Player Status Causes Route Error: ${error.message}` });
+    }
+};

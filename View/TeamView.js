@@ -1,6 +1,6 @@
 import express from 'express';
 import protectRoute from '../middleware/ProtectRoute.js';
-import { buildTeam, DeleteTeam, UpdateTeam} from '../Controller/TeamController.js';
+import { buildTeam, DeleteTeam, UpdateTeam, MyTeams, MyCurrentTeams, PlayForStatus, CurrentPlayerStatus, PlayerStatus} from '../Controller/TeamController.js';
 import UserDetails from '../Model/UserModelDetails.js'
 
 const router = express.Router();
@@ -8,6 +8,14 @@ const router = express.Router();
 router.post("/createteam", protectRoute, buildTeam);
 router.delete("/deleteteam/:teamid", protectRoute, DeleteTeam);
 router.put("/updateteam/:teamIdToFind", protectRoute, UpdateTeam);
+router.get("/myteam/", protectRoute, MyTeams);
+router.get("/myteam/:teamid", protectRoute, MyCurrentTeams);
+router.get("/myplayfor/", protectRoute, PlayForStatus);
+router.get("/myplayfor/:teamid", protectRoute, CurrentPlayerStatus);
+router.put("/status/:teamid", protectRoute, PlayerStatus);
+
+
+
 
 router.delete("/delete/:userid/:id", async (req, res) => {
     const { id, userid } = req.params;

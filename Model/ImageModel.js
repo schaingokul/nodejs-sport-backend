@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const CommentSchema = new mongoose.Schema(
   {
-    commentBy_id: { type: String },
+    commentById: { type: String },
     comment: { type: String },
     createdAt: { type: Date, default: Date.now }, 
   },
@@ -11,24 +11,23 @@ const CommentSchema = new mongoose.Schema(
 
 const LikesSchema = new mongoose.Schema(
   {
-    LikedBy_id: { type: String },
+    likedById: { type: String },
     createdAt: { type: Date, default: Date.now }, 
   },
   { _id: false } 
 );
 
 const ImageDetailsSchema = new mongoose.Schema({
-    P_Id: { type: String, required: true, unique: true },
-    PostBy_Name: { type: String },
-    PostImage_URL: { type: [String] },
-    PostVideo_URL: { type: [String] },
-    Location: { type: String, required: true },
-    Likes: [LikesSchema],
-    Comments: [CommentSchema],
+    postedBy: { id: { type: mongoose.Schema.Types.ObjectId, ref: 'UserDetails', required: true }, name: { type: String, required: true },},
+    URL: { type: [String] , default: []},
+    location: { type: String, required: true },
+    type: { type: String, required: true, enum:["image", "video", "reel","event"] },
+    likes: [LikesSchema],
+    comments: [CommentSchema],
     description: { type: String, required: true }
-},{ timestamps: true }      
+},
+{ timestamps: true }      
 );
-
 
 const ImageModel = mongoose.model("postImage", ImageDetailsSchema);
 

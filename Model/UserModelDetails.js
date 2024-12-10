@@ -63,7 +63,7 @@ const followerSchema = new mongoose.Schema(
 const playersListSchema = mongoose.Schema({
   Player_id:{type : String, required :true},
   Position: {type : String, required :true},
-  status: {type : String, enum: ["Accept" ,"Reject", "N/A"], default: "N/A"},
+  status: {type : String, enum: ["Accepted" ,"NotWilling", "N/A"], default: "N/A"},
   },
   { _id: false }
 );
@@ -84,7 +84,7 @@ const PlayForSchema = mongoose.Schema({
   Team_Name: {type : String, required :true},
   Sports_Name:{type : String, required :true},
   TotalPlayers:{type : String, required :true},
-  playersList:[]
+  playersList:[playersListSchema]
 },
 { _id: false });
 
@@ -100,7 +100,7 @@ const userDetailsSchema = new mongoose.Schema(
     sportsInfo: [sportInfoSchema],
     following: [followingSchema],
     followers: [followerSchema],
-    myPostKeys: [{type: String}],     
+    myPostKeys: [{ type: String, default: [] }],     
     MyTeamBuild: [TeamBuildSchema],
     PlayFor: [PlayForSchema],
     isVerified: { type: Boolean, default: false },
