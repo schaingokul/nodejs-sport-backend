@@ -58,7 +58,7 @@ export const SaveUserProfile = async(req,res) => {
         if(user.userInfo && user.userInfo.Profile_ImgURL){
             if (user.userInfo.Profile_ImgURL) {
                 const fileName = user.userInfo.Profile_ImgURL
-             deleteFile(fileName, category)
+             deleteFile(fileName, "image")
             }
         }
         const saveObj = {};

@@ -1,5 +1,5 @@
 import express from 'express';
-import {postAdd, postView, postLike, postComment, postCurrentView, typeView} from '../Controller/PostController.js';
+import {postAdd, postView, postLike, createComment, deleteComment, postCurrentView, typeView} from '../Controller/PostController.js';
 import ProtectRoute from '../middleware/ProtectRoute.js';
 import {upload} from '../utilis/uploadFiles.js'
 
@@ -11,6 +11,9 @@ router.get("/view", ProtectRoute, postView);
 router.get("/view/:id", ProtectRoute, postCurrentView);
 router.post("/view/:type", ProtectRoute, typeView);
 router.post("/like/:id", ProtectRoute, postLike);
-router.post("/comment/:id",ProtectRoute, postComment);
+
+// Create Comment & delete Comment
+router.post("/comment/:id",ProtectRoute, createComment);
+router.delete("/comment/:id",ProtectRoute, deleteComment);
 
 export default router;

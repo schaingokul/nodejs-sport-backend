@@ -28,7 +28,7 @@ const protectRoute = async (req, res, next) => {
 	} catch (err) {
 		console.log("protectRoute: ",err.message);
 		return res.status(200).json({status: false, message: "protectRoute"})
-		//throw new ErrorHandler(400, "Unauthorized: Invalid token");
+		
 	}
 };
 
