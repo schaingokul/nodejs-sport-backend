@@ -1,8 +1,8 @@
 import UserDetails from '../Model/UserModelDetails.js';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { findUser, deleteFile } from '../utilis/userUtils.js';
+import { PORT, HOST } from '../env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -47,7 +47,7 @@ export const SaveUserProfile = async(req,res) => {
          // Check if file is uploaded and then build the image URL
         let profileImageUrl = '';
         if (req?.files?.Profile_ImgURL && req.files.Profile_ImgURL[0]) {
-             profileImageUrl = `http://localhost:4500/uploads/${req.files.Profile_ImgURL[0].filename}`;
+             profileImageUrl = `${HOST}:${PORT}/uploads/${req.files.Profile_ImgURL[0].filename}`;
         }
         
         const user = await UserDetails.findOne({ uuid });
@@ -123,15 +123,15 @@ export const sportsAdd = async(req,res) => {
         let Sports_videoImageURL = [];
 
         if (req?.files?.Sports_ProfileImage_URL?.[0]) {
-            Sports_ProfileImage_URL = `http://localhost:4500/uploads/images/${req.files.Sports_ProfileImage_URL[0].filename}`;
+            Sports_ProfileImage_URL = `${HOST}:${PORT}/uploads/images/${req.files.Sports_ProfileImage_URL[0].filename}`;
         }
 
         if (req?.files?.Sports_PostImage_URL?.length > 0) {
-            Sports_PostImage_URL = req.files.Sports_PostImage_URL.map(file => `http://localhost:4500/uploads/images/${file.filename}`);
+            Sports_PostImage_URL = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
         }
 
         if (req?.files?.Sports_videoImageURL?.length > 0) {
-            Sports_videoImageURL = req.files.Sports_videoImageURL.map(file => `http://localhost:4500/uploads/videos/${file.filename}`);
+            Sports_videoImageURL = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
         }
         
         const user = await UserDetails.findOne({ uuid });
@@ -197,19 +197,19 @@ export const sportsEdit = async(req, res) => {
             if (sport.Sports_ProfileImage_URL) {
                 deleteFile(path.basename(sport.Sports_ProfileImage_URL), "image");
             }
-            updateObj['sportsInfo.$.Sports_ProfileImage_URL'] = `http://localhost:4500/uploads/images/${req.files.Sports_ProfileImage_URL[0].filename}`;
+            updateObj['sportsInfo.$.Sports_ProfileImage_URL'] = `${HOST}:${PORT}/uploads/images/${req.files.Sports_ProfileImage_URL[0].filename}`;
         }
 
         // Handle post image updates
         if (req?.files?.Sports_PostImage_URL?.length > 0) {
             sport.Sports_PostImage_URL.forEach(oldPath => deleteFile(path.basename(oldPath), "image"));
-            updateObj['sportsInfo.$.Sports_PostImage_URL'] = req.files.Sports_PostImage_URL.map(file => `http://localhost:4500/uploads/images/${file.filename}`);
+            updateObj['sportsInfo.$.Sports_PostImage_URL'] = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
         }
 
         // Handle video image updates
         if (req?.files?.Sports_videoImageURL?.length > 0) {
             sport.Sports_videoImageURL.forEach(oldPath => deleteFile(path.basename(oldPath), "video"));
-            updateObj['sportsInfo.$.Sports_videoImageURL'] = req.files.Sports_videoImageURL.map(file => `http://localhost:4500/uploads/videos/${file.filename}`);
+            updateObj['sportsInfo.$.Sports_videoImageURL'] = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
         }
 
         // Dynamically update additional fields
@@ -270,12 +270,12 @@ export const sportsCertificateAdd = async(req,res) => {
 
         // Check and update the Post Image URLs if they exist
         if (req?.files?.Sports_PostImage_URL && req.files.Sports_PostImage_URL.length > 0) {
-            updateObj['sportsInfo.Certificate.$.Upload_certificate'] = req.files.Sports_PostImage_URL.map(file => `http://localhost:4500/uploads/images/${file.filename}`);
+            updateObj['sportsInfo.Certificate.$.Upload_certificate'] = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
         }
 
         // Check and update the Video Image URLs if they exist
         if (req?.files?.Sports_videoImageURL && req.files.Sports_videoImageURL.length > 0) {
-            updateObj['sportsInfo.Certificate.$.Upload_Photos'] = req.files.Sports_videoImageURL.map(file => `http://localhost:4500/uploads/videos/${file.filename}`);
+            updateObj['sportsInfo.Certificate.$.Upload_Photos'] = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
         }
 
         // Loop through the updateFields object and add them to updateObj
@@ -309,12 +309,12 @@ export const sportsCertificateEdit = async(req, res) => {
 
         // Check and update the Post Image URLs if they exist
         if (req?.files?.Sports_PostImage_URL && req.files.Sports_PostImage_URL.length > 0) {
-            updateObj['sportsInfo.Certificate.$.Upload_certificate'] = req.files.Sports_PostImage_URL.map(file => `http://localhost:4500/uploads/images/${file.filename}`);
+            updateObj['sportsInfo.Certificate.$.Upload_certificate'] = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
         }
 
         // Check and update the Video Image URLs if they exist
         if (req?.files?.Sports_videoImageURL && req.files.Sports_videoImageURL.length > 0) {
-            updateObj['sportsInfo.Certificate.$.Upload_Photos'] = req.files.Sports_videoImageURL.map(file => `http://localhost:4500/uploads/videos/${file.filename}`);
+            updateObj['sportsInfo.Certificate.$.Upload_Photos'] = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
         }
 
         // Loop through the updateFields object and add them to updateObj

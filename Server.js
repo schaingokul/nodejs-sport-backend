@@ -9,6 +9,7 @@ import path from "path";
 import { fileURLToPath } from 'url';
 import machineRoute from './Model/IndustrialModel/machineRoute.js'
 import TeamRouter from './View/TeamView.js'
+import { PORT, HOST } from "./env.js";
 // import MessageRoute from './View/ChatView/messageRoute.js'
 // import userAppRoute from './View/ChatView/userAppRoute.js';
 // import {app, server} from './socket/Socket.js'
@@ -16,10 +17,6 @@ import TeamRouter from './View/TeamView.js'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-//const HOST = process.X_ZOHO_CATALYST_LISTEN_PORT || 4500;
-
-const HOST = '147.79.68.157';
-const PORT = 4500;
 
 const app = express();
 
@@ -38,7 +35,7 @@ app.use('/api/user', postRouter);
 app.use('/api/team', TeamRouter);
 app.use('/machine', machineRoute);
 
-app.listen(PORT, HOST, async () => {
+app.listen(PORT, HOST.replace('http://', ''), async () => {
     try {
         await connectDB();
         console.log(`Server is running on ${HOST}:${PORT}`);

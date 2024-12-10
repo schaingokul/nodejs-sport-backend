@@ -16,11 +16,11 @@ export const postAdd = async (req, res) => {
         }
 
         if (req?.files?.imageURL && req.files.imageURL.length > 0) {
-            URL = req.files.imageURL.map(file => `http://localhost:4500/uploads/images/${file.filename}`);
+            URL = req.files.imageURL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
         }
 
         if (req?.files?.videoURL && req.files.videoURL.length > 0) {
-            URL = req.files.videoURL.map(file => `http://localhost:4500/uploads/videos/${file.filename}`);
+            URL = req.files.videoURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
         }
 
         const addPost = {
@@ -101,11 +101,11 @@ export const deletePost = async (req, res) => {
         }
 
         if (req?.files?.imageURL && req.files.imageURL.length > 0) {
-            URL = req.files.imageURL.map(file => `http://localhost:4500/uploads/images/${file.filename}`);
+            URL = req.files.imageURL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
         }
 
         if (req?.files?.videoURL && req.files.videoURL.length > 0) {
-            URL = req.files.videoURL.map(file => `http://localhost:4500/uploads/videos/${file.filename}`);
+            URL = req.files.videoURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
         }
 
         const addPost = {
