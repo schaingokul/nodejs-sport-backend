@@ -16,8 +16,10 @@ import TeamRouter from './View/TeamView.js'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// const PORT = process.X_ZOHO_CATALYST_LISTEN_PORT || 4500;
-const PORT = "147.79.68.157:4500"; //serevr
+//const HOST = process.X_ZOHO_CATALYST_LISTEN_PORT || 4500;
+
+const HOST = '147.79.68.157';
+const PORT = 4500;
 
 const app = express();
 
@@ -34,16 +36,16 @@ app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/user', postRouter);
 app.use('/api/team', TeamRouter);
-/*app.use('/api/message', MessageRoute);
-app.use('/api/user', userAppRoute);*/
-
 app.use('/machine', machineRoute);
 
-app.listen(PORT, async() => {
+app.listen(PORT, HOST, async () => {
     try {
         await connectDB();
-        console.log(`Server is running on Port: ${PORT} `);
+        console.log(`Server is running on ${HOST}:${PORT}`);
     } catch (error) {
-        console.log(`Server is not connected to PORT: ${error.message}`);
-    }
+        console.log(`Server failed to connect to database: ${error.message}`);
+    }
 });
+
+/*app.use('/api/message', MessageRoute);
+app.use('/api/user', userAppRoute);*/

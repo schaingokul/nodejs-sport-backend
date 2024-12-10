@@ -79,10 +79,8 @@ export const login = async (req,res, next) => {
         await UserDetails.findByIdAndUpdate(user._id, { isVerified: true });
 
         const token =  generateToken({ id: user._id, uuid: user.uuid, Email_ID: user.Email_ID }, res);
-        const database = await UserDetails.find()
         const sendInfo = await UserDetails.findOne({ uuid: user.uuid }).select("uuid _id");
-        console.log(sendInfo)
-        res.status(200).json({status: true, message: "login Successfully", data: token, sendInfo, UserInfo: database });
+        res.status(200).json({status: true, message: "login Successfully", data: token, UserInfo: sendInfo });
     
     } catch (error) {
         console.error("Login error:", error.message);
