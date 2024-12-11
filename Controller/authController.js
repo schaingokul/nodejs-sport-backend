@@ -126,6 +126,7 @@ export const login = async (req,res, next) => {
             return res.status(200).json({status: false, message: "Invalid Password"});
             // return next(new ErrorHandler(200, "Invalid Password"));
         }
+
         if(user.isVerified === "false"){
             if(user.verificationCode != code){
                 res.status(200).json({status: false, message: "LogIncorrect Verfication Codein Route"})
@@ -191,8 +192,7 @@ export const verifycationCode = async (req, res) => {
             // return next( new ErrorHandler(400,"Incorrect Verfication Code"));
             res.status(200).json({status: false, message: "Incorrect Verfication Code"})
         }
-
-        await UserDetails.findByIdAndUpdate(user._id, {verificationCode: null});
+        await UserDetails.findByIdAndUpdate(user._id, { isVerified: true });
        
         res.status(200).json({status: true, message: "Verification successfully ", user: { uuid: user.uuid, Email_ID: user.Email_ID }});
     } catch (error) {
