@@ -8,19 +8,59 @@ import { generateToken } from '../utilis/generateToken.js';
 
 export const googlesignUp = async (req,res, next) => {
 
-    const {firstName, lastName, Email } = req.body;
+    const {firstName, lastName, Email, profile_Pic } = req.body;
     try {
+        // Check for the fixed token in the headers
+        const dummyToken = req.headers['x-google-auth-token'];
 
+        // Validate the token
+        if (dummyToken !== 'google-access') {
+            return res.status(401).json({ status: false, message: 'Invalid or missing token please send information through Application Token' });
+        }
 
-    res.status(201).json({ status: true, message: "User registered successfully", data: token });
+        const isValidEmail = await UserDetails.findOne({Email_ID: Email});
+        if(!isValidEmail){
+            const Password = nanoid();
+            const encryptedPassword = await bcrypt.hash(Password, 10);
+
+            const code = Math.floor(100000+ Math.random()*900000).toString();
+            const uniqueId = nanoid();
+            
+            const newUser = new UserDetails(
+                {
+                uuid: uniqueId,
+                First_Name: firstName,
+                Last_Name: lastName,
+                Email_ID: Email,
+                Password: encryptedPassword,
+                verificationCode: code,
+            });
     
+            const isEmailSent  = await emailConfig({code, Email});
+            if (!isEmailSent ) {
+                return res.status(200).json({status: false, message: "User created but email sending failed."})
+            }
+            newUser.userInfo.Profile_ImgURL = profile_Pic
+            
+            await newUser.save();
+            await UserDetails.findByIdAndUpdate(newUser._id, { isVerified: true });
+            const token =  generateToken({ id: newUser._id, uuid: newUser.uuid, Email_ID: newUser.Email_ID }, res);
+         return res.status(201).json({ status: true, message: "User registered successfully", data: token, password : Password });
+        }
+
+        if(isValidEmail){
+
+            const token =  generateToken({ id: isValidEmail._id, uuid: isValidEmail.uuid, Email_ID: isValidEmail.Email_ID }, res);
+            const sendInfo = await UserDetails.findById(isValidEmail._id).select("uuid _id FirstName LastName");
+            return res.status(200).json({status: true, message: "login Successfully", data: token, UserInfo: sendInfo });
+        }
+
     } catch (error) {
         console.error("Sign-up error:", error.message);
-        // next(error.message);
-        res.status(200).json({status: false, message: "Sign-up Route error"})
+        next(error.message);
+        // res.status(200).json({status: false, message: "Sign-up Route error"})
     }
 };
-
 
 export const signUp = async (req,res, next) => {
 
@@ -48,18 +88,18 @@ export const signUp = async (req,res, next) => {
             verificationCode: code,
         });
 
-    const isEmailSent  = await emailConfig({code, Email});
-    if (!isEmailSent ) {
-        //return next(new ErrorHandler(400, "User created but email sending failed"));
-        return res.status(200).json({status: false, message: "User created but email sending failed."})
-      }
-   
-   await newUser.save();
-    console.log(`Step 6 Completed: User saved to database ${newUser.id}`);
-   
-    const token =  generateToken({ id: newUser._id, uuid: newUser.uuid, Email_ID: newUser.Email_ID },res);
+        const isEmailSent  = await emailConfig({code, Email});
+        if (!isEmailSent ) {
+            return next(new ErrorHandler(400, "User created but email sending failed"));
+            //return res.status(200).json({status: false, message: "User created but email sending failed."})
+        }
+    
+    await newUser.save();
+        console.log(`Step 6 Completed: User saved to database ${newUser.id}`);
+    
+        const token =  generateToken({ id: newUser._id, uuid: newUser.uuid, Email_ID: newUser.Email_ID },res);
 
-    res.status(201).json({ status: true, message: "User registered successfully", data: token });
+        res.status(201).json({ status: true, message: "User registered successfully", data: token, Verification: code});
     
     } catch (error) {
         console.error("Sign-up error:", error.message);
@@ -97,7 +137,7 @@ export const login = async (req,res, next) => {
 
         const token =  generateToken({ id: user._id, uuid: user.uuid, Email_ID: user.Email_ID }, res);
         const sendInfo = await UserDetails.findOne({ uuid: user.uuid }).select("uuid _id");
-        res.status(200).json({status: true, message: "login Successfully", data: token, UserInfo: sendInfo });
+        res.status(200).json({status: true, message: "login Successfully", Token: token, UserInfo: sendInfo });
     
     } catch (error) {
         console.error("Login error:", error.message);
@@ -127,7 +167,7 @@ export const forgetPassword = async (req, res) => {
             res.status(200).json({status: false, message: "Failed to send email"})
         }
 
-        res.status(200).json({status: true, message: "VerificationCode is sended to mail", token });
+        res.status(200).json({status: true, message: "VerificationCode is sended to mail", Token: token, Verification: code  });
 
     } catch (error) {
         console.error("Forget password error:", error.message);
@@ -136,8 +176,8 @@ export const forgetPassword = async (req, res) => {
     }
 };
 
-export const resetPassword = async (req, res) => {
-    const {code, Password} = req.body;
+export const verifycationCode = async (req, res) => {
+    const {code} = req.body;
     const {uuid} = req.user;
     try {
         const user = await UserDetails.findOne({uuid});
@@ -152,8 +192,30 @@ export const resetPassword = async (req, res) => {
             res.status(200).json({status: false, message: "Incorrect Verfication Code"})
         }
 
+        await UserDetails.findByIdAndUpdate(user._id, {verificationCode: null});
+       
+        res.status(200).json({status: true, message: "Verification successfully ", user: { uuid: user.uuid, Email_ID: user.Email_ID }});
+    } catch (error) {
+        console.error("Reset password error:", error.message);
+        // next(error.message);
+        res.status(200).json({status: false, message: "Reset password Route error"})
+    }
+};
+
+
+export const resetPassword = async (req, res) => {
+    const {Password} = req.body;
+    const {uuid} = req.user;
+    try {
+        const user = await UserDetails.findOne({uuid});
+
+        if(!user){
+            // return next( new ErrorHandler(400,"User not found"));
+            res.status(200).json({status: false, message: "User not found"})
+        }
+
         const encryptPassword = await bcrypt.hash(Password, 10);
-        await UserDetails.findByIdAndUpdate(user._id, { Password: encryptPassword, verificationCode: null});
+        await UserDetails.findByIdAndUpdate(user._id, { Password: encryptPassword});
        
         res.status(200).json({status: true, message: "Password reset successfully",user: { uuid: user.uuid, Email_ID: user.Email_ID }});
     } catch (error) {
@@ -162,7 +224,6 @@ export const resetPassword = async (req, res) => {
         res.status(200).json({status: false, message: "Reset password Route error"})
     }
 };
-
 
 export const follower = async (req, res, next) => {
     const { id } = req.params; // follower uuid
