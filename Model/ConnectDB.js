@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { MONGO_URI } from "../env";
+import { MONGO_URI } from "../env.js";
 
 
 // Function to ensure collections exist

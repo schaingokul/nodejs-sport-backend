@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import machineRoute from './Model/IndustrialModel/machineRoute.js'
 import TeamRouter from './View/TeamView.js'
 import { PORT, HOST } from "./env.js";
+
 // import MessageRoute from './View/ChatView/messageRoute.js'
 // import userAppRoute from './View/ChatView/userAppRoute.js';
 // import {app, server} from './socket/Socket.js'
@@ -34,7 +35,22 @@ app.use('/api/user', postRouter);
 app.use('/api/team', TeamRouter);
 app.use('/machine', machineRoute);
 
-app.listen(PORT, HOST.replace('http://', ''), async () => {
+app.get("/", (req,res) => {
+    res.send("Hello World")
+});
+
+/* ------------------------------------------ http://:localhost:4500 ------------------------------------------ */ 
+// app.listen(PORT,async () => {
+//     try {
+//         await connectDB();
+//         console.log(`Server is running on ${HOST}:${PORT}`);
+//     } catch (error) {
+//         console.log(`Server failed to connect to database: ${error.message}`);
+//     }
+// });
+
+/* --------------------------------------------- Hositing Server --------------------------------------------- */ 
+app.listen(PORT, HOST, async () => {
     try {
         await connectDB();
         console.log(`Server is running on ${HOST}:${PORT}`);
@@ -42,6 +58,7 @@ app.listen(PORT, HOST.replace('http://', ''), async () => {
         console.log(`Server failed to connect to database: ${error.message}`);
     }
 });
+
 
 /*app.use('/api/message', MessageRoute);
 app.use('/api/user', userAppRoute);*/

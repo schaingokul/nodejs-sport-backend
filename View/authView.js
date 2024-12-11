@@ -1,10 +1,12 @@
 import express from 'express';
-import {signUp, login, forgetPassword, resetPassword, follower, following} from '../Controller/authController.js';
+import {googlesignUp, signUp, login, forgetPassword, resetPassword, follower, following} from '../Controller/authController.js';
 import ProtectRoute from '../middleware/ProtectRoute.js';
 import { ErrorHandler } from '../utilis/ErrorHandlingMiddleware.js';
 
 const router = express.Router();
 
+// googleAuth
+router.post("/google", googlesignUp);
 
 router.post("/signup", signUp);
 router.post("/login", login);

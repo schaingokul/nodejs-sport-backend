@@ -29,7 +29,7 @@ if (!fs.existsSync(videosDir)) {
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        const allowedImageTypes = ['image/jpeg','image/jpg', 'image/png', 'image/gif'];
         const allowedVideoTypes = ['video/mp4', 'video/avi', 'video/mkv'];
 
         // Set destination based on file type
@@ -49,7 +49,7 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    const allowedImageTypes = ['image/jpeg', 'image/jpg','image/png', 'image/gif'];
     const allowedVideoTypes = ['video/mp4', 'video/avi', 'video/mkv'];
     
     if (allowedImageTypes.includes(file.mimetype)) {

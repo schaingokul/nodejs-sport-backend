@@ -42,10 +42,8 @@ export const checkAndCreateDir = (dir) => {
 // File deletion function
 export const deleteFile = (filePath, fileType) => {
     // Extract the file name from the filePath (removes the base URL if present)
-    console.log("filePath", filePath)
-    console.log('fileType', fileType)
+    console.log("filePath - ", filePath, ' // fileType ', fileType)
     const extractedFileName = path.basename(filePath); 
-    console.log("extractedFileName: ",extractedFileName)
     // Determine the correct file path based on file type
     let filePathLoc = '';
     

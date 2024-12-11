@@ -15,8 +15,6 @@ export const viewUserProfile = async(req,res) => {
             return res.status(200).json({ status: false, message: "User not found" });
         }
         const userInfo = user.userInfo;
-        console.log(`Step 2: User Info: ${userInfo}`);
-        
         const UI = userInfo
             ? {
                 Email_ID: user.Email_ID,
@@ -34,7 +32,7 @@ export const viewUserProfile = async(req,res) => {
 
         console.log(`Step 3: Constructed UI: ${JSON.stringify(UI)}`);
 
-        res.status(200).json({status: true, message: "UserInfo Success", UI})
+        res.status(200).json({status: true, message: "UserInfo Success", UserDetails: UI})
     } catch (error) {
         res.status(200).json({status: false, message: "UserInfo, Causes Route Error"});
     }
@@ -46,21 +44,27 @@ export const SaveUserProfile = async(req,res) => {
     try {
          // Check if file is uploaded and then build the image URL
         let profileImageUrl = '';
-        if (req?.files?.Profile_ImgURL && req.files.Profile_ImgURL[0]) {
-             profileImageUrl = `${HOST}:${PORT}/uploads/${req.files.Profile_ImgURL[0].filename}`;
-        }
-        
         const user = await UserDetails.findOne({ uuid });
-         if (!user) {
-             return res.status(200).json({ status: false, message: "User not found" });
+        if (!user) {
+            return res.status(200).json({ status: false, message: "User not found" });
         }
-        // If there's an existing image, delete it
-        if(user.userInfo && user.userInfo.Profile_ImgURL){
-            if (user.userInfo.Profile_ImgURL) {
-                const fileName = user.userInfo.Profile_ImgURL
-             deleteFile(fileName, "image")
+
+        if(req?.files?.Profile_ImgURL && req.files.Profile_ImgURL.length > 0){
+            
+            if (req?.files?.Profile_ImgURL && req.files.Profile_ImgURL[0]) {
+                profileImageUrl = `${HOST}:${PORT}/Uploads/images/${req.files.Profile_ImgURL[0].filename}`;
+            }
+            
+            // If there's an existing image, delete it
+            if(user.userInfo && user.userInfo.Profile_ImgURL){
+                if (user.userInfo.Profile_ImgURL) {
+                    const fileName = user.userInfo.Profile_ImgURL
+                    console.log("Step 2 - fileName Before Delete",fileName)
+                    deleteFile(fileName, "image")
+                }
             }
         }
+
         const saveObj = {};
          // Ensure saveFields is an object before attempting to iterate over it
          if (typeof saveFields === 'object' && saveFields !== null) {
@@ -68,7 +72,6 @@ export const SaveUserProfile = async(req,res) => {
             Object.keys(saveFields).forEach(field => {
                 saveObj[`userInfo.${field}`] = saveFields[field];
             });
-            console.log("Step 2 saveObj", saveObj);
         } else {
             return res.status(200).json({ status: false, message: "Invalid data format" });
         }
@@ -76,7 +79,7 @@ export const SaveUserProfile = async(req,res) => {
         // If there is a profile image, add it to the saveObj
         if (profileImageUrl) {
             saveObj['userInfo.Profile_ImgURL'] = profileImageUrl;
-            console.log("Step 3 profileImageUrl", saveObj)
+            
         }
 
         // If no fields to update, return an error message
@@ -91,9 +94,7 @@ export const SaveUserProfile = async(req,res) => {
             { new: true } 
         ).select("userInfo");
 
-        console.log(`Step 4: User found: ${saveUser}`);
-
-        res.status(200).json({ status: true, message: "UserInfo Updated", saveUser });
+        res.status(200).json({ status: true, message: "UserInfo Updated", updateInformation: saveUser });
         
     } catch (error) {
         res.status(200).json({status: false, message: error.message});
@@ -123,15 +124,15 @@ export const sportsAdd = async(req,res) => {
         let Sports_videoImageURL = [];
 
         if (req?.files?.Sports_ProfileImage_URL?.[0]) {
-            Sports_ProfileImage_URL = `${HOST}:${PORT}/uploads/images/${req.files.Sports_ProfileImage_URL[0].filename}`;
+            Sports_ProfileImage_URL = `${HOST}:${PORT}/Uploads/images/${req.files.Sports_ProfileImage_URL[0].filename}`;
         }
 
         if (req?.files?.Sports_PostImage_URL?.length > 0) {
-            Sports_PostImage_URL = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
+            Sports_PostImage_URL = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/Uploads/images/${file.filename}`);
         }
 
         if (req?.files?.Sports_videoImageURL?.length > 0) {
-            Sports_videoImageURL = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
+            Sports_videoImageURL = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/Uploads/videos/${file.filename}`);
         }
         
         const user = await UserDetails.findOne({ uuid });
@@ -197,19 +198,19 @@ export const sportsEdit = async(req, res) => {
             if (sport.Sports_ProfileImage_URL) {
                 deleteFile(path.basename(sport.Sports_ProfileImage_URL), "image");
             }
-            updateObj['sportsInfo.$.Sports_ProfileImage_URL'] = `${HOST}:${PORT}/uploads/images/${req.files.Sports_ProfileImage_URL[0].filename}`;
+            updateObj['sportsInfo.$.Sports_ProfileImage_URL'] = `${HOST}:${PORT}/Uploads/images/${req.files.Sports_ProfileImage_URL[0].filename}`;
         }
 
         // Handle post image updates
         if (req?.files?.Sports_PostImage_URL?.length > 0) {
             sport.Sports_PostImage_URL.forEach(oldPath => deleteFile(path.basename(oldPath), "image"));
-            updateObj['sportsInfo.$.Sports_PostImage_URL'] = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
+            updateObj['sportsInfo.$.Sports_PostImage_URL'] = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/Uploads/images/${file.filename}`);
         }
 
         // Handle video image updates
         if (req?.files?.Sports_videoImageURL?.length > 0) {
             sport.Sports_videoImageURL.forEach(oldPath => deleteFile(path.basename(oldPath), "video"));
-            updateObj['sportsInfo.$.Sports_videoImageURL'] = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
+            updateObj['sportsInfo.$.Sports_videoImageURL'] = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/Uploads/videos/${file.filename}`);
         }
 
         // Dynamically update additional fields
@@ -270,12 +271,12 @@ export const sportsCertificateAdd = async(req,res) => {
 
         // Check and update the Post Image URLs if they exist
         if (req?.files?.Sports_PostImage_URL && req.files.Sports_PostImage_URL.length > 0) {
-            updateObj['sportsInfo.Certificate.$.Upload_certificate'] = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
+            updateObj['sportsInfo.Certificate.$.Upload_certificate'] = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/Uploads/images/${file.filename}`);
         }
 
         // Check and update the Video Image URLs if they exist
         if (req?.files?.Sports_videoImageURL && req.files.Sports_videoImageURL.length > 0) {
-            updateObj['sportsInfo.Certificate.$.Upload_Photos'] = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
+            updateObj['sportsInfo.Certificate.$.Upload_Photos'] = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/Uploads/videos/${file.filename}`);
         }
 
         // Loop through the updateFields object and add them to updateObj
@@ -309,12 +310,12 @@ export const sportsCertificateEdit = async(req, res) => {
 
         // Check and update the Post Image URLs if they exist
         if (req?.files?.Sports_PostImage_URL && req.files.Sports_PostImage_URL.length > 0) {
-            updateObj['sportsInfo.Certificate.$.Upload_certificate'] = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
+            updateObj['sportsInfo.Certificate.$.Upload_certificate'] = req.files.Sports_PostImage_URL.map(file => `${HOST}:${PORT}/Uploads/images/${file.filename}`);
         }
 
         // Check and update the Video Image URLs if they exist
         if (req?.files?.Sports_videoImageURL && req.files.Sports_videoImageURL.length > 0) {
-            updateObj['sportsInfo.Certificate.$.Upload_Photos'] = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
+            updateObj['sportsInfo.Certificate.$.Upload_Photos'] = req.files.Sports_videoImageURL.map(file => `${HOST}:${PORT}/Uploads/videos/${file.filename}`);
         }
 
         // Loop through the updateFields object and add them to updateObj

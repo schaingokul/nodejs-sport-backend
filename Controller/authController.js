@@ -5,6 +5,23 @@ import { nanoid } from 'nanoid';
 import { generateToken } from '../utilis/generateToken.js';
 
 
+
+export const googlesignUp = async (req,res, next) => {
+
+    const {firstName, lastName, Email } = req.body;
+    try {
+
+
+    res.status(201).json({ status: true, message: "User registered successfully", data: token });
+    
+    } catch (error) {
+        console.error("Sign-up error:", error.message);
+        // next(error.message);
+        res.status(200).json({status: false, message: "Sign-up Route error"})
+    }
+};
+
+
 export const signUp = async (req,res, next) => {
 
     const {firstName, lastName, Email, Password } = req.body;

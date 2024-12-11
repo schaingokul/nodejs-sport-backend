@@ -1,10 +1,9 @@
 import PostImage from '../Model/ImageModel.js';
 import UserDetails from '../Model/UserModelDetails.js';
-import mongoose from 'mongoose';
 import { deleteFile } from '../utilis/userUtils.js';
+import {HOST, PORT} from '../env.js'
 
-export const postAdd = async (req, res) => {
-    let session;
+export const createPost = async (req, res) => {
     let URL = [];
     try {
         const { id: loginId } = req.user;
@@ -14,13 +13,34 @@ export const postAdd = async (req, res) => {
         if (!user) {
             return res.status(200).json({ status: false, message: "User not found" });
         }
+        
+                // Process and validate uploaded files
+        if (req?.files?.URL && req.files.URL.length > 0) {
+            req.files.URL.forEach((file) => {
+                try {
+                    // Determine file type
+                    const isImage = ["image/jpeg", "image/png", "image/jpg"].includes(file.mimetype);
+                    const isVideo = ["video/mp4", "video/avi", "video/mkv"].includes(file.mimetype);
 
-        if (req?.files?.imageURL && req.files.imageURL.length > 0) {
-            URL = req.files.imageURL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
-        }
-
-        if (req?.files?.videoURL && req.files.videoURL.length > 0) {
-            URL = req.files.videoURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
+                    // Validate based on 'type' parameter
+                    if (type === "image" && isImage) {
+                        URL.push(`${HOST}:${PORT}/Uploads/images/${file.filename}`);
+                    } else if ((type === "video" || type === "reel") && isVideo) {
+                        URL.push(`${HOST}:${PORT}/Uploads/videos/${file.filename}`);
+                    } else {
+                        // Invalid file type for the specified 'type'
+                        deleteFile(file.path, isImage ? "image" : "video");
+                        throw new Error(
+                            `Invalid file type: ${file.mimetype}. Expected ${
+                                type === "image" ? "images" : "videos"
+                            }.`
+                        );
+                    }
+                } catch (error) {
+                    console.error(`File validation error: ${error.message}`);
+                    throw error; // Rethrow to handle cleanup in the calling block
+                }
+            });
         }
 
         const addPost = {
@@ -34,23 +54,15 @@ export const postAdd = async (req, res) => {
             addPost.URL = URL;
         }
 
-        // Start transaction-like flow
-        session = await mongoose.startSession();
-        session.startTransaction();
-
         // Create a new post object
         const newPost = new PostImage(addPost);
-        await newPost.save({ session });
+        await newPost.save();
 
         // Update the user's post keys
         if (Array.isArray(user.myPostKeys)) {
             user.myPostKeys.push(newPost._id);
-            await user.save({ session });
+            await user.save();
         }
-
-        // Commit the transaction if everything is successful
-        await session.commitTransaction();
-        session.endSession();
 
         const response = {
             postId: newPost._id,
@@ -65,114 +77,68 @@ export const postAdd = async (req, res) => {
         res.status(201).json({ status: true, message: "Post added successfully!", info: response });
 
     } catch (error) {
-        if (session) {
-            await session.abortTransaction();
-            session.endSession();
+
+        if (URL.length > 0 && error) {
+            URL.forEach((filePath) => {
+                const fileType = filePath.includes("/images/") ? "image" : "video";
+                deleteFile(filePath, fileType);
+            });
         }
-        
-        // Delete files if they were uploaded
-        try {
-            if (URL.length > 0) {
-                URL.forEach(file => deleteFile(file, 'image'))}
-
-            if (URL.length > 0) {
-                URL.forEach(file =>  deleteFile(file, 'videos'))}
-
-        } catch (fileError) {
-            console.error("Error deleting files:", fileError);
-        }
-
+        console.log("Posted Images are removed due to error");
         console.log(error.message);
-        res.status(500).json({ status: false, message: "An error occurred while posting", error: error.message });
+        res.status(500).json({ status: false, message: "An error occurred while posting & Posted Images are removed due to error", error: error.message });
     }
 };
-
 
 export const deletePost = async (req, res) => {
-    let session;
-    let URL = [];
+
     try {
         const { id: loginId } = req.user;
-        const { location, description , type} = req.body;
-        
+        const { id: postId } = req.params;
+
+        // Fetch the user
         const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys");
         if (!user) {
-            return res.status(200).json({ status: false, message: "User not found" });
+            return res.status(404).json({ status: false, message: "User not found" });
         }
 
-        if (req?.files?.imageURL && req.files.imageURL.length > 0) {
-            URL = req.files.imageURL.map(file => `${HOST}:${PORT}/uploads/images/${file.filename}`);
+        // Fetch the post to delete
+        const post = await PostImage.findById(postId);
+        if (!post) {
+            return res.status(404).json({ status: false, message: "Post not found" });
         }
 
-        if (req?.files?.videoURL && req.files.videoURL.length > 0) {
-            URL = req.files.videoURL.map(file => `${HOST}:${PORT}/uploads/videos/${file.filename}`);
+        // Check if the post belongs to the user
+        if (post.postedBy.id.toString() !== loginId) {
+            return res.status(403).json({ status: false, message: "Unauthorized to delete this post" });
         }
 
-        const addPost = {
-            postedBy: { id: loginId, name: `${user.First_Name} ${user.Last_Name}` },
-            location: location,
-            description: description,
-            type: type
-        };
-
-        if (URL.length > 0) {
-            addPost.URL = URL;
+        // Delete associated files (images/videos)
+        if (Array.isArray(post.URL) && post.URL.length > 0) {
+            await Promise.all(
+                post.URL.map(async (filePath) => {
+                    const fileType = filePath.includes("/images/") ? "image" : "video";
+                    deleteFile(filePath, fileType);
+                })
+            );
         }
 
-        // Start transaction-like flow
-        session = await mongoose.startSession();
-        session.startTransaction();
+        // Delete the post
+        await post.deleteOne();
 
-        // Create a new post object
-        const newPost = new PostImage(addPost);
-        await newPost.save({ session });
-
-        // Update the user's post keys
-        if (Array.isArray(user.myPostKeys)) {
-            user.myPostKeys.push(newPost._id);
-            await user.save({ session });
-        }
-
-        // Commit the transaction if everything is successful
-        await session.commitTransaction();
-        session.endSession();
-
-        const response = {
-            postId: newPost._id,
-            userId: newPost.postedBy.id,
-            userName: newPost.postedBy.name,
-            location: newPost.location,
-            description: newPost.description,
-            type: newPost.type,
-            URL: newPost.URL,
-        }
-
-        res.status(201).json({ status: true, message: "Post Deleted successfully!", info: response });
+        // Remove the post ID from the user's myPostKeys
+        user.myPostKeys = user.myPostKeys.filter((key) => key.toString() !== postId);
+        await user.save();
+        res.status(201).json({ status: true, message: "Post Deleted successfully!", info: user });
 
     } catch (error) {
-        if (session) {
-            await session.abortTransaction();
-            session.endSession();
-        }
-        
-        // Delete files if they were uploaded
-        try {
-            if (URL.length > 0) {
-                URL.forEach(file => deleteFile(file, 'image'))}
-
-            if (URL.length > 0) {
-                URL.forEach(file =>  deleteFile(file, 'videos'))}
-
-        } catch (fileError) {
-            console.error("Error deleting files:", fileError);
-        }
-
+       
         console.log(error.message);
         res.status(500).json({ status: false, message: "An error occurred while posting", error: error.message });
     }
 };
 
-export const postView = async(req,res) => {
+export const viewAllPost = async(req,res) => {
     const {uuid: loginuuid, id: loginId} = req.user;
     try {
         const user = await UserDetails.findOne({uuid: loginuuid}).select("uuid _id First_Name Last_Name myPostKeys");
@@ -218,7 +184,7 @@ export const postView = async(req,res) => {
     }
 };
 
-export const postCurrentView = async(req,res) => {
+export const viewCurrentPost = async(req,res) => {
     const {id: loginId} = req.user;
     const {id: postId} = req.params;
     try {
@@ -250,10 +216,10 @@ export const postCurrentView = async(req,res) => {
     }
 };
 
-export const typeView = async (req, res) => {
+export const typeofViewPost = async (req, res) => {
     const { uuid: loginuuid, id: loginId } = req.user;
     const { type } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { page, limit} = req.query;
 
     try {
         // Validate input
@@ -271,12 +237,19 @@ export const typeView = async (req, res) => {
         
         // Ensure the query is filtering by `type` properly
         const totalCount = await PostImage.countDocuments({ type: type.toLowerCase().toString() }); // Case-insensitive match
-        
-        const posts = await PostImage.find({ type: type.toLowerCase() }) // Filter posts by `type`
+        const posts = {}
+        if(page || limit){
+            page = page||1, limit = limit|| 20 
+            posts = await PostImage.find({ type: type.toLowerCase() }) // Filter posts by `type`
             .skip((parseInt(page) - 1) * parseInt(limit)) // Paginate results
             .limit(parseInt(limit)) // Limit results
             .sort({ createdAt: -1 }); // Sort by creation date
+        }
 
+        if(!page || !limit){
+            posts = await PostImage.find({ type: type.toLowerCase() }).sort({ createdAt: -1 }); // Sort by creation date
+        }
+        
         if (!posts || posts.length === 0) {
             return res.status(404).json({ status: false, message: "No posts found for this type." });
         }
@@ -311,7 +284,8 @@ export const typeView = async (req, res) => {
     }
 };
 
-export const postLike = async(req,res) => {
+// Like-UnLike Session
+export const likeUnLikePost = async(req,res) => {
     const {id: postId} = req.params;
     const {uuid: UniqueUser} = req.user;
     try {
@@ -340,6 +314,7 @@ export const postLike = async(req,res) => {
     }
  };
 
+// Comments Session
  export const createComment = async(req,res) => {
     const {id: postId} = req.params;
     const {uuid: loginuuid} = req.user;
@@ -375,7 +350,8 @@ export const postLike = async(req,res) => {
             { _id: postId }, // Match the post
             { $pull: { comments: { _id: commentId } } } // Remove the comment
         );
-        return res.status(200).json({status: true,message:`Comment ${commentId} deleted from post ${postId}`});
+
+        return res.status(200).json({status: true,message:`Comment ${result} deleted from post ${postId}`});
     } catch (error) {
         console.error(error);
         return res.status(500).json({
