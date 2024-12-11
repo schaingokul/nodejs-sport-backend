@@ -8,7 +8,7 @@ import { generateToken } from '../utilis/generateToken.js';
 
 export const googlesignUp = async (req,res, next) => {
 
-    const {firstName, lastName, Email, profile_Pic } = req.body;
+    const {firstName, lastName, Email } = req.body;
     try {
         // Check for the fixed token in the headers
         const dummyToken = req.headers['x-google-auth-token'];
@@ -40,7 +40,6 @@ export const googlesignUp = async (req,res, next) => {
             if (!isEmailSent ) {
                 return res.status(200).json({status: false, message: "User created but email sending failed."})
             }
-            newUser.userInfo.Profile_ImgURL = profile_Pic
             
             await newUser.save();
             await UserDetails.findByIdAndUpdate(newUser._id, { isVerified: true });
@@ -109,7 +108,7 @@ export const signUp = async (req,res, next) => {
 };
 
 export const login = async (req,res, next) => {
-    const {Email, Password, code } = req.body;
+    const {Email, Password } = req.body;
     try {
 
         const user = await UserDetails.findOne({Email_ID: Email});
@@ -127,14 +126,9 @@ export const login = async (req,res, next) => {
             // return next(new ErrorHandler(200, "Invalid Password"));
         }
 
-        if(user.isVerified === "false"){
-            if(user.verificationCode != code){
-                res.status(200).json({status: false, message: "LogIncorrect Verfication Codein Route"})
-                // return next( new ErrorHandler(200, "Incorrect Verfication Code"));
-             }
+        if(user.isVerified === false){
+            res.status(200).json({status: false, message: "LogIncorrect Verfication Codein Route"})
         }
-        
-        await UserDetails.findByIdAndUpdate(user._id, { isVerified: true });
 
         const token =  generateToken({ id: user._id, uuid: user.uuid, Email_ID: user.Email_ID }, res);
         const sendInfo = await UserDetails.findOne({ uuid: user.uuid }).select("uuid _id");

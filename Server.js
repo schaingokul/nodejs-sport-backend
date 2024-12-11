@@ -5,7 +5,7 @@ import { connectDB } from "./Model/ConnectDB.js";
 import authRouter from './View/authView.js';
 import userRouter from './View/userView.js';
 import postRouter from './View/PostView.js';
-import path from "path";
+import path, { join } from "path";
 import { fileURLToPath } from 'url';
 import machineRoute from './Model/IndustrialModel/machineRoute.js'
 import TeamRouter from './View/TeamView.js'
@@ -36,7 +36,8 @@ app.use('/api/team', TeamRouter);
 app.use('/machine', machineRoute);
 
 app.get("/", (req,res) => {
-    res.send("Hello World")
+    res.sendFile(path.join(__dirname, "html.html"));
+
 });
 
 /* ------------------------------------------ http://:localhost:4500 ------------------------------------------ */ 
