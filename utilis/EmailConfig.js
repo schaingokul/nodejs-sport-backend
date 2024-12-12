@@ -11,7 +11,7 @@ const emailConfig = async ({ code, Email }) => {
   
     const mailOptions = {
       from: "schaingokul@gmail.com",
-      to: "schaingokul@gmail.com", 
+      to: "sportspersonapp@gmail.com", 
       subject: "Verify Your Account",
       text: `Your verification code is: ${code}, Your Email Address is: ${Email}`,
     };

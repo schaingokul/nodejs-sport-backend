@@ -1,5 +1,5 @@
 export const PORT = 4500
-export const HOST = '147.79.68.157';
+export const HOST = 'https://147.79.68.157';
 export const MONGO_URI = "mongodb://127.0.0.1:27017";
 
 //local

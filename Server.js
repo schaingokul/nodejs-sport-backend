@@ -36,8 +36,7 @@ app.use('/api/team', TeamRouter);
 app.use('/machine', machineRoute);
 
 app.get("/", (req,res) => {
-    res.sendFile(path.join(__dirname, "html.html"));
-
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
 /* ------------------------------------------ http://:localhost:4500 ------------------------------------------ */ 
@@ -51,7 +50,7 @@ app.get("/", (req,res) => {
 // });
 
 /* --------------------------------------------- Hositing Server --------------------------------------------- */ 
-app.listen(PORT, HOST, async () => {
+app.listen(PORT, HOST.replace("https://", ""), async () => {
     try {
         await connectDB();
         console.log(`Server is running on ${HOST}:${PORT}`);

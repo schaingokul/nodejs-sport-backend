@@ -10,6 +10,7 @@ export const createPost = async (req, res) => {
         const { location, description , type} = req.body;
         
         const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys");
+        
         if (!user) {
             return res.status(200).json({ status: false, message: "User not found" });
         }
@@ -23,9 +24,9 @@ export const createPost = async (req, res) => {
                     const isVideo = ["video/mp4", "video/avi", "video/mkv"].includes(file.mimetype);
 
                     // Validate based on 'type' parameter
-                    if (type === "image" && isImage) {
+                    if (type === "image" || type === "event" && isImage) {
                         URL.push(`${HOST}:${PORT}/Uploads/images/${file.filename}`);
-                    } else if ((type === "video" || type === "reel") && isVideo) {
+                    } else if ((type === "video" || type === "reel" || type === "event") && isVideo) {
                         URL.push(`${HOST}:${PORT}/Uploads/videos/${file.filename}`);
                     } else {
                         // Invalid file type for the specified 'type'
@@ -138,51 +139,83 @@ export const deletePost = async (req, res) => {
     }
 };
 
-export const viewAllPost = async(req,res) => {
-    const {uuid: loginuuid, id: loginId} = req.user;
+export const getHomeFeed = async (req, res) => {
+    const { id: loginId, uuid: loginuuid } = req.user;
+
     try {
-        const user = await UserDetails.findOne({uuid: loginuuid}).select("uuid _id First_Name Last_Name myPostKeys");
-        
+        // Fetch user details
+        const user = await UserDetails.findById(loginId).select("uuid _id following");
         if (!user) {
-            return res.status(200).json({ status: false, message: "User not found" });
+            return res.status(404).json({ status: false, message: "User not found" });
         }
 
-        // Check if the user has posts (myPostKeys should not be empty)
-        if (!user.myPostKeys || user.myPostKeys.length === 0) {
-            return res.status(200).json({ status: true, message: "No posts available" });
+        const following = user.following || []; // Users the current user follows
+        let feed = []; // Array to hold the final feed
+
+        // Step 1: HashSet for liked posts
+        const likedPosts = new Set(
+            (
+                await PostImage.find({ "likes.likedById": loginuuid }).select("_id")
+            ).map((post) => post._id.toString())
+        );
+
+        // Step 2: Fetch posts from followed users
+        if (following.length > 0) {
+            const followedPosts = await PostImage.find({ "postedBy.id": { $in: following } });
+            followedPosts.forEach((post) => {
+                if (!likedPosts.has(post._id.toString())) {
+                    feed.push(post);
+                }
+            });
         }
 
-        // Query only the posts related to the user's post keys
-        const posts = await PostImage.find({ _id: { $in: user.myPostKeys } }).select("postedBy location description type URL likes comments");
-        
-        // Map over the posts to create the response format
-        const filteredPosts = posts.map(post => ({
+        // Step 3: Priority Queue (Max Heap) for trending posts
+        const trendingPosts = await PostImage.find({
+            type: { $in: ["video", "reel", "image"] }
+        })
+            .sort({ likesCount: -1 }) // Sort by likes count
+            .limit(10);
+
+        trendingPosts.forEach((post) => feed.push(post));
+
+        // Step 4: Random posts for new users
+        if (following.length === 0) {
+            const randomPosts = await PostImage.aggregate([{ $sample: { size: 20 } }]);
+            feed = feed.concat(randomPosts);
+        }
+
+        // Step 5: Shuffle the feed (Fisher-Yates Shuffle Algorithm)
+        for (let i = feed.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [feed[i], feed[j]] = [feed[j], feed[i]];
+        }
+
+        // Limit the feed to 20 posts
+        const finalFeed = feed.slice(0, 20);
+
+        // Step 6: Format the response
+        const response = finalFeed.map((post) => ({
             postId: post._id,
             userId: post.postedBy.id,
             userName: post.postedBy.name,
-            location: post.location,
             description: post.description,
             type: post.type,
             URL: post.URL,
             likes: post.likes,
             comments: post.comments
         }));
-        
-        const response = {
-            LoginUser: {
-                id: loginId,
-                Unique: loginuuid,
-                Name: `${user.First_Name} ${user.Last_Name}`
-            },
-            post: filteredPosts
-            
-        }
-        res.status(200).json({status: true, message: "Views", info: response});
+
+        return res.status(200).json({
+            status: true,
+            message: "Home feed fetched successfullyy",
+            posts: response
+        });
     } catch (error) {
-        console.log(error.message)
-        res.status(200).json({status: false, message: "View Post Route Causes Error"});
+        console.error(error.message);
+        res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
 };
+
 
 export const viewCurrentPost = async(req,res) => {
     const {id: loginId} = req.user;
@@ -218,53 +251,56 @@ export const viewCurrentPost = async(req,res) => {
 
 export const typeofViewPost = async (req, res) => {
     const { uuid: loginuuid, id: loginId } = req.user;
-    const { type } = req.params;
-    const { page, limit} = req.query;
+    const { type } = req.params; // Extract type from the route parameter
+    const { page, limit } = req.query; // Extract pagination parameters
 
     try {
         // Validate input
         if (!type || typeof type !== "string") {
             return res.status(400).json({ status: false, message: "Invalid type parameter." });
         }
-        if (isNaN(page) || page <= 0 || isNaN(limit) || limit <= 0) {
-            return res.status(400).json({ status: false, message: "Invalid pagination parameters." });
-        }
 
         const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name");
         if (!user) {
-            return res.status(404).json({ status: false, message: "User not found" });
-        }
-        
-        // Ensure the query is filtering by `type` properly
-        const totalCount = await PostImage.countDocuments({ type: type.toLowerCase().toString() }); // Case-insensitive match
-        const posts = {}
-        if(page || limit){
-            page = page||1, limit = limit|| 20 
-            posts = await PostImage.find({ type: type.toLowerCase() }) // Filter posts by `type`
-            .skip((parseInt(page) - 1) * parseInt(limit)) // Paginate results
-            .limit(parseInt(limit)) // Limit results
-            .sort({ createdAt: -1 }); // Sort by creation date
+            return res.status(404).json({ status: false, message: "User not found." });
         }
 
-        if(!page || !limit){
-            posts = await PostImage.find({ type: type.toLowerCase() }).sort({ createdAt: -1 }); // Sort by creation date
+        // Base query to filter by type
+        const query = { type: type.toLowerCase() };
+
+        // Count total documents for the given type
+        const totalCount = await PostImage.countDocuments(query);
+
+        let posts;
+        if (page && limit) {
+            // If pagination parameters are provided, fetch paginated results
+            const pageNum = parseInt(page) || 1;
+            const limitNum = parseInt(limit) || 20;
+
+            posts = await PostImage.find(query)
+                .skip((pageNum - 1) * limitNum)
+                .limit(limitNum)
+                .sort({ createdAt: -1 });
+        } else {
+            // If no pagination parameters, fetch all posts of the given type
+            posts = await PostImage.find(query).sort({ createdAt: -1 });
         }
-        
-        if (!posts || posts.length === 0) {
-            return res.status(404).json({ status: false, message: "No posts found for this type." });
+
+        if (posts.length === 0) {
+            return res.status(404).json({ status: false, message: `No posts found for the type '${type}'.` });
         }
 
         // Format the response
         const formattedPosts = posts.map(post => ({
             postId: post._id,
-            userId: post.postedBy.id,
-            userName: post.postedBy.name,
+            userId: post.postedBy?.id,
+            userName: post.postedBy?.name,
             location: post.location,
             description: post.description,
             type: post.type,
             URL: post.URL,
             likes: post.likes,
-            comments: post.comments
+            comments: post.comments,
         }));
 
         const response = {
@@ -354,10 +390,48 @@ export const likeUnLikePost = async(req,res) => {
         return res.status(200).json({status: true,message:`Comment ${result} deleted from post ${postId}`});
     } catch (error) {
         console.error(error);
-        return res.status(500).json({
-            status: false,
-            message: "Error while deleting the comment",
-        });
+        return res.status(500).json({ status: false, message: "Error while deleting the comment", });
+    }
+};
+
+export const searchAlgorithm = async (req, res) => {
+    const { type , searchQuery } = req.body;
+    try {
+        const { id } = req.user;
+        const user = await UserDetails.findById(id);
+        if (!user) {
+            return res.status(403).json({ status: false, message: "User not found" });
+        }
+
+        // Build the regular expression for case-insensitive search
+        const regex = new RegExp(searchQuery, 'i'); // 'i' for case-insensitive matching
+        
+        if(type.toString().toLowerCase() === "people"){
+            var posts= await UserDetails.aggregate([
+                {
+                    $match: {
+                        $or: [
+                            { First_Name: { "$regex": regex } }
+                        ]
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        uuid: 1,
+                        First_Name: 1,
+                        Profile_ImgURL: { $ifNull: ["$userInfo.Profile_ImgURL", "N/A"] },
+                        Nickname: { $ifNull: ["$userInfo.Nickname", "N/A"] },
+                    }
+                },
+                { $sort: { createdAt: -1 } }
+            ]);
+        }
+
+        return res.status(200).json({ status: true, message: "Data received", info: posts });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: false, message: "Error while search Algorithm" });
     }
 };
 

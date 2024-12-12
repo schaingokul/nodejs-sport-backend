@@ -63,7 +63,7 @@ export const googlesignUp = async (req,res, next) => {
 
 export const signUp = async (req,res, next) => {
 
-    const {firstName, lastName, Email, Password } = req.body;
+    const {firstName, lastName, Email, Password, Phone_Number } = req.body;
     try {
 
         const isValidEmail = await UserDetails.findOne({Email_ID: Email});
@@ -85,6 +85,7 @@ export const signUp = async (req,res, next) => {
             Email_ID: Email,
             Password: encryptedPassword,
             verificationCode: code,
+            "userInfo.Phone_Number": Phone_Number,
         });
 
         const isEmailSent  = await emailConfig({code, Email});
@@ -93,9 +94,8 @@ export const signUp = async (req,res, next) => {
             //return res.status(200).json({status: false, message: "User created but email sending failed."})
         }
     
-    await newUser.save();
+        await newUser.save();
         console.log(`Step 6 Completed: User saved to database ${newUser.id}`);
-    
         const token =  generateToken({ id: newUser._id, uuid: newUser.uuid, Email_ID: newUser.Email_ID },res);
 
         res.status(201).json({ status: true, message: "User registered successfully", data: token, Verification: code});
@@ -132,7 +132,7 @@ export const login = async (req,res, next) => {
 
         const token =  generateToken({ id: user._id, uuid: user.uuid, Email_ID: user.Email_ID }, res);
         const sendInfo = await UserDetails.findOne({ uuid: user.uuid }).select("uuid _id");
-        res.status(200).json({status: true, message: "login Successfully", Token: token, UserInfo: sendInfo });
+        res.status(200).json({status: true, message: "login Successfully", Token: token, UserInfo: sendInfo , user: user});
     
     } catch (error) {
         console.error("Login error:", error.message);

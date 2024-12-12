@@ -29,6 +29,12 @@ const ImageDetailsSchema = new mongoose.Schema({
 { timestamps: true }      
 );
 
+// Create an index on 'postedBy.id' for faster lookups
+ImageDetailsSchema.index({ "postedBy.id": 1 });
+ImageDetailsSchema.index({ location: 1 });
+ImageDetailsSchema.index({ type: 1 });
+ImageDetailsSchema.index({ description: "text" });
+
 const ImageModel = mongoose.model("postImage", ImageDetailsSchema);
 
 export default ImageModel;

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(45deg, #ff7e5f, #feb47b);
+            background-size: 400% 400%;
+            animation: gradientAnimation 8s ease infinite;
+        }
+
+        .status {
+            padding: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            border-radius: 10px;
+            opacity: 100;
+            transform: scale(0);
+            animation: fadeIn 2s ease-in-out, bounce 2s infinite, glowOutline 1.5s ease-in-out infinite, colorCycle 4s infinite;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-20px);
+            }
+            60% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes colorCycle {
+            0% {
+                color: #28a745; /* Green */
+            }
+            10% {
+                color: #ff5733; /* Orange */
+            }
+            20% {
+                color: #007bff; /* Blue */
+            }
+            30% {
+                color: #f39c12; /* Yellow */
+            }
+            40% {
+                color: #8e44ad; /* Purple */
+            }
+            50% {
+                color: #e74c3c; /* Red */
+            }
+            60% {
+                color: #1abc9c; /* Turquoise */
+            }
+            70% {
+                color: #c0392b; /* Dark Red */
+            }
+            80% {
+                color: #2ecc71; /* Emerald Green */
+            }
+            90% {
+                color: #3498db; /* Light Blue */
+            }
+            100% {
+                color: #28a745; /* Green */
+            }
+        }
+
+
+        @keyframes scaleText {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="status" id="statusMessage">
+    Server is Alive!
+</div>
+
+<script>
+    window.onload = function() {
+        const statusMessage = document.getElementById("statusMessage");
+        // Trigger animations when the page loads
+        statusMessage.style.animation = "fadeIn 2s ease-in-out, bounce 2s infinite, glowOutline 1.5s ease-in-out infinite, colorCycle 4s infinite";
+    };
+</script>
+
+</body>
+</html>
