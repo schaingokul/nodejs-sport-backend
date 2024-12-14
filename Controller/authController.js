@@ -2,8 +2,9 @@ import UserDetails from '../Model/UserModelDetails.js';
 import bcrypt from 'bcryptjs';
 import emailConfig from '../utilis/EmailConfig.js';
 import { nanoid } from 'nanoid';
-import { generateToken } from '../utilis/generateToken.js';
+import { generateToken} from '../utilis/generateToken.js';
 import {sportsDefault} from '../env.js' 
+import {generateUniqueNickname} from '../utilis/userUtils.js'
 
 
 export const googlesignUp = async (req,res, next) => {
@@ -25,7 +26,11 @@ export const googlesignUp = async (req,res, next) => {
 
             const code = Math.floor(100000+ Math.random()*900000).toString();
             const uniqueId = nanoid();
+
             
+            // Generate unique nickname
+            const username = await generateUniqueNickname(firstName);
+
             const newUser = new UserDetails(
                 {
                 uuid: uniqueId,
@@ -34,6 +39,7 @@ export const googlesignUp = async (req,res, next) => {
                 Email_ID: Email,
                 Password: encryptedPassword,
                 verificationCode: code,
+                "userInfo.Nickname": username
             });
             
             sportsDefault.map((sport) => {
@@ -61,9 +67,10 @@ export const googlesignUp = async (req,res, next) => {
     } catch (error) {
         console.error("Sign-up error:", error.message);
         // next(error.message);
-        res.status(500).json({status: false, message: "Sign-up Route error"})
+        res.status(500).json({status: false, message: "googleSign-up Route error"})
     }
 };
+
 
 export const signUp = async (req,res, next) => {
 
@@ -80,8 +87,11 @@ export const signUp = async (req,res, next) => {
 
         const code = Math.floor(100000+ Math.random()*900000).toString();
         const uniqueId = nanoid();
-    
-        const newUser = new UserDetails(
+
+        // Generate unique nickname
+        const username = await generateUniqueNickname(firstName);
+
+        var newUser = new UserDetails(
             {
             uuid: uniqueId,
             First_Name: firstName,
@@ -90,6 +100,7 @@ export const signUp = async (req,res, next) => {
             Password: encryptedPassword,
             verificationCode: code,
             "userInfo.Phone_Number": Phone_Number,
+            "userInfo.Nickname": username
         });
 
         sportsDefault.map((sport) => {
@@ -112,9 +123,8 @@ export const signUp = async (req,res, next) => {
     } catch (error) {
         console.error("Sign-up error:", error.message);
         // next(error.message);
-        if (error && newUser?._id) {
-            await UserDetails.findByIdAndDelete(newUser._id);
-        }
+        await UserDetails.findByIdAndDelete(newUser._id);
+        
         res.status(500).json({status: false, message: "Sign-up Route error"})
     }
 };
@@ -143,7 +153,8 @@ export const login = async (req,res, next) => {
         }
 
         const token =  generateToken({ id: user._id, uuid: user.uuid, Email_ID: user.Email_ID }, res);
-        const sendInfo = await UserDetails.findOne({ uuid: user.uuid }).select("uuid _id");
+        const sendInfo = await UserDetails.findOne({ uuid: user.uuid }).select("uuid _id userInfo.Nickname userInfo.Profile_ImgURL");
+
         res.status(200).json({status: true, message: "login Successfully", Token: token, UserInfo: sendInfo , user: user});
     
     } catch (error) {

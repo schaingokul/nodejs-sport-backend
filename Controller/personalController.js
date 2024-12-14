@@ -1,8 +1,9 @@
 import UserDetails from '../Model/UserModelDetails.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { findUser, deleteFile } from '../utilis/userUtils.js';
+import { findUser, deleteFile , generateUniqueNickname} from '../utilis/userUtils.js';
 import { PORT, HOST } from '../env.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -38,69 +39,68 @@ export const viewUserProfile = async(req,res) => {
     }
 };
 
-export const SaveUserProfile = async(req,res) => {
-    const {uuid} = req.user;
+export const SaveUserProfile = async (req, res) => {
+    const { uuid } = req.user;
     const saveFields = req.body;
+
     try {
-         // Check if file is uploaded and then build the image URL
-        let profileImageUrl = '';
+
+        if (saveFields.NickName) {
+            let Nickname = await generateUniqueNickname(saveFields.NickName);
+            saveFields.NickName = Nickname; // Update NickName in saveFields
+        }
+
+        // Check if the user exists
         const user = await UserDetails.findOne({ uuid });
         if (!user) {
             return res.status(404).json({ status: false, message: "User not found" });
         }
 
-        if(req?.files?.Profile_ImgURL && req.files.Profile_ImgURL.length > 0){
-            
-            if (req?.files?.Profile_ImgURL && req.files.Profile_ImgURL[0]) {
-                profileImageUrl = `${HOST}:${PORT}/Uploads/images/${req.files.Profile_ImgURL[0].filename}`;
-            }
-            
-            // If there's an existing image, delete it
-            if(user.userInfo && user.userInfo.Profile_ImgURL){
-                if (user.userInfo.Profile_ImgURL) {
-                    const fileName = user.userInfo.Profile_ImgURL
-                    console.log("Step 2 - fileName Before Delete",fileName)
-                    deleteFile(fileName, "image")
-                }
+        // Handle profile image
+        let profileImageUrl = "";
+        if (req?.files?.Profile_ImgURL?.length > 0) {
+            profileImageUrl = `${HOST}:${PORT}/Uploads/images/${req.files.Profile_ImgURL[0].filename}`;
+
+            // Delete the existing image if any
+            if (user.userInfo?.Profile_ImgURL) {
+                const existingFileName = path.basename(user.userInfo.Profile_ImgURL);
+                await deleteFile(existingFileName, "image");
             }
         }
 
+        // Prepare update object
         const saveObj = {};
-         // Ensure saveFields is an object before attempting to iterate over it
-         if (typeof saveFields === 'object' && saveFields !== null) {
-            // Iterate through the object fields and add them to saveObj
+        if (typeof saveFields === "object" && saveFields !== null) {
             Object.keys(saveFields).forEach(field => {
                 saveObj[`userInfo.${field}`] = saveFields[field];
             });
         } else {
-            return res.status(404).json({ status: false, message: "Invalid data format" });
+            return res.status(400).json({ status: false, message: "Invalid data format" });
         }
 
-        // If there is a profile image, add it to the saveObj
+        // Add the profile image URL to the update object
         if (profileImageUrl) {
-            saveObj['userInfo.Profile_ImgURL'] = profileImageUrl;
-            
+            saveObj["userInfo.Profile_ImgURL"] = profileImageUrl;
         }
 
-        // If no fields to update, return an error message
+        // Ensure there are fields to update
         if (Object.keys(saveObj).length === 0) {
-            return res.status(200).json({ status: false, message: "No fields to update" });
+            return res.status(400).json({ status: false, message: "No fields to update" });
         }
 
-        // Perform the update in the database
-        const saveUser = await UserDetails.findOneAndUpdate(
-            { uuid },  
-            { $set: saveObj },  
-            { new: true } 
+        // Update user in the database
+        const updatedUser = await UserDetails.findOneAndUpdate(
+            { uuid },
+            { $set: saveObj },
+            { new: true }
         ).select("userInfo");
 
-        res.status(200).json({ status: true, message: "UserInfo Updated", updateInformation: saveUser });
-        
+        res.status(200).json({ status: true, message: "User profile updated successfully", updateInformation: updatedUser });
     } catch (error) {
-        res.status(500).json({status: false, message: error.message});
+        console.error("Error updating user profile:", error.message);
+        res.status(500).json({ status: false, message: error.message });
     }
 };
-
 export const sportsView = async(req,res) => {
     const {uuid} = req.user;
     try {
@@ -158,8 +158,9 @@ export const sportsAdd = async(req,res) => {
         }
         user.sportsInfo.push(newSports);
         await user.save();
+        const sendInfo = await UserDetails.findOne({ uuid: user.uuid }).select("uuid _id userInfo.Nickname userInfo.Profile_ImgURL");
 
-        res.status(200).json({status: true,  message: "Sports Details added successfully.", sport: newSports });
+        res.status(200).json({status: true,  message: "Sports Details added successfully.", sport: newSports, sendInfo });
         
     } catch (error) {
         if(error) {

@@ -68,3 +68,17 @@ export const deleteFile = (filePath, fileType) => {
         console.log(`File not found: ${filePathLoc}`);
     }
 };
+
+
+// Helper function to generate a unique nickname
+export const generateUniqueNickname = async (firstName) => {
+    let username = `${firstName}`;
+    let existingUsersCount = await UserDetails.countDocuments({ "userInfo.NickName": { $regex: `^${firstName}` } });
+
+    while (await UserDetails.findOne({ "userInfo.NickName": username })) {
+        username = `${firstName}${existingUsersCount + Math.floor(Math.random() * 100) + 1}`;
+        existingUsersCount++;
+    }
+
+    return username;
+};

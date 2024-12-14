@@ -245,6 +245,70 @@ export const viewCurrentPost = async(req,res) => {
     }
 };
 
+export const myViewPost = async (req, res) => {
+    const { uuid: loginuuid, id: loginId } = req.user;
+    const { page, limit } = req.query; // Extract pagination parameters
+
+    try {
+    
+        const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name");
+        if (!user) {
+            return res.status(404).json({status: false, message: "User not found." });
+        }
+
+        // Count total documents for the given type
+        const totalCount = await PostImage.countDocuments(query);
+
+        let posts;
+        if (page && limit) {
+            // If pagination parameters are provided, fetch paginated results
+            const pageNum = parseInt(page) || 1;
+            const limitNum = parseInt(limit) || 20;
+
+            posts = await PostImage.find(query)
+                .skip((pageNum - 1) * limitNum)
+                .limit(limitNum)
+                .sort({ createdAt: -1 });
+        } else {
+            // If no pagination parameters, fetch all posts of the given type
+            posts = await PostImage.find(query).sort({ createdAt: -1 });
+        }
+
+        if (posts.length === 0) {
+            return res.status(404).json({status: false, message: `No posts found for the type '${type}'.` });
+        }
+
+        // Format the response
+        const formattedPosts = posts.map(post => ({
+            postId: post._id,
+            userId: post.postedBy?.id,
+            userName: post.postedBy?.name,
+            location: post.location,
+            description: post.description,
+            type: post.type,
+            URL: post.URL,
+            likes: post.likes,
+            comments: post.comments,
+        }));
+
+        const response = {
+            LoginUser: {
+                id: loginId,
+                Unique: loginuuid,
+                Name: `${user.First_Name} ${user.Last_Name}`
+            },
+            totalPosts: totalCount,
+            posts: formattedPosts
+        };
+
+        res.status(200).json({ status: true, message: `Category ${type} Views`, info: response });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ status: false, message: "Category Views Causes Error", error: error.message });
+    }
+};
+
+
 export const typeofViewPost = async (req, res) => {
     const { uuid: loginuuid, id: loginId } = req.user;
     const { type } = req.params; // Extract type from the route parameter
@@ -359,7 +423,7 @@ export const likeUnLikePost = async(req,res) => {
         
         post.comments.push({
             commentById: loginuuid, 
-            comment: comment, 
+            comment: comment
         });
         
         await post.save();
