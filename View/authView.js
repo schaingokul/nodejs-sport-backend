@@ -42,8 +42,8 @@ export const adminUserDelete = async (req, res) => {
             }
     
             // Delete profile image if it exists
-            if (store.userInfo?.Profile_ImgURL) {
-                await deleteFile(store.userInfo.Profile_ImgURL, 'image');
+            if (store?.userInfo?.Profile_ImgURL) {
+                deleteFile(store?.userInfo?.Profile_ImgURL, 'image');
             }
     
             // Delete sports profile images
@@ -70,8 +70,9 @@ export const adminUserDelete = async (req, res) => {
             for (const postId of store.myPostKeys) {
                 const post = await postImage.findById(postId);
                 if (post?.URL) {
-                    for (const video of post.URL) {
-                        await deleteFile(video, 'video');
+                    for (const file of post.URL) {
+                        deleteFile(file, 'image');
+                        deleteFile(file, 'video');
                     }
                 }
             }
@@ -82,8 +83,8 @@ export const adminUserDelete = async (req, res) => {
     
         return res.status(200).json({ status: true, message: "User and associated files successfully deleted.", });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ status: false, message: "Error deleting user data.", });
+        console.error(error.message);
+        return res.status(500).json({ status: false, message: "Error deleting user data.", error: error.message });
     }
 };
 

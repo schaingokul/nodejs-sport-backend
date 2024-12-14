@@ -138,7 +138,6 @@ export const deletePost = async (req, res) => {
         res.status(500).json({ status: false, message: "An error occurred while posting", error: error.message });
     }
 };
-
 export const getHomeFeed = async (req, res) => {
     const { id: loginId, uuid: loginuuid } = req.user;
 
@@ -146,7 +145,7 @@ export const getHomeFeed = async (req, res) => {
         // Fetch user details
         const user = await UserDetails.findById(loginId).select("uuid _id following");
         if (!user) {
-            return res.status(404).json({status: false, message: "User not found" });
+            return res.status(404).json({ status: false, message: "User not found" });
         }
 
         const following = user.following || []; // Users the current user follows
@@ -176,7 +175,7 @@ export const getHomeFeed = async (req, res) => {
             .sort({ likesCount: -1 }) // Sort by likes count
             .limit(10);
 
-        trendingPosts.forEach((post) => feed.push(post));
+        feed.push(...trendingPosts);
 
         // Step 4: Random posts for new users
         if (following.length === 0) {
@@ -193,25 +192,35 @@ export const getHomeFeed = async (req, res) => {
         // Limit the feed to 20 posts
         const finalFeed = feed.slice(0, 20);
 
-        // Step 6: Format the response
-        const response = finalFeed.map((post) => ({
-            postId: post._id,
-            userId: post.postedBy.id,
-            userName: post.postedBy.name,
-            description: post.description,
-            type: post.type,
-            URL: post.URL,
-            likes: post.likes,
-            comments: post.comments
-        }));
+        // Step 6: Format the response (Resolve all promises)
+        const response = await Promise.all(
+            finalFeed.map(async (post) => {
+                const prf = await UserDetails.findById(post.postedBy.id).select("userInfo");
+                return {
+                    postId: post._id,
+                    userId: post.postedBy.id,
+                    userProfile: prf?.userInfo?.Profile_ImgURL || null,
+                    userName: post.postedBy.name,
+                    description: post.description,
+                    type: post.type,
+                    URL: post.URL,
+                    likes: post.likes,
+                    comments: post.comments,
+                    location: post.location
+                };
+            })
+        );
 
-        return res.status(200).json({ status: true, message: "Home feed fetched successfullyy", posts: response});
+        return res.status(200).json({
+            status: true,
+            message: "Home feed fetched successfully",
+            posts: response,
+        });
     } catch (error) {
         console.error(error.message);
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
 };
-
 
 export const viewCurrentPost = async(req,res) => {
     const {id: loginId} = req.user;
