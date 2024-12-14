@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import emailConfig from '../utilis/EmailConfig.js';
 import { nanoid } from 'nanoid';
 import { generateToken } from '../utilis/generateToken.js';
-
+import {sportsDefault} from '../env.js' 
 
 
 export const googlesignUp = async (req,res, next) => {
@@ -15,7 +15,7 @@ export const googlesignUp = async (req,res, next) => {
 
         // Validate the token
         if (dummyToken !== 'google-access') {
-            return res.status(401).json({ status: false, message: 'Invalid or missing token please send information through Application Token' });
+            return res.status(403).json({ status: false, message: 'Invalid or missing token please send information through Application Token' });
         }
 
         const isValidEmail = await UserDetails.findOne({Email_ID: Email});
@@ -35,10 +35,14 @@ export const googlesignUp = async (req,res, next) => {
                 Password: encryptedPassword,
                 verificationCode: code,
             });
-    
+            
+            sportsDefault.map((sport) => {
+                newUser.sportsInfo.push(sport)
+            })
+            
             const isEmailSent  = await emailConfig({code, Email});
             if (!isEmailSent ) {
-                return res.status(200).json({status: false, message: "User created but email sending failed."})
+                return res.status(404).json({status: false, message: "User created but email sending failed."})
             }
             
             await newUser.save();
@@ -56,8 +60,8 @@ export const googlesignUp = async (req,res, next) => {
 
     } catch (error) {
         console.error("Sign-up error:", error.message);
-        next(error.message);
-        // res.status(200).json({status: false, message: "Sign-up Route error"})
+        // next(error.message);
+        res.status(500).json({status: false, message: "Sign-up Route error"})
     }
 };
 
@@ -69,7 +73,7 @@ export const signUp = async (req,res, next) => {
         const isValidEmail = await UserDetails.findOne({Email_ID: Email});
         if(isValidEmail){
             //return next( new ErrorHandler(400, "Email already in use"))
-            return res.status(200).json({status: false, message: "Email already in use."})
+            return res.status(404).json({status: false, message: "Email already in use."})
         }
         
         const encryptedPassword = await bcrypt.hash(Password, 10);
@@ -88,22 +92,30 @@ export const signUp = async (req,res, next) => {
             "userInfo.Phone_Number": Phone_Number,
         });
 
+        sportsDefault.map((sport) => {
+            newUser.sportsInfo.push(sport)
+        })
+        
         const isEmailSent  = await emailConfig({code, Email});
         if (!isEmailSent ) {
-            return next(new ErrorHandler(400, "User created but email sending failed"));
-            //return res.status(200).json({status: false, message: "User created but email sending failed."})
+            // return next(new ErrorHandler(400, "User created but email sending failed"));
+            await UserDetails.findByIdAndDelete(newUser._id);
+            return res.status(404).json({status: false, message: "User created but Invalid Email Account, sending failed."})
         }
-    
-        await newUser.save();
-        console.log(`Step 6 Completed: User saved to database ${newUser.id}`);
         const token =  generateToken({ id: newUser._id, uuid: newUser.uuid, Email_ID: newUser.Email_ID },res);
 
+        await newUser.save();
+        console.log(`Step 6 Completed: User saved to database ${newUser.id}`);
+        
         res.status(201).json({ status: true, message: "User registered successfully", data: token, Verification: code});
     
     } catch (error) {
         console.error("Sign-up error:", error.message);
         // next(error.message);
-        res.status(200).json({status: false, message: "Sign-up Route error"})
+        if (error && newUser?._id) {
+            await UserDetails.findByIdAndDelete(newUser._id);
+        }
+        res.status(500).json({status: false, message: "Sign-up Route error"})
     }
 };
 
@@ -114,7 +126,7 @@ export const login = async (req,res, next) => {
         const user = await UserDetails.findOne({Email_ID: Email});
         
         if(!user){
-            return res.status(200).json({status: false, message: "Email not found, Please sign up."})
+            return res.status(404).json({status: false, message: "Email not found, Please sign up."})
             // return next(new ErrorHandler(200, "Email not found, Please sign up."));
         }
 
@@ -122,12 +134,12 @@ export const login = async (req,res, next) => {
         console.log(" Pass: ", isPasswordValid);
         
         if(!isPasswordValid ){
-            return res.status(200).json({status: false, message: "Invalid Password"});
+            return res.status(404).json({status: false, message: "Invalid Password"});
             // return next(new ErrorHandler(200, "Invalid Password"));
         }
 
         if(user.isVerified === false){
-            res.status(200).json({status: false, message: "LogIncorrect Verfication Codein Route"})
+            res.status(404).json({status: false, message: `Please Verfication User ${Email}`})
         }
 
         const token =  generateToken({ id: user._id, uuid: user.uuid, Email_ID: user.Email_ID }, res);
@@ -137,7 +149,7 @@ export const login = async (req,res, next) => {
     } catch (error) {
         console.error("Login error:", error.message);
         // next(error.message)
-        res.status(200).json({status: false, message: "Login Route"})
+        res.status(500).json({status: false, message: "Login Route"})
     }
 };
 
@@ -148,7 +160,7 @@ export const forgetPassword = async (req, res) => {
 
         if(!user){
             //return next( new ErrorHandler(400, "InValidemail"));
-            res.status(200).json({status: false, message: "InValidemail"})
+            res.status(404).json({status: false, message: "InValidemail"})
         }
 
         const code = Math.floor(100000+ Math.random()*900000).toString();
@@ -159,7 +171,7 @@ export const forgetPassword = async (req, res) => {
         const token =  generateToken({ id: user._id, uuid: user.uuid, Email_ID: user.Email_ID }, res);
         if (!isEmailSent) {
             // return next(new ErrorHandler(400, "Failed to send email"));
-            res.status(200).json({status: false, message: "Failed to send email"})
+            res.status(404).json({status: false, message: "Failed to send email"})
         }
 
         res.status(200).json({status: true, message: "VerificationCode is sended to mail", Token: token, Verification: code  });
@@ -167,7 +179,7 @@ export const forgetPassword = async (req, res) => {
     } catch (error) {
         console.error("Forget password error:", error.message);
         // next(error.message);
-        res.status(200).json({status: false, message: "Forget password Route error"})
+        res.status(500).json({status: false, message: "Forget password Route error"})
     }
 };
 
@@ -179,12 +191,12 @@ export const verifycationCode = async (req, res) => {
 
         if(!user){
             // return next( new ErrorHandler(400,"User not found"));
-            res.status(200).json({status: false, message: "User not found"})
+            res.status(404).json({status: false, message: "User not found"})
         }
 
         if(user.verificationCode != code){
             // return next( new ErrorHandler(400,"Incorrect Verfication Code"));
-            res.status(200).json({status: false, message: "Incorrect Verfication Code"})
+            res.status(404).json({status: false, message: "Incorrect Verfication Code"})
         }
         await UserDetails.findByIdAndUpdate(user._id, { isVerified: true });
        
@@ -192,7 +204,7 @@ export const verifycationCode = async (req, res) => {
     } catch (error) {
         console.error("Reset password error:", error.message);
         // next(error.message);
-        res.status(200).json({status: false, message: "Reset password Route error"})
+        res.status(500).json({status: false, message: "Reset password Route error"})
     }
 };
 
@@ -205,7 +217,7 @@ export const resetPassword = async (req, res) => {
 
         if(!user){
             // return next( new ErrorHandler(400,"User not found"));
-            res.status(200).json({status: false, message: "User not found"})
+            res.status(404).json({status: false, message: "User not found"})
         }
 
         const encryptPassword = await bcrypt.hash(Password, 10);
@@ -215,7 +227,7 @@ export const resetPassword = async (req, res) => {
     } catch (error) {
         console.error("Reset password error:", error.message);
         // next(error.message);
-        res.status(200).json({status: false, message: "Reset password Route error"})
+        res.status(500).json({status: false, message: "Reset password Route error"})
     }
 };
 
@@ -228,12 +240,12 @@ export const follower = async (req, res, next) => {
 
         if (uuid === id) {
             // return next(new ErrorHandler(400,"Cannot follow/unfollow yourself"));
-            res.status(200).json({status: false, message: "Cannot follow/unfollow yourself"})
+            res.status(404).json({status: false, message: "Cannot follow/unfollow yourself"})
         }
 
         if (!user) {
             // return next(new ErrorHandler(404 ,"User not found"));
-            res.status(200).json({status: false, message: "User not found"})
+            res.status(404).json({status: false, message: "User not found"})
         }
 
         const followerIndex = user.followers.findIndex((follow) => follow.follwersBy_id === id);
@@ -251,7 +263,7 @@ export const follower = async (req, res, next) => {
     } catch (error) {
         console.log(error);
         //next(error.message);
-        res.status(200).json({status: false, message: "follower Route error"})
+        res.status(500).json({status: false, message: "follower Route error"})
     }
 };
 
@@ -264,7 +276,7 @@ export const following = async (req, res) => {
 
         if (!user) {
             // return next(new ErrorHandler(404, "User not found"));
-            res.status(200).json({status: false, message: "User not found"})
+            res.status(404).json({status: false, message: "User not found"})
         }
 
         const followingIndex = user.following.findIndex((follow) => follow.followingBy_id === id);
@@ -282,6 +294,6 @@ export const following = async (req, res) => {
     } catch (error) {
         console.log(error);
         // next(error.message);
-        res.status(200).json({status: false, message: "Following Route error"})
+        res.status(500).json({status: false, message: "Following Route error"})
     }
 };

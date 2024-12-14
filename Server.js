@@ -5,7 +5,7 @@ import { connectDB } from "./Model/ConnectDB.js";
 import authRouter from './View/authView.js';
 import userRouter from './View/userView.js';
 import postRouter from './View/PostView.js';
-import path, { join } from "path";
+import path from "path";
 import { fileURLToPath } from 'url';
 import machineRoute from './Model/IndustrialModel/machineRoute.js'
 import TeamRouter from './View/TeamView.js'

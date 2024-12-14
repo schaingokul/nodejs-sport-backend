@@ -12,7 +12,7 @@ export const createPost = async (req, res) => {
         const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys");
         
         if (!user) {
-            return res.status(200).json({ status: false, message: "User not found" });
+            return res.status(404).json({status: false, message: "User not found" });
         }
         
                 // Process and validate uploaded files
@@ -100,13 +100,13 @@ export const deletePost = async (req, res) => {
         // Fetch the user
         const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys");
         if (!user) {
-            return res.status(404).json({ status: false, message: "User not found" });
+            return res.status(404).json({status: false, message: "User not found" });
         }
 
         // Fetch the post to delete
         const post = await PostImage.findById(postId);
         if (!post) {
-            return res.status(404).json({ status: false, message: "Post not found" });
+            return res.status(404).json({status: false, message: "Post not found" });
         }
 
         // Check if the post belongs to the user
@@ -146,7 +146,7 @@ export const getHomeFeed = async (req, res) => {
         // Fetch user details
         const user = await UserDetails.findById(loginId).select("uuid _id following");
         if (!user) {
-            return res.status(404).json({ status: false, message: "User not found" });
+            return res.status(404).json({status: false, message: "User not found" });
         }
 
         const following = user.following || []; // Users the current user follows
@@ -205,11 +205,7 @@ export const getHomeFeed = async (req, res) => {
             comments: post.comments
         }));
 
-        return res.status(200).json({
-            status: true,
-            message: "Home feed fetched successfullyy",
-            posts: response
-        });
+        return res.status(200).json({ status: true, message: "Home feed fetched successfullyy", posts: response});
     } catch (error) {
         console.error(error.message);
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
@@ -224,7 +220,7 @@ export const viewCurrentPost = async(req,res) => {
         const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys ");
 
         if (!user) {
-            return res.status(200).json({ status: false, message: "User not found" });
+            return res.status(404).json({status: false ,message: "User not found" });
         }
         console.log("PostImages", user.myPostKeys)
         
@@ -245,7 +241,7 @@ export const viewCurrentPost = async(req,res) => {
         res.status(200).json({status: true, message: "Views", info: obj});
     } catch (error) {
         console.log(error.message)
-        res.status(200).json({status: false, message: "View Post Route Causes Error"});
+        res.status(500).json({status: false, message: "View Post Route Causes Error"});
     }
 };
 
@@ -257,12 +253,12 @@ export const typeofViewPost = async (req, res) => {
     try {
         // Validate input
         if (!type || typeof type !== "string") {
-            return res.status(400).json({ status: false, message: "Invalid type parameter." });
+            return res.status(404).json({status: false, message: "Invalid type parameter." });
         }
 
         const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name");
         if (!user) {
-            return res.status(404).json({ status: false, message: "User not found." });
+            return res.status(404).json({status: false, message: "User not found." });
         }
 
         // Base query to filter by type
@@ -287,7 +283,7 @@ export const typeofViewPost = async (req, res) => {
         }
 
         if (posts.length === 0) {
-            return res.status(404).json({ status: false, message: `No posts found for the type '${type}'.` });
+            return res.status(404).json({status: false, message: `No posts found for the type '${type}'.` });
         }
 
         // Format the response
@@ -327,7 +323,7 @@ export const likeUnLikePost = async(req,res) => {
     try {
         const post = await PostImage.findById(postId);
         if (!post) {
-            return res.status(200).json({ status: false, message: "Post not found" });
+            return res.status(404).json({status: false, message: "Post not found" });
         }
 
         const likeIndex = post.likes.findIndex((like) => like.likedById === UniqueUser);
@@ -346,7 +342,7 @@ export const likeUnLikePost = async(req,res) => {
         res.status(201).json({ status: true, message: "Like the Post", Data: post });
     } catch (error) {
         console.log(error)
-        res.status(200).json({status: false, message: "Like Post Route Causes Error"});
+        res.status(500).json({status: false, message: "Like Post Route Causes Error"});
     }
  };
 
@@ -358,7 +354,7 @@ export const likeUnLikePost = async(req,res) => {
     try {
         const post = await PostImage.findById(postId);
         if (!post) {
-            return res.status(200).json({ status: false, message: "Post not found" });
+            return res.status(404).json({status: false ,message: "Post not found" });
         }
         
         post.comments.push({
@@ -372,7 +368,7 @@ export const likeUnLikePost = async(req,res) => {
         res.status(201).json({ status: true, message: "Added Comments", Data: post });
     } catch (error) {
         console.log(error.message)
-        res.status(200).json({status: false, message: "Comment Post Route Causes Error"});
+        res.status(500).json({status: false, message: "Comment Post Route Causes Error"});
     }
  }
 
@@ -387,15 +383,14 @@ export const likeUnLikePost = async(req,res) => {
             { $pull: { comments: { _id: commentId } } } // Remove the comment
         );
 
-        return res.status(200).json({status: true,message:`Comment ${result} deleted from post ${postId}`});
+        return res.status(200).json({status: true, message:`Comment ${result} deleted from post ${postId}`});
     } catch (error) {
         console.error(error);
         return res.status(500).json({ status: false, message: "Error while deleting the comment", });
     }
-};
+};export const searchAlgorithm = async (req, res) => {
+    const { type, searchQuery, limit, skip } = req.body; // Get limit and skip from request body
 
-export const searchAlgorithm = async (req, res) => {
-    const { type , searchQuery } = req.body;
     try {
         const { id } = req.user;
         const user = await UserDetails.findById(id);
@@ -403,49 +398,116 @@ export const searchAlgorithm = async (req, res) => {
             return res.status(403).json({ status: false, message: "User not found" });
         }
 
-        // Build the regular expression for case-insensitive search
-        const regex = new RegExp(searchQuery, 'i'); // 'i' for case-insensitive matching
-        
-        if(type.toString().toLowerCase() === "people"){
-            var posts= await UserDetails.aggregate([
-                {
-                    $match: {
-                        $or: [
-                            { First_Name: { "$regex": regex } }
-                        ]
-                    }
-                },
-                {
-                    $project: {
-                        _id: 1,
-                        uuid: 1,
-                        First_Name: 1,
-                        Profile_ImgURL: { $ifNull: ["$userInfo.Profile_ImgURL", "N/A"] },
-                        Nickname: { $ifNull: ["$userInfo.Nickname", "N/A"] },
-                    }
-                },
-                { $sort: { createdAt: -1 } }
-            ]);
+        // Case-insensitive regex for search
+        const regex = new RegExp(searchQuery, 'i');
+
+        // Pagination defaults
+        const paginationLimit = limit ? parseInt(limit) : 0; // Use 0 for unlimited if limit is not provided
+        const paginationSkip = skip ? parseInt(skip) : 0;
+
+        // Common projection fields
+        const commonProjection = {
+            "postedBy.id": 1,
+            "postedBy.name": 1,
+            URL: { $ifNull: ["$URL", "N/A"] },
+        };
+
+        let posts = [];
+        switch (type?.toString().toLowerCase()) {
+            case "post":
+                posts = await PostImage.aggregate([
+                    {
+                        $match: {
+                            $or: [
+                                { "postedBy.name": { $regex: regex } },
+                                { location: { $regex: regex } }
+                            ],
+                            $and: [
+                                { type: { $regex: "image" } }
+                            ]
+                        }
+                    },
+                    { $project: { ...commonProjection, PostId: "$_id" } },
+                    { $sort: { createdAt: -1 } },
+                    { $skip: paginationSkip },
+                    ...(paginationLimit ? [{ $limit: paginationLimit }] : []),
+                ]);
+                break;
+
+            case "video":
+                posts = await PostImage.aggregate([
+                    {
+                        $match: {
+                            $or: [
+                                { "postedBy.name": { $regex: regex } },
+                                { location: { $regex: regex } },
+                            ],
+                            $and: [
+                                { type: { $regex: "video|reel" } }
+                            ]
+                        }
+                    },
+                    { $project: commonProjection },
+                    { $sort: { createdAt: -1 } },
+                    { $skip: paginationSkip },
+                    ...(paginationLimit ? [{ $limit: paginationLimit }] : []),
+                ]);
+                break;
+
+            case "location":
+                posts = await PostImage.aggregate([
+                    {
+                        $match: {
+                            $or: [
+                                { "postedBy.name": { $regex: regex } },
+                                { location: { $regex: regex } }
+                            ]
+                        }
+                    },
+                    { 
+                        $project: { 
+                            "postedBy.id": 1, 
+                            "postedBy.name": 1, 
+                            location: 1
+                        } 
+                    },
+                    { $sort: { createdAt: -1 } },
+                    { $skip: paginationSkip },
+                    ...(paginationLimit ? [{ $limit: paginationLimit }] : []),
+                ]);
+                break;
+
+            default: // Handle "people" search as the default case
+                posts = await UserDetails.aggregate([
+                    {
+                        $match: {
+                            $or: [
+                                { First_Name: { $regex: regex } },
+                                { Last_Name: { $regex: regex } },
+                                { "userInfo.Nickname": { $regex: regex } }
+                            ]
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 1,
+                            uuid: 1,
+                            First_Name: 1,
+                            Last_Name: 1,
+                            Profile_ImgURL: { $ifNull: ["$userInfo.Profile_ImgURL", "N/A"] },
+                            Nickname: { $ifNull: ["$userInfo.Nickname", "N/A"] },
+                        }
+                    },
+                    { $sort: { createdAt: -1 } },
+                    { $skip: paginationSkip },
+                    ...(paginationLimit ? [{ $limit: paginationLimit }] : []),
+                ]);
+                break;
         }
 
         return res.status(200).json({ status: true, message: "Data received", info: posts });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ status: false, message: "Error while search Algorithm" });
+        return res.status(500).json({ status: false, message: "Error while executing search algorithm" });
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

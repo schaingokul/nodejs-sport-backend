@@ -37,7 +37,7 @@ router.delete("/delete/:userid/:id", async (req, res) => {
         res.status(200).json({ status: true, message: "Team deleted successfully." });
     } catch (error) {
         // Send an error response if something goes wrong
-        res.status(400).json({ status: false, message: `Error deleting team: ${error.message}` });
+        res.status(500).json({ status: false, message: `Error deleting team: ${error.message}` });
     }
 });
 

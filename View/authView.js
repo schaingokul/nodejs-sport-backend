@@ -31,68 +31,64 @@ export const adminUser = async(req,res) => {
 }
 
 export const adminUserDelete = async (req, res) => {
-    const { id } = req.params;
+    
+    const {userId} = req.body;
     try {
         // Find the user by ID
-        const store = await UserDetails.findById(id);
-        if (!store) {
-            return res.status(404).json({ status: false, message: "User not found" });
-        }
-
-        // Delete profile image if it exists
-        if (store.userInfo?.Profile_ImgURL) {
-            await deleteFile(store.userInfo.Profile_ImgURL, 'image');
-        }
-
-        // Delete sports profile images
-        const sportsProfileImages = store.sportsInfo.map(file => file.Sports_ProfileImage_URL).filter(Boolean);
-        for (const image of sportsProfileImages) {
-            await deleteFile(image, 'image');
-        }
-
-        // Delete sports post images
-         for (const file of store.sportsInfo) {
-             for (const image of file.Sports_PostImage_URL || []) {
+        for (const id of userId) {
+            const store = await UserDetails.findById(id);
+            if (!store) {
+                return res.status(404).json({status: false, message: "User not found" });
+            }
+    
+            // Delete profile image if it exists
+            if (store.userInfo?.Profile_ImgURL) {
+                await deleteFile(store.userInfo.Profile_ImgURL, 'image');
+            }
+    
+            // Delete sports profile images
+            const sportsProfileImages = store.sportsInfo.map(file => file.Sports_ProfileImage_URL).filter(Boolean);
+            for (const image of sportsProfileImages) {
                 await deleteFile(image, 'image');
             }
-        }
-
-        // Delete sports video URLs
-        for (const file of store.sportsInfo) {
-            for (const video of file.Sports_videoImageURL || []) {
-                await deleteFile(video, 'video');
+    
+            // Delete sports post images
+             for (const file of store.sportsInfo) {
+                 for (const image of file.Sports_PostImage_URL || []) {
+                    await deleteFile(image, 'image');
+                }
             }
-        }
-
-        // Delete post videos
-        for (const postId of store.myPostKeys) {
-            const post = await postImage.findById(postId);
-            if (post?.URL) {
-                for (const video of post.URL) {
+    
+            // Delete sports video URLs
+            for (const file of store.sportsInfo) {
+                for (const video of file.Sports_videoImageURL || []) {
                     await deleteFile(video, 'video');
                 }
             }
+    
+            // Delete post videos
+            for (const postId of store.myPostKeys) {
+                const post = await postImage.findById(postId);
+                if (post?.URL) {
+                    for (const video of post.URL) {
+                        await deleteFile(video, 'video');
+                    }
+                }
+            }
+    
+            // Optionally: delete the user document
+            await UserDetails.findByIdAndDelete(id);
         }
-
-        // Optionally: delete the user document
-        await UserDetails.findByIdAndDelete(id);
-
-        return res.status(200).json({
-            status: true,
-            message: "User and associated files successfully deleted.",
-        });
+    
+        return res.status(200).json({ status: true, message: "User and associated files successfully deleted.", });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({
-            status: false,
-            message: "Error deleting user data.",
-        });
+        return res.status(500).json({ status: false, message: "Error deleting user data.", });
     }
 };
 
-
 router.get("/admin", adminUser);
-router.delete("/admin/:id", adminUserDelete);
+router.delete("/admin", adminUserDelete);
 
 
 router.use(ErrorHandler);

@@ -12,7 +12,7 @@ export const viewUserProfile = async(req,res) => {
     try {
         const user = await UserDetails.findOne({ uuid })
         if (!user) {
-            return res.status(200).json({ status: false, message: "User not found" });
+            return res.status(404).json({ status: false, message: "User not found" });
         }
         const userInfo = user.userInfo;
         const UI = userInfo
@@ -34,7 +34,7 @@ export const viewUserProfile = async(req,res) => {
 
         res.status(200).json({status: true, message: "UserInfo Success", UserDetails: UI})
     } catch (error) {
-        res.status(200).json({status: false, message: "UserInfo, Causes Route Error"});
+        res.status(500).json({status: false, message: "UserInfo, Causes Route Error"});
     }
 };
 
@@ -46,7 +46,7 @@ export const SaveUserProfile = async(req,res) => {
         let profileImageUrl = '';
         const user = await UserDetails.findOne({ uuid });
         if (!user) {
-            return res.status(200).json({ status: false, message: "User not found" });
+            return res.status(404).json({ status: false, message: "User not found" });
         }
 
         if(req?.files?.Profile_ImgURL && req.files.Profile_ImgURL.length > 0){
@@ -73,7 +73,7 @@ export const SaveUserProfile = async(req,res) => {
                 saveObj[`userInfo.${field}`] = saveFields[field];
             });
         } else {
-            return res.status(200).json({ status: false, message: "Invalid data format" });
+            return res.status(404).json({ status: false, message: "Invalid data format" });
         }
 
         // If there is a profile image, add it to the saveObj
@@ -97,7 +97,7 @@ export const SaveUserProfile = async(req,res) => {
         res.status(200).json({ status: true, message: "UserInfo Updated", updateInformation: saveUser });
         
     } catch (error) {
-        res.status(200).json({status: false, message: error.message});
+        res.status(500).json({status: false, message: error.message});
     }
 };
 
@@ -110,7 +110,7 @@ export const sportsView = async(req,res) => {
 
         res.status(200).json({status: true, message, UserInfo: sportsInfo});
     } catch (error) {
-        res.status(200).json({status: false, message: "ViewSports Causes Route Error"});
+        res.status(500).json({status: false, message: "ViewSports Causes Route Error"});
     }
 };
 
@@ -138,12 +138,12 @@ export const sportsAdd = async(req,res) => {
         const user = await UserDetails.findOne({ uuid });
         
         if (!user) {
-            return res.status(200).json({ status: false, message: "User not found" });
+            return res.status(404).json({ status: false, message: "User not found" });
         }
 
         const existingSport = user.sportsInfo.find(sport => sport.Sports_Name.toLowerCase() === Sports_Name.toLowerCase());
           if (existingSport) {
-            return res.status(200).json({ status: false, message: "Sport with this name already exists." });
+            return res.status(404).json({ status: false, message: "Sport with this name already exists." });
           }
 
         const newSports = {
@@ -162,7 +162,27 @@ export const sportsAdd = async(req,res) => {
         res.status(200).json({status: true,  message: "Sports Details added successfully.", sport: newSports });
         
     } catch (error) {
-        res.status(200).json({status: false, message: `Sports Details Causes Route Error, ${error.message}`});
+        if(error) {
+            if (req?.files?.Sports_ProfileImage_URL) {
+                deleteFile(path.basename(req?.files?.Sports_ProfileImage_URL), "image");
+            }
+    
+            // Clean up uploaded files if an error occurs
+            if (req?.files?.Sports_PostImage_URL) {
+                req.files.Sports_PostImage_URL.forEach(file =>
+                    deleteFile(`Uploads/images/${file.filename}`, "image")
+                );
+            }
+            if (req?.files?.Sports_videoImageURL) {
+                req.files.Sports_videoImageURL.forEach(file =>
+                    deleteFile(`Uploads/videos/${file.filename}`, "video")
+                );
+            }
+           }
+
+        res.status(500).json({status: false, message: `Sports Details Causes Route Error, ${error.message}`});
+
+
     }
 };
 
@@ -187,7 +207,7 @@ export const sportsEdit = async(req, res) => {
                 s => s.Sports_Name.toLowerCase() === updateFields.Sports_Name.toLowerCase() && s._id.toString() !== sportid
             );
             if (existingSport) {
-                return res.status(409).json({ status: false, message: "Sport with this name already exists." });
+                return res.status(404).json({ status: false, message: "Sport with this name already exists." });
             }
         }
 
@@ -226,7 +246,7 @@ export const sportsEdit = async(req, res) => {
 
         res.status(200).json({ status: true, message: "Sport updated successfully.", sport: userUpdate });
     } catch (error) {
-        res.status(200).json({status: false, message: `Updates Causes Route Error ${error.message}`});
+        res.status(500).json({status: false, message: `Updates Causes Route Error ${error.message}`});
     }
 };
 
@@ -259,11 +279,12 @@ export const sportsClear = async(req, res) => {
 
         res.status(200).json({status: true,  message: "Sport removed successfully"});
     } catch (error) {
-        res.status(200).json({status: false, message: "Updates Causes Route Error"});
+        res.status(500).json({status: false, message: "Updates Causes Route Error"});
     }
 };
 
 export const sportsCertificateAdd = async(req,res) => {
+    const {spi: sportId} = req.params;
     const {uuid} = req.user;
     const updateFields = req.body;
     try {
@@ -285,19 +306,36 @@ export const sportsCertificateAdd = async(req,res) => {
                 updateObj[`sportsInfo.Certificate.$.${field}`] = updateFields[field]; // Update additional fields dynamically
             }
         }
-
+        
         const user = await findUser({ uuid: uuid })
         if (!user) {
-            return res.status(200).json({ status: false, message: "User not found" });
+            return res.status(404).json({ status: false, message: "User not found" });
         }
 
         user.sportsInfo.Certificate.push(updateObj);
         await user.save();
 
-        res.status(200).json({status: true,  message: "Certificate added successfully.", sport:  user.sportsInfo.Certificate});
+        res.status(201).json({status: true,  message: "Certificate added successfully.", sport:  user.sportsInfo.Certificate});
         
     } catch (error) {
-        res.status(200).json({status: false, message: "Certificate Causes Route Error"});
+       if(error) {
+        if (req?.files?.Sports_ProfileImage_URL) {
+            deleteFile(path.basename(req?.files?.Sports_ProfileImage_URL), "image");
+        }
+
+        // Clean up uploaded files if an error occurs
+        if (req?.files?.Sports_PostImage_URL) {
+            req.files.Sports_PostImage_URL.forEach(file =>
+                deleteFile(`Uploads/images/${file.filename}`, "image")
+            );
+        }
+        if (req?.files?.Sports_videoImageURL) {
+            req.files.Sports_videoImageURL.forEach(file =>
+                deleteFile(`Uploads/videos/${file.filename}`, "video")
+            );
+        }
+       }
+        res.status(500).json({status: false, message: "Certificate Causes Route Error"});
     }
 };
 /*
