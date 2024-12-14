@@ -40,17 +40,7 @@ app.get("/", (req,res) => {
 });
 
 /* ------------------------------------------ http://:localhost:4500 ------------------------------------------ */ 
-app.listen(PORT,async () => {
-    try {
-        await connectDB();
-        console.log(`Server is running on ${HOST}:${PORT}`);
-    } catch (error) {
-        console.log(`Server failed to connect to database: ${error.message}`);
-    }
-});
-
-/* --------------------------------------------- Hositing Server --------------------------------------------- */ 
-// app.listen(PORT, HOST.replace("https://", ""), async () => {
+// app.listen(PORT,async () => {
 //     try {
 //         await connectDB();
 //         console.log(`Server is running on ${HOST}:${PORT}`);
@@ -58,6 +48,16 @@ app.listen(PORT,async () => {
 //         console.log(`Server failed to connect to database: ${error.message}`);
 //     }
 // });
+
+/* --------------------------------------------- Hositing Server --------------------------------------------- */ 
+app.listen(PORT, HOST.replace("https://", ""), async () => {
+    try {
+        await connectDB();
+        console.log(`Server is running on ${HOST}:${PORT}`);
+    } catch (error) {
+        console.log(`Server failed to connect to database: ${error.message}`);
+    }
+});
 
 /*app.use('/api/message', MessageRoute);
 app.use('/api/user', userAppRoute);*/
