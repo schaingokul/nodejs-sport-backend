@@ -251,7 +251,7 @@ export const myViewPost = async (req, res) => {
 
     try {
     
-        const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name");
+        const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name userInfo");
         if (!user) {
             return res.status(404).json({status: false, message: "User not found." });
         }
@@ -295,7 +295,9 @@ export const myViewPost = async (req, res) => {
             LoginUser: {
                 id: loginId,
                 Unique: loginuuid,
-                Name: `${user.First_Name} ${user.Last_Name}`
+                Name: `${user.First_Name} ${user.Last_Name}`,
+                profile: user.userInfo.Profile_ImgURL,
+                username:user.userInfo.Nickname
             },
             totalPosts: totalCount,
             posts: formattedPosts
@@ -320,7 +322,7 @@ export const typeofViewPost = async (req, res) => {
             return res.status(404).json({status: false, message: "Invalid type parameter." });
         }
 
-        const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name");
+        const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name userInfo");
         if (!user) {
             return res.status(404).json({status: false, message: "User not found." });
         }
@@ -367,10 +369,13 @@ export const typeofViewPost = async (req, res) => {
             LoginUser: {
                 id: loginId,
                 Unique: loginuuid,
-                Name: `${user.First_Name} ${user.Last_Name}`
+                Name: `${user.First_Name} ${user.Last_Name}`,
+                profile: user.userInfo.Profile_ImgURL,
+                username:user.userInfo.Nickname
             },
             totalPosts: totalCount,
-            posts: formattedPosts
+            posts: formattedPosts,
+            
         };
 
         res.status(200).json({ status: true, message: `Category ${type} Views`, info: response });
@@ -386,6 +391,11 @@ export const likeUnLikePost = async(req,res) => {
     const {uuid: UniqueUser} = req.user;
     try {
         const post = await PostImage.findById(postId);
+        const name = await UserDetails.findOne({uuid: UniqueUser}).select('userInfo')
+        const field = {
+            Profile: name.userInfo.Profile_ImgURL,
+            username:name.userInfo.Nickname
+        }
         if (!post) {
             return res.status(404).json({status: false, message: "Post not found" });
         }
@@ -396,14 +406,14 @@ export const likeUnLikePost = async(req,res) => {
            
             post.likes.splice(likeIndex, 1);
             await post.save();
-            return res.status(200).json({ status: true, message: "UnLike the Post", Data: post });
+            return res.status(200).json({ status: true, message: `${field.username} Unliked this post by ${post.postedBy.name}`, Data: post, userName: field  });
         }
-
+        
         post.likes.push({ likedById: UniqueUser }); 
         await post.save();
 
-        console.log(`Login_Id ${UniqueUser} liked post id ${loginUser}`);
-        res.status(201).json({ status: true, message: "Like the Post", Data: post });
+        console.log(`${field.username} liked this post by ${post.postedBy.name}`);
+        res.status(201).json({ status: true, message: `${field.username} liked this post by ${post.postedBy.name}`, Data: post, userName: field });
     } catch (error) {
         console.log(error)
         res.status(500).json({status: false, message: "Like Post Route Causes Error"});
@@ -417,19 +427,28 @@ export const likeUnLikePost = async(req,res) => {
     const {comment} = req.body;
     try {
         const post = await PostImage.findById(postId);
+        const name = await UserDetails.findOne({uuid: loginuuid}).select('userInfo')
+        const field = {
+            Profile: name.userInfo.Profile_ImgURL,
+            username:name.userInfo.Nickname
+        }
+        console.log(field[Profile])
+
         if (!post) {
             return res.status(404).json({status: false ,message: "Post not found" });
         }
         
         post.comments.push({
-            commentById: loginuuid, 
+            commentBy: loginuuid, 
+            commentBy: name.userInfo.Nickname,
+            commentProfile: name.userInfo.Profile_ImgURL,
             comment: comment
         });
         
         await post.save();
 
-        console.log(`Login_Id ${loginuuid} Comment post id ${postId}`);
-        res.status(201).json({ status: true, message: "Added Comments", Data: post });
+        console.log(`${field.username} added a comment to the post by ${post.postedBy.name}`);
+        res.status(201).json({ status: true, message: `${field.username} added a comment to the post by ${post.postedBy.name}`, Data: post , userName: field});
     } catch (error) {
         console.log(error.message)
         res.status(500).json({status: false, message: "Comment Post Route Causes Error"});
@@ -452,7 +471,9 @@ export const likeUnLikePost = async(req,res) => {
         console.error(error);
         return res.status(500).json({ status: false, message: "Error while deleting the comment", });
     }
-};export const searchAlgorithm = async (req, res) => {
+};
+
+export const searchAlgorithm = async (req, res) => {
     const { type, searchQuery, limit, skip } = req.body; // Get limit and skip from request body
 
     try {

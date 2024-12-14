@@ -100,7 +100,7 @@ export const signUp = async (req,res, next) => {
             Password: encryptedPassword,
             verificationCode: code,
             "userInfo.Phone_Number": Phone_Number,
-            "userInfo.Nickname": username
+            "userInfo.Nickname": username,
         });
 
         sportsDefault.map((sport) => {
