@@ -69,7 +69,6 @@ export const deleteFile = (filePath, fileType) => {
     }
 };
 
-
 // Helper function to generate a unique nickname
 export const generateUniqueNickname = async (firstName) => {
     let username = `${firstName}`;

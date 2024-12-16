@@ -5,6 +5,7 @@ import { ErrorHandler } from '../utilis/ErrorHandlingMiddleware.js';
 import UserDetails from '../Model/UserModelDetails.js';
 import { deleteFile } from '../utilis/userUtils.js';
 import {getNotificationsForUser} from '../Controller/getNotificationContollers.js';
+import PostImage from '../Model/ImageModel.js';
 
 const router = express.Router();
 
@@ -32,57 +33,56 @@ export const adminUser = async(req,res) => {
 }
 
 export const adminUserDelete = async (req, res) => {
-    
-    const {userId} = req.body;
+    const { userId } = req.body;
     try {
-        // Find the user by ID
+        // Loop through each user ID to delete associated data
         for (const id of userId) {
             const store = await UserDetails.findById(id);
             if (!store) {
-                return res.status(404).json({status: false, message: "User not found" });
+                return res.status(404).json({ status: false, message: "User not found" });
             }
-    
+
             // Delete profile image if it exists
             if (store?.userInfo?.Profile_ImgURL) {
-                deleteFile(store?.userInfo?.Profile_ImgURL, 'image');
+                await deleteFile(store?.userInfo?.Profile_ImgURL, 'image');
             }
-    
-            // Delete sports profile images
+
+            // Delete sports profile images if they exist
             const sportsProfileImages = store.sportsInfo.map(file => file.Sports_ProfileImage_URL).filter(Boolean);
             for (const image of sportsProfileImages) {
                 await deleteFile(image, 'image');
             }
-    
-            // Delete sports post images
-             for (const file of store.sportsInfo) {
-                 for (const image of file.Sports_PostImage_URL || []) {
+
+            // Delete sports post images if they exist
+            for (const file of store.sportsInfo) {
+                for (const image of file.Sports_PostImage_URL || []) {
                     await deleteFile(image, 'image');
                 }
             }
-    
-            // Delete sports video URLs
+
+            // Delete sports video URLs if they exist
             for (const file of store.sportsInfo) {
                 for (const video of file.Sports_videoImageURL || []) {
                     await deleteFile(video, 'video');
                 }
             }
-    
-            // Delete post videos
+
+            // Delete post videos if they exist
             for (const postId of store.myPostKeys) {
-                const post = await postImage.findById(postId);
+                const post = await PostImage.findById(postId);
                 if (post?.URL) {
                     for (const file of post.URL) {
-                        deleteFile(file, 'image');
-                        deleteFile(file, 'video');
+                        await deleteFile(file, 'image');
+                        await deleteFile(file, 'video');
                     }
                 }
             }
-    
-            // Optionally: delete the user document
+
+            // Optionally: Delete the user document after all file deletions
             await UserDetails.findByIdAndDelete(id);
         }
-    
-        return res.status(200).json({ status: true, message: "User and associated files successfully deleted.", });
+
+        return res.status(200).json({ status: true, message: "User and associated files successfully deleted." });
     } catch (error) {
         console.error(error.message);
         return res.status(500).json({ status: false, message: "Error deleting user data.", error: error.message });
