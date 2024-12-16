@@ -143,10 +143,9 @@ export const getHomeFeed = async (req, res) => {
     const { id: loginId, uuid: loginuuid } = req.user;
     let { page, limit} = req.query;
     try {
-
+        
         page = page ? page : 1
-        limit = limit ? limit : 10
-
+        const limitNum = parseInt(limit, 10);
         // Fetch user details
         const user = await UserDetails.findById(loginId).select("uuid _id following");
         if (!user) {
@@ -184,7 +183,7 @@ export const getHomeFeed = async (req, res) => {
 
         // Step 4: Random posts for new users
         if (following.length === 0) {
-            const randomPosts = await PostImage.aggregate([{ $sample: { size: limit } }]);
+            const randomPosts = await PostImage.aggregate([{ $sample: { size: limitNum } }]);
             feed = feed.concat(randomPosts);
         }
 
