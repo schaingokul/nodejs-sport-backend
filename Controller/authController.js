@@ -39,7 +39,8 @@ export const googlesignUp = async (req,res, next) => {
                 Email_ID: Email,
                 Password: encryptedPassword,
                 verificationCode: code,
-                "userInfo.Nickname": username
+                "userInfo.Nickname": username,
+                "userInfo.Profile_ImgURL": "https://placehold.co/150/orange/white?text=Profile"
             });
             
             sportsDefault.map((sport) => {
@@ -101,6 +102,7 @@ export const signUp = async (req,res, next) => {
             verificationCode: code,
             "userInfo.Phone_Number": Phone_Number,
             "userInfo.Nickname": username,
+            "userInfo.Profile_ImgURL": "https://placehold.co/150/orange/white?text=Profile"
         });
 
         sportsDefault.map((sport) => {

@@ -1,23 +1,33 @@
 import express from 'express';
-import {createPost, deletePost, getHomeFeed, likeUnLikePost, createComment, deleteComment, viewCurrentPost, typeofViewPost,myViewPost, searchAlgorithm} from '../Controller/PostController.js';
+import {createPost, deletePost, getHomeFeed,
+    viewCurrentPost, typeofViewPost, myViewPost, searchAlgorithm, } from '../Controller/PostController/PostController.js';
+import{ likeUnLikePost, likeCount} from '../Controller/PostController/likeUnlike.js'
 import ProtectRoute from '../middleware/ProtectRoute.js';
 import {upload} from '../utilis/uploadFiles.js'
-
+import {viewPostComments, createPostComment, deletePostComment}from '../Controller/PostController/Comment.js';
 
 const router = express.Router();
 
 router.post("/post", ProtectRoute, upload.fields([{ name: 'URL', maxCount: 5 }]), createPost);
-router.get("/view", ProtectRoute, getHomeFeed);
-router.get("/view/:id", ProtectRoute, viewCurrentPost);
+router.delete("/delete/:id", ProtectRoute, deletePost);
+
+//Home
+router.get("/home", ProtectRoute, getHomeFeed);
+router.get("/home/:id", ProtectRoute, viewCurrentPost);
+router.post("/home/:type", ProtectRoute, typeofViewPost);
+
+//Personal
 router.get("/mypost", ProtectRoute, myViewPost);
-router.post("/view/:type", ProtectRoute, typeofViewPost);
+router.get("/mypost/:id", ProtectRoute, viewCurrentPost);
+
+// Create Like/UnLike
+router.get('/like/id', ProtectRoute, likeCount);
 router.post("/like/:id", ProtectRoute, likeUnLikePost);
 
-// post Delete
-router.delete("/delete/:id", ProtectRoute, deletePost);
 // Create Comment & delete Comment
-router.post("/comment/:id",ProtectRoute, createComment);
-router.delete("/comment/:id",ProtectRoute, deleteComment);
+router.get("/comment/:id/view",ProtectRoute, viewPostComments);
+router.post("/comment/:id",ProtectRoute, createPostComment);
+router.delete("/comment/:id",ProtectRoute, deletePostComment);
 
 
 router.post("/trail", ProtectRoute, searchAlgorithm);

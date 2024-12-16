@@ -2,9 +2,7 @@ import mongoose from "mongoose";
 
 const CommentSchema = new mongoose.Schema(
   {
-    commentById: { type: String },
     commentBy: { type: String },
-    commentProfile: { type: [String] },
     comment: { type: String },
     createdAt: { type: Date, default: Date.now }, 
   },
@@ -13,7 +11,7 @@ const CommentSchema = new mongoose.Schema(
 
 const LikesSchema = new mongoose.Schema(
   {
-    likedById: { type: String },
+    likedByUuid: { type: String }, 
     createdAt: { type: Date, default: Date.now }, 
   },
   { _id: false } 

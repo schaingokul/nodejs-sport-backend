@@ -82,3 +82,89 @@ export const generateUniqueNickname = async (firstName) => {
 
     return username;
 };
+
+/* infinty feed
+export const getHomeFeed = async (req, res) => {
+    const { id: loginId, uuid: loginuuid } = req.user;
+    const { page = 1, limit = 20 } = req.query; // Default page = 1 and limit = 20
+
+    try {
+        // Fetch user details
+        const user = await UserDetails.findById(loginId).select("uuid _id following");
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User not found" });
+        }
+
+        const following = user.following || []; // Users the current user follows
+        let feed = []; // Array to hold the final feed
+
+        // Step 1: HashSet for liked posts
+        const likedPosts = new Set(
+            (
+                await PostImage.find({ "likes.likedById": loginuuid }).select("_id")
+            ).map((post) => post._id.toString())
+        );
+
+        // Step 2: Fetch posts from followed users
+        if (following.length > 0) {
+            const followedPosts = await PostImage.find({ "postedBy.id": { $in: following } });
+            followedPosts.forEach((post) => {
+                if (!likedPosts.has(post._id.toString())) {
+                    feed.push(post);
+                }
+            });
+        }
+
+        // Step 3: Priority Queue (Max Heap) for trending posts
+        const trendingPosts = await PostImage.find({
+            type: { $in: ["video", "reel", "image"] }
+        })
+            .sort({ likesCount: -1 }) // Sort by likes count
+            .limit(10);
+
+        feed.push(...trendingPosts);
+
+        // Step 4: Random posts for new users
+        if (following.length === 0) {
+            const randomPosts = await PostImage.aggregate([{ $sample: { size: 20 } }]);
+            feed = feed.concat(randomPosts);
+        }
+
+        // Step 5: Handle infinite scrolling (repeat posts if fewer)
+        while (feed.length < limit * page) {
+            feed = feed.concat(feed.slice(0, Math.min(feed.length, limit * page - feed.length)));
+        }
+
+        // Paginate the feed
+        const startIndex = (page - 1) * limit;
+        const paginatedFeed = feed.slice(startIndex, startIndex + limit);
+
+        // Step 6: Format the response (Resolve all promises)
+        const response = await Promise.all(
+            paginatedFeed.map(async (post) => {
+                const prf = await UserDetails.findById(post.postedBy.id).select("userInfo");
+                return {
+                    postId: post._id,
+                    userId: post.postedBy.id,
+                    userProfile: prf?.userInfo?.Profile_ImgURL || null,
+                    userName: post.postedBy.name,
+                    description: post.description,
+                    type: post.type,
+                    URL: post.URL,
+                    likes: post.likes,
+                    comments: post.comments,
+                    location: post.location
+                };
+            })
+        );
+
+        return res.status(200).json({
+            status: true,
+            message: "Home feed fetched successfully",
+            posts: response,
+        });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
+    }
+};*/

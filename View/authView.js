@@ -4,6 +4,7 @@ import ProtectRoute from '../middleware/ProtectRoute.js';
 import { ErrorHandler } from '../utilis/ErrorHandlingMiddleware.js';
 import UserDetails from '../Model/UserModelDetails.js';
 import { deleteFile } from '../utilis/userUtils.js';
+import {getNotificationsForUser} from '../Controller/getNotificationContollers.js';
 
 const router = express.Router();
 
@@ -18,8 +19,8 @@ router.post("/reset_password", ProtectRoute, resetPassword);
 router.post("/follower/:id", ProtectRoute, follower);
 router.post("/following/:id", ProtectRoute, following);
 
-
-
+// notification
+router.get("/notification", ProtectRoute, getNotificationsForUser);
 
 export const adminUser = async(req,res) => {
     try {

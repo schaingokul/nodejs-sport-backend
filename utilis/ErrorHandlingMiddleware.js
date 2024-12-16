@@ -1,5 +1,4 @@
 
-
 export class ErrorHandler extends Error {
     constructor(statusCode, message) {
         super(message);
@@ -18,4 +17,10 @@ export const handleErrors = (err, req, res, next) => {
         message,
         ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
+};
+
+
+export const sendErrorResponse = (res, statusCode, message, errorDetail, errorCode = null) => {
+    console.error(`[${new Date().toISOString()}] Error: ${message}`, errorDetail);
+    res.status(statusCode).json({ status: false, message, errorCode, errorDetail });
 };

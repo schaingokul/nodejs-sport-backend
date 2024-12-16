@@ -1,7 +1,7 @@
-import PostImage from '../Model/ImageModel.js';
-import UserDetails from '../Model/UserModelDetails.js';
-import { deleteFile } from '../utilis/userUtils.js';
-import {HOST, PORT} from '../env.js'
+import PostImage from '../../Model/ImageModel.js';
+import UserDetails from '../../Model/UserModelDetails.js';
+import { deleteFile } from '../../utilis/userUtils.js';
+import {HOST, PORT} from '../../env.js'
 
 export const createPost = async (req, res) => {
     let URL = [];
@@ -138,10 +138,16 @@ export const deletePost = async (req, res) => {
         res.status(500).json({ status: false, message: "An error occurred while posting", error: error.message });
     }
 };
+
 export const getHomeFeed = async (req, res) => {
     const { id: loginId, uuid: loginuuid } = req.user;
+    let { page, limit} = req.query;
 
     try {
+
+        page = page ? page : 1
+        limit = limit ? limit : 30
+
         // Fetch user details
         const user = await UserDetails.findById(loginId).select("uuid _id following");
         if (!user) {
@@ -173,7 +179,7 @@ export const getHomeFeed = async (req, res) => {
             type: { $in: ["video", "reel", "image"] }
         })
             .sort({ likesCount: -1 }) // Sort by likes count
-            .limit(10);
+            .limit(limit);
 
         feed.push(...trendingPosts);
 
@@ -183,20 +189,21 @@ export const getHomeFeed = async (req, res) => {
             feed = feed.concat(randomPosts);
         }
 
-        // Step 5: Shuffle the feed (Fisher-Yates Shuffle Algorithm)
-        for (let i = feed.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [feed[i], feed[j]] = [feed[j], feed[i]];
+        // Step 5: Handle infinite scrolling (repeat posts if fewer)
+        while (feed.length < limit * page) {
+            feed = feed.concat(feed.slice(0, Math.min(feed.length, limit * page - feed.length)));
         }
 
-        // Limit the feed to 20 posts
-        const finalFeed = feed.slice(0, 20);
+        // Paginate the feed
+        const startIndex = (page - 1) * limit;
+        const paginatedFeed = feed.slice(startIndex, startIndex + limit);
 
         // Step 6: Format the response (Resolve all promises)
         const response = await Promise.all(
-            finalFeed.map(async (post) => {
+            paginatedFeed.map(async (post, index) => {
                 const prf = await UserDetails.findById(post.postedBy.id).select("userInfo");
                 return {
+                    localId: index + 1,
                     postId: post._id,
                     userId: post.postedBy.id,
                     userProfile: prf?.userInfo?.Profile_ImgURL || null,
@@ -204,8 +211,6 @@ export const getHomeFeed = async (req, res) => {
                     description: post.description,
                     type: post.type,
                     URL: post.URL,
-                    likes: post.likes,
-                    comments: post.comments,
                     location: post.location
                 };
             })
@@ -242,9 +247,7 @@ export const viewCurrentPost = async(req,res) => {
             location: filteredPosts.location,
             description: filteredPosts.description,
             type: filteredPosts.type,
-            URL: filteredPosts.URL,
-            likes: filteredPosts.likes,
-            comments: filteredPosts.comments
+            URL: filteredPosts.URL
         }
 
         res.status(200).json({status: true, message: "Views", info: obj});
@@ -255,12 +258,15 @@ export const viewCurrentPost = async(req,res) => {
 };
 
 export const myViewPost = async (req, res) => {
-    const { uuid: loginuuid, id: loginId } = req.user;
-    const { page, limit } = req.query; // Extract pagination parameters
+    const { uuid: loginuuid, id: userId } = req.user;
+    let { page, limit } = req.query; // Extract pagination parameters
 
     try {
-    
-        const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name userInfo");
+        
+        page = page ? page : 1
+        limit = limit ? limit : 20
+
+        const user = await UserDetails.findById(userId).select("uuid _id First_Name Last_Name userInfo");
         if (!user) {
             return res.status(404).json({status: false, message: "User not found." });
         }
@@ -274,7 +280,7 @@ export const myViewPost = async (req, res) => {
             const pageNum = parseInt(page) || 1;
             const limitNum = parseInt(limit) || 20;
 
-            posts = await PostImage.find(query)
+            posts = await PostImage.findById()
                 .skip((pageNum - 1) * limitNum)
                 .limit(limitNum)
                 .sort({ createdAt: -1 });
@@ -295,9 +301,7 @@ export const myViewPost = async (req, res) => {
             location: post.location,
             description: post.description,
             type: post.type,
-            URL: post.URL,
-            likes: post.likes,
-            comments: post.comments,
+            URL: post.URL
         }));
 
         const response = {
@@ -369,9 +373,7 @@ export const typeofViewPost = async (req, res) => {
             location: post.location,
             description: post.description,
             type: post.type,
-            URL: post.URL,
-            likes: post.likes,
-            comments: post.comments,
+            URL: post.URL
         }));
 
         const response = {
@@ -391,94 +393,6 @@ export const typeofViewPost = async (req, res) => {
     } catch (error) {
         console.error(error.message);
         res.status(500).json({ status: false, message: "Category Views Causes Error", error: error.message });
-    }
-};
-
-// Like-UnLike Session
-export const likeUnLikePost = async(req,res) => {
-    const {id: postId} = req.params;
-    const {uuid: UniqueUser} = req.user;
-    try {
-        const post = await PostImage.findById(postId);
-        const name = await UserDetails.findOne({uuid: UniqueUser}).select('userInfo')
-        const field = {
-            Profile: name.userInfo.Profile_ImgURL,
-            username:name.userInfo.Nickname
-        }
-        if (!post) {
-            return res.status(404).json({status: false, message: "Post not found" });
-        }
-
-        const likeIndex = post.likes.findIndex((like) => like.likedById === UniqueUser);
-
-        if (likeIndex !== -1) {
-           
-            post.likes.splice(likeIndex, 1);
-            await post.save();
-            return res.status(200).json({ status: true, message: `${field.username} Unliked this post by ${post.postedBy.name}`, Data: post, userName: field  });
-        }
-        
-        post.likes.push({ likedById: UniqueUser }); 
-        await post.save();
-
-        console.log(`${field.username} liked this post by ${post.postedBy.name}`);
-        res.status(201).json({ status: true, message: `${field.username} liked this post by ${post.postedBy.name}`, Data: post, userName: field });
-    } catch (error) {
-        console.log(error)
-        res.status(500).json({status: false, message: "Like Post Route Causes Error"});
-    }
- };
-
-// Comments Session
- export const createComment = async(req,res) => {
-    const {id: postId} = req.params;
-    const {uuid: loginuuid} = req.user;
-    const {comment} = req.body;
-    try {
-        const post = await PostImage.findById(postId);
-        const name = await UserDetails.findOne({uuid: loginuuid}).select('userInfo')
-        const field = {
-            Profile: name.userInfo.Profile_ImgURL,
-            username:name.userInfo.Nickname
-        }
-        console.log(field[Profile])
-
-        if (!post) {
-            return res.status(404).json({status: false ,message: "Post not found" });
-        }
-        
-        post.comments.push({
-            commentBy: loginuuid, 
-            commentBy: name.userInfo.Nickname,
-            commentProfile: name.userInfo.Profile_ImgURL,
-            comment: comment
-        });
-        
-        await post.save();
-
-        console.log(`${field.username} added a comment to the post by ${post.postedBy.name}`);
-        res.status(201).json({ status: true, message: `${field.username} added a comment to the post by ${post.postedBy.name}`, Data: post , userName: field});
-    } catch (error) {
-        console.log(error.message)
-        res.status(500).json({status: false, message: "Comment Post Route Causes Error"});
-    }
- }
-
-
- export const deleteComment = async (req, res) => {
-    const { id: postId } = req.params; // Post ID
-    const { commentId } = req.body;   // Comment ID to delete
-
-    try {
-        const result = await PostImage.updateOne(
-            { _id: postId }, // Match the post
-            { $pull: { comments: { _id: commentId } } } // Remove the comment
-        );
-
-        return res.status(200).json({status: true, message:`Comment ${result} deleted from post ${postId}`});
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ status: false, message: "Error while deleting the comment", });
     }
 };
 
