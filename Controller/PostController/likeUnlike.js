@@ -35,6 +35,7 @@ export const likeUnLikePost = async (req, res) => {
         );
 
         if (likeIndex !== -1) {
+            
             // User has already liked the post, so remove the like
             postInfo.likes.splice(likeIndex, 1);
             await postInfo.save();
@@ -43,6 +44,7 @@ export const likeUnLikePost = async (req, res) => {
             const notification = new Notification({
                 fromUserId: userId, // Liker's user ID
                 toUserId: postInfo.postedBy.id, // Post owner's user ID
+                field: postId,
                 type: 'like', // Type of action
                 message: `${response.username} unliked your post`, // Notification message
             });
@@ -62,8 +64,10 @@ export const likeUnLikePost = async (req, res) => {
             fromUserId: userId, // Liker's user ID
             toUserId: postInfo.postedBy.id, // Post owner's user ID
             type: 'like', // Type of action
+            field: postId,
             message: `${response.username} liked your post`, // Notification message
         });
+
         await notification.save();
 
         return res.status(201).json({ status: true, message: `${response.username} liked this post by ${postInfo.postedBy.name}`, userInfo: response,

@@ -55,6 +55,7 @@ export const createPostComment = async(req,res) => {
         const notification = new Notification({
             fromUserId: userId, // Liker's user ID
             toUserId: postInfo.postedBy.id, // Post owner's user ID
+            field: postId,
             type: 'comment', // Type of action
             message: `${userInfo.userInfo.Nickname} is ${comments.comment} your post`, // Notification message
         });

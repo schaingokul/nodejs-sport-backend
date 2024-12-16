@@ -249,7 +249,7 @@ export const follower = async (req, res, next) => {
     const { uuid } = req.user; // logged-in user uuid
     try {
         // Fixing the query by passing an object with the uuid field
-        const user = await UserDetails.findOne({ uuid });
+        const user = await UserDetails.findOne({ uuid }).select('followers');
 
         if (uuid === id) {
             // return next(new ErrorHandler(400,"Cannot follow/unfollow yourself"));
@@ -285,7 +285,7 @@ export const following = async (req, res) => {
     const { uuid } = req.user; // logged-in user uuid
     try {
         // Fixing the query by passing an object with the uuid field
-        const user = await UserDetails.findOne({ uuid });
+        const user = await UserDetails.findOne({ uuid }).select('following');
 
         if (!user) {
             // return next(new ErrorHandler(404, "User not found"));
@@ -297,16 +297,16 @@ export const following = async (req, res) => {
         if (followingIndex !== -1) {
             user.following.splice(followingIndex, 1);
             await user.save();
-            return res.status(200).json({ status: true, message: "Unfollowed", data: user });
+            return res.status(200).json({ status: true, message: "Unfollow", data: user });
         }
 
         user.following.push({ followingBy_id: id });
         await user.save();
 
-        res.status(201).json({ status: true, message: "Following added", data: user.following });
+        res.status(201).json({ status: true, message: "Follow added", data: user.following });
     } catch (error) {
         console.log(error);
         // next(error.message);
-        res.status(500).json({status: false, message: "Following Route error"})
+        res.status(500).json({status: false, message: "Follow Route error"})
     }
 };

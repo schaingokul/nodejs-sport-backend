@@ -1,6 +1,6 @@
 import express from 'express';
 import {createPost, deletePost, getHomeFeed,
-    viewCurrentPost, typeofViewPost, myViewPost, searchAlgorithm, } from '../Controller/PostController/PostController.js';
+    viewCurrentPost, typeofViewPost, myProfile, searchAlgorithm, otherProfile } from '../Controller/PostController/PostController.js';
 import{ likeUnLikePost, likeCount} from '../Controller/PostController/likeUnlike.js'
 import ProtectRoute from '../middleware/ProtectRoute.js';
 import {upload} from '../utilis/uploadFiles.js'
@@ -17,8 +17,11 @@ router.get("/home/:id", ProtectRoute, viewCurrentPost);
 router.post("/home/:type", ProtectRoute, typeofViewPost);
 
 //Personal
-router.get("/mypost", ProtectRoute, myViewPost);
+router.get("/myprofile", ProtectRoute, myProfile);
 router.get("/mypost/:id", ProtectRoute, viewCurrentPost);
+
+//OtherProfile
+router.get("/profile/:id", ProtectRoute, otherProfile);
 
 // Create Like/UnLike
 router.get('/like/id', ProtectRoute, likeCount);

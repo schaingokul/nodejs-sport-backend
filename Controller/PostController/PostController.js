@@ -140,14 +140,14 @@ export const deletePost = async (req, res) => {
 };
 
 export const getHomeFeed = async (req, res) => {
-    const { id: loginId, uuid: loginuuid } = req.user;
-    let { page, limit} = req.query;
+    const { id: userId, uuid: userUuid } = req.user;
+    let { page, limit } = req.query;
     try {
-        
-        page = page ? page : 1
-        const limitNum = parseInt(limit, 10);
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+
         // Fetch user details
-        const user = await UserDetails.findById(loginId).select("uuid _id following");
+        const user = await UserDetails.findById(userId).select("uuid _id following");
         if (!user) {
             return res.status(404).json({ status: false, message: "User not found" });
         }
@@ -158,7 +158,7 @@ export const getHomeFeed = async (req, res) => {
         // Step 1: HashSet for liked posts
         const likedPosts = new Set(
             (
-                await PostImage.find({ "likes.likedById": loginuuid }).select("_id")
+                await PostImage.find({ "likes.likedById": userUuid }).select("_id")
             ).map((post) => post._id.toString())
         );
 
@@ -174,10 +174,10 @@ export const getHomeFeed = async (req, res) => {
 
         // Step 3: Priority Queue (Max Heap) for trending posts
         const trendingPosts = await PostImage.find({
-            type: { $in: ["video", "reel", "image"] }
+            type: { $in: ["video", "reel", "image", "event"] }
         })
             .sort({ likesCount: -1 }) // Sort by likes count
-            .limit(limit);
+            .limit(limitNum);
 
         feed.push(...trendingPosts);
 
@@ -187,16 +187,17 @@ export const getHomeFeed = async (req, res) => {
             feed = feed.concat(randomPosts);
         }
 
-        // Step 5: Handle infinite scrolling (repeat posts if fewer)
-        while (feed.length < limit * page) {
-            feed = feed.concat(feed.slice(0, Math.min(feed.length, limit * page - feed.length)));
+        // Shuffle the feed array (Fisher-Yates shuffle)
+        for (let i = feed.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [feed[i], feed[j]] = [feed[j], feed[i]];
         }
 
         // Paginate the feed
-        const startIndex = (page - 1) * limit;
-        const paginatedFeed = feed.slice(startIndex, startIndex + limit);
+        const startIndex = (pageNum - 1) * limitNum;
+        const paginatedFeed = feed.slice(startIndex, startIndex + limitNum);
 
-        // Step 6: Format the response (Resolve all promises)
+        // Step 5: Format the response (Resolve all promises)
         const response = await Promise.all(
             paginatedFeed.map(async (post, index) => {
                 const prf = await UserDetails.findById(post.postedBy.id).select("userInfo");
@@ -226,15 +227,14 @@ export const getHomeFeed = async (req, res) => {
 };
 
 export const viewCurrentPost = async(req,res) => {
-    const {id: loginId} = req.user;
+    const {id: userId} = req.user;
     const {id: postId} = req.params;
     try {
-        const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys ");
+        const user = await UserDetails.findById(userId).select("uuid _id First_Name Last_Name myPostKeys ");
 
         if (!user) {
             return res.status(404).json({status: false ,message: "User not found" });
         }
-        console.log("PostImages", user.myPostKeys)
         
         const filteredPosts = await PostImage.findById(postId);
 
@@ -245,7 +245,8 @@ export const viewCurrentPost = async(req,res) => {
             location: filteredPosts.location,
             description: filteredPosts.description,
             type: filteredPosts.type,
-            URL: filteredPosts.URL
+            URL: filteredPosts.URL,
+            likeCount: filteredPosts.likes.length,
         }
 
         res.status(200).json({status: true, message: "Views", info: obj});
@@ -255,87 +256,150 @@ export const viewCurrentPost = async(req,res) => {
     }
 };
 
-export const myViewPost = async (req, res) => {
-    const { uuid: loginuuid, id: userId } = req.user;
-    let { page, limit } = req.query; // Extract pagination parameters
+export const myProfile = async (req, res) => {
+    const { uuid: userUuid, id: userId } = req.user;
 
     try {
-        
-        page = page ? page : 1
-        limit = limit ? limit : 20
+        const user = await UserDetails.findById(userId).select("-Password");
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User not found." });
+        }
 
-        const user = await UserDetails.findById(userId).select("uuid _id First_Name Last_Name userInfo");
+        // Fetch all posts in one query
+        const postIds = user.myPostKeys.map((postid) => postid.toString());
+        const posts = await PostImage.find({ _id: { $in: postIds } });
+        console.log("step3", posts)
+        // Map posts with user.myPostKeys
+        const URLWithUserDetails = posts.map((postid) => {
+            const post = posts.find((p) => p.id.toString() === postid.id);
+            return post
+                ? {
+                      postId: post.id,
+                      postURL: post.URL,
+                  }
+                : null;
+        }).filter(Boolean); // Remove null entries for unmatched postIds
+
+        const response = {
+            PersonalInfo: {
+                uuid: user.uuid,
+                First_Name: user.First_Name,
+                Last_Name: user.Last_Name,
+                Email_ID: user.Email_ID,
+                userInfo: user.userInfo,
+            },
+            sportsInfo: {
+                sportCount: user.sportsInfo.length,
+                sportsInfo: user.sportsInfo,
+            },
+            following: {
+                followingCount: user.following.length,
+            },
+            followers: {
+                followersCount: user.followers.length,
+            },
+            myPostKeys: {
+                myPostKeysCount: URLWithUserDetails.length,
+                myPostKeys: URLWithUserDetails,
+            },
+            MyTeamBuild: {
+                MyTeamBuildCount: user.MyTeamBuild.length,
+                MyTeamBuild: user.MyTeamBuild,
+            },
+            PlayFor: {
+                PlayForCount: user.PlayFor.length,
+                PlayFor: user.PlayFor,
+            },
+        };
+
+        res.status(200).json({ status: true, message: "My Profile", info: response });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ status: false, message: "My Profile Causes Error", error: error.message });
+    }
+};
+
+export const otherProfile = async (req, res) => {
+    const { id: userId } = req.user;
+    const {id: otherUserId} = req.params
+    try {
+        const current = await UserDetails.findById(userId).select("-Password");
+        if (!current) {
+            return res.status(404).json({status: false, message: "User not found." });
+        }
+
+        const user = await UserDetails.findById(otherUserId).select("-Password");
         if (!user) {
             return res.status(404).json({status: false, message: "User not found." });
         }
 
-        // Count total documents for the given type
-        const totalCount = await PostImage.countDocuments(query);
-
-        let posts;
-        if (page && limit) {
-            // If pagination parameters are provided, fetch paginated results
-            const pageNum = parseInt(page) || 1;
-            const limitNum = parseInt(limit) || 20;
-
-            posts = await PostImage.findById()
-                .skip((pageNum - 1) * limitNum)
-                .limit(limitNum)
-                .sort({ createdAt: -1 });
-        } else {
-            // If no pagination parameters, fetch all posts of the given type
-            posts = await PostImage.find(query).sort({ createdAt: -1 });
-        }
-
-        if (posts.length === 0) {
-            return res.status(404).json({status: false, message: `No posts found for the type '${type}'.` });
-        }
-
-        // Format the response
-        const formattedPosts = posts.map(post => ({
-            postId: post._id,
-            userId: post.postedBy?.id,
-            userName: post.postedBy?.name,
-            location: post.location,
-            description: post.description,
-            type: post.type,
-            URL: post.URL
-        }));
+        // Fetch all posts in one query
+        const postIds = user.myPostKeys.map((postid) => postid.toString());
+        const posts = await PostImage.find({ _id: { $in: postIds } });
+        console.log("step3", posts)
+        // Map posts with user.myPostKeys
+        const URLWithUserDetails = posts.map((postid) => {
+            const post = posts.find((p) => p.id.toString() === postid.id);
+            return post
+                ? {
+                      postId: post.id,
+                      postURL: post.URL,
+                  }
+                : null;
+        }).filter(Boolean); // Remove null entries for unmatched postIds
 
         const response = {
-            LoginUser: {
-                id: loginId,
-                Unique: loginuuid,
-                Name: `${user.First_Name} ${user.Last_Name}`,
-                profile: user.userInfo.Profile_ImgURL,
-                username:user.userInfo.Nickname
-            },
-            totalPosts: totalCount,
-            posts: formattedPosts
-        };
-
-        res.status(200).json({ status: true, message: `Category ${type} Views`, info: response });
+                PersonalInfo: {
+                    uuid: user.uuid,
+                    First_Name: user.First_Name,
+                    Last_Name: user.Last_Name,
+                    Email_ID: user.Email_ID,
+                    userInfo: user.userInfo,
+                },
+                sportsInfo: {
+                    sportCount: user.sportsInfo.length,
+                    sportsInfo: user.sportsInfo
+                },
+                following: {
+                    followingCount: user.following.length,
+                },
+                followers: {
+                    followersCount: user.followers.length,
+                },
+                myPostKeys: {
+                    myPostKeysCount: user.myPostKeys.length,
+                    myPostKeys: URLWithUserDetails
+                },
+                MyTeamBuild: {
+                    MyTeamBuildCount: user.MyTeamBuild.length,
+                    MyTeamBuild: user.MyTeamBuild
+                },
+                PlayFor: {
+                    PlayForCount: user.PlayFor.length,
+                    PlayFor: user.PlayFor
+                }
+        }
+        res.status(200).json({ status: true, message: `Others Profile`, info: response });
     } catch (error) {
         console.error(error.message);
-        res.status(500).json({ status: false, message: "Category Views Causes Error", error: error.message });
+        res.status(500).json({ status: false, message: "Others Profile Causes Error", error: error.message });
     }
 };
 
-
 export const typeofViewPost = async (req, res) => {
-    const { uuid: loginuuid, id: loginId } = req.user;
+    const { uuid: userUuid, id: userId } = req.user;
     const { type } = req.params; // Extract type from the route parameter
     const { page, limit } = req.query; // Extract pagination parameters
 
     try {
         // Validate input
         if (!type || typeof type !== "string") {
-            return res.status(404).json({status: false, message: "Invalid type parameter." });
+            return res.status(404).json({ status: false, message: "Invalid type parameter." });
         }
 
-        const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name userInfo");
+        const user = await UserDetails.findById(userId).select("uuid _id First_Name Last_Name userInfo");
         if (!user) {
-            return res.status(404).json({status: false, message: "User not found." });
+            return res.status(404).json({ status: false, message: "User not found." });
         }
 
         // Base query to filter by type
@@ -360,7 +424,13 @@ export const typeofViewPost = async (req, res) => {
         }
 
         if (posts.length === 0) {
-            return res.status(404).json({status: false, message: `No posts found for the type '${type}'.` });
+            return res.status(404).json({ status: false, message: `No posts found for the type '${type}'.` });
+        }
+
+        // Shuffle the posts
+        for (let i = posts.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [posts[i], posts[j]] = [posts[j], posts[i]];
         }
 
         // Format the response
@@ -376,15 +446,14 @@ export const typeofViewPost = async (req, res) => {
 
         const response = {
             LoginUser: {
-                id: loginId,
-                Unique: loginuuid,
+                id: userId,
+                Unique: userUuid,
                 Name: `${user.First_Name} ${user.Last_Name}`,
                 profile: user.userInfo.Profile_ImgURL,
-                username:user.userInfo.Nickname
+                username: user.userInfo.Nickname
             },
             totalPosts: totalCount,
             posts: formattedPosts,
-            
         };
 
         res.status(200).json({ status: true, message: `Category ${type} Views`, info: response });
@@ -510,7 +579,6 @@ export const searchAlgorithm = async (req, res) => {
                 ]);
                 break;
         }
-
         return res.status(200).json({ status: true, message: "Data received", info: posts });
     } catch (error) {
         console.error(error);
