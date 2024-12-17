@@ -46,7 +46,7 @@ export const SaveUserProfile = async (req, res) => {
     try {
 
         if (saveFields.NickName) {
-            let Nickname = await generateUniqueNickname(saveFields.NickName);
+            
             saveFields.NickName = Nickname; // Update NickName in saveFields
         }
 
@@ -101,6 +101,7 @@ export const SaveUserProfile = async (req, res) => {
         res.status(500).json({ status: false, message: error.message });
     }
 };
+
 export const sportsView = async(req,res) => {
     const {uuid} = req.user;
     try {

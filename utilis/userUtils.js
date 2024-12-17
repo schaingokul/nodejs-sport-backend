@@ -69,23 +69,24 @@ export const deleteFile = (filePath, fileType) => {
     }
 };
 
+const special = '@';
 export const generateUniqueNickname = async (firstName) => {
     // Fetch all nicknames that start with the given firstName
+    let username = firstName.toString().toLowerCase();
     const existingNicknames = await UserDetails.find(
-        { "userInfo.Nickname": { $regex: `^${firstName.toString()}` } },
+        { "userInfo.Nickname": { $regex: `^${username}` } },
         { "userInfo.Nickname": 1, _id: 0 }
     );
 
     // Extract the nicknames into an array
-    const nicknameSet = new Set(existingNicknames.map(user => user.userInfo.Nickname.toString()));
+    const nicknameSet = new Set(existingNicknames.map(user => user.userInfo.Nickname));
 
-    let username = firstName;
-    let randomNumber = Math.floor(Math.random() * (firstName.length * 100)) + 1;
+    let randomNumber = Math.floor(Math.random() * (username.length * 100)) + 1;
     let counter = 1;
-
+    
     // Generate a new unique nickname
     while (nicknameSet.has(username)) {
-        username = `${firstName.toString()}_${randomNumber}`;
+        username = `${special}${firstName.toString().toLowerCase()}${randomNumber}`;
         counter++;
     }
 

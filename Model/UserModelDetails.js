@@ -73,7 +73,8 @@ const TeamBuildSchema = mongoose.Schema({
   Team_Name: {type : String, required :true},
   Sports_Name:{type : String, required :true},
   TotalPlayers:{type : String, required :true, default: "0"},
-  playersList:[playersListSchema]
+  playersList:[playersListSchema],
+  isReady:{type : Boolean, required :true, default: false}
 },
 { _id: true });
 

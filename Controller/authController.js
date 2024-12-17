@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid';
 import { generateToken} from '../utilis/generateToken.js';
 import {sportsDefault} from '../env.js' 
 import {generateUniqueNickname} from '../utilis/userUtils.js'
+import { sendErrorResponse } from '../utilis/ErrorHandlingMiddleware.js';
 
 
 export const googlesignUp = async (req,res, next) => {
@@ -139,7 +140,6 @@ export const login = async (req,res, next) => {
         
         if(!user){
             return res.status(404).json({status: false, message: "Email not found, Please sign up."})
-            // return next(new ErrorHandler(200, "Email not found, Please sign up."));
         }
 
         const isPasswordValid  = await bcrypt.compare(Password, user.Password);
@@ -157,7 +157,7 @@ export const login = async (req,res, next) => {
         const token =  generateToken({ id: user._id, uuid: user.uuid, Email_ID: user.Email_ID }, res);
         const sendInfo = await UserDetails.findOne({ uuid: user.uuid }).select("uuid _id userInfo.Nickname userInfo.Profile_ImgURL");
 
-        res.status(200).json({status: true, message: "login Successfully", Token: token, UserInfo: sendInfo , user: user});
+        res.status(200).json({status: true, message: "login Successfully", Token: token, UserInfo: sendInfo });
     
     } catch (error) {
         console.error("Login error:", error.message);
@@ -244,20 +244,18 @@ export const resetPassword = async (req, res) => {
     }
 };
 
-export const follower = async (req, res, next) => {
+export const follow = async (req, res, next) => {
     const { id } = req.params; // follower uuid
-    const { uuid } = req.user; // logged-in user uuid
+    const { uuid: userUuid } = req.user; // logged-in user uuid
     try {
         // Fixing the query by passing an object with the uuid field
-        const user = await UserDetails.findOne({ uuid }).select('followers');
+        const user = await UserDetails.findOne({uuid: userUuid }).select('followers');
 
         if (uuid === id) {
-            // return next(new ErrorHandler(400,"Cannot follow/unfollow yourself"));
             res.status(404).json({status: false, message: "Cannot follow/unfollow yourself"})
         }
 
         if (!user) {
-            // return next(new ErrorHandler(404 ,"User not found"));
             res.status(404).json({status: false, message: "User not found"})
         }
 
@@ -274,9 +272,7 @@ export const follower = async (req, res, next) => {
 
         res.status(201).json({ status: true, message: "Follower added", data: user });
     } catch (error) {
-        console.log(error);
-        //next(error.message);
-        res.status(500).json({status: false, message: "follower Route error"})
+        sendErrorResponse(res, 500, "Follower Route Failed to request.", error.message, "FOLLWER_CAUSES_ERROR")
     }
 };
 

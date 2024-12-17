@@ -1,12 +1,12 @@
 import UserDetails from "../Model/UserModelDetails.js";
 
 export const buildTeam = async(req,res) => {
-    const {id, uuid} = req.user;
+    const {id: userId, uuid: userUuid} = req.user;
     const {Team_Name, Sports_Name, TotalPlayers, playersList} = req.body;
 
     try {   
         // Fetch current user by ID
-        const currentUser = await UserDetails.findById(id)
+        const currentUser = await UserDetails.findById(userId)
         if (!currentUser) {
             return res.status(200).json({ status: false, message: "User not found." });
         }
@@ -25,7 +25,6 @@ export const buildTeam = async(req,res) => {
         return res.status(200).json({status: false, message: `Player positions must be between 1 and ${totalPlayersNumber}.`});
         }
 
-        
         // Check if required fields are provided
          if (!Team_Name || !Sports_Name || !TotalPlayers || !playersList || !Array.isArray(playersList)) {
             return res.status(200).json({ status: false, message: "Invalid input. All fields are required." });
@@ -90,12 +89,13 @@ export const buildTeam = async(req,res) => {
                 await localStore.save();
               }
         })
-        
+
         res.status(200).json({status: true, message: `Create Team Sucessfully by ${currentUser.First_Name}`, TeamMembers: createTeam });
     } catch (error) {
         res.status(200).json({status: false, message: `Create Team Causes Route Error: ${error.message}`});
     }
 };
+
 /*
 
 Create TeamBuild 

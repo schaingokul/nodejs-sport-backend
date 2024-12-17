@@ -20,5 +20,4 @@ router.post("/sports_edit/:sportid/doc", ProtectRoute,upload.fields([{ name: 'Sp
 /* SportsInfo Delete Including Files Also*/
 router.delete("/sports_clear/:sportid", ProtectRoute, sportsClear);
 
-
 export default router;
