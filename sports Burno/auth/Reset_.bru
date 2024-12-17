@@ -1,0 +1,22 @@
+meta {
+  name: Reset_
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{Port}}/api/auth/reset_password
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NDQ0YzgwOGViMWYzMmMzMGM2Y2ExOSIsInV1aWQiOiJqX0NMaTBGdkw2VV85bXR6eGs0d1ciLCJFbWFpbF9JRCI6IlVzZXIxMUBnbWFpbC5jb20iLCJpYXQiOjE3MzI1MjkzMjMsImV4cCI6MTczMjUyOTYyM30.8UicgsfuLzQReW_AaFHxZYflyiOyND8sOiuz-IMYSFc
+}
+
+body:json {
+  {
+    "code": "523843",
+    "Password": "1234567890"
+  }
+}

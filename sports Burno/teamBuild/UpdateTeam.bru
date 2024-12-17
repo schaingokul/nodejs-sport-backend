@@ -1,0 +1,27 @@
+meta {
+  name: UpdateTeam
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{Port}}/api/team/updateteam/67505847053753be50fc1cc1
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NTA0N2JjMmQ5ZWIzNjExOWUwM2Q4ZiIsInV1aWQiOiJzVEtLSlZVY3lRRXdURmkzUk1LbWQiLCJFbWFpbF9JRCI6InNjaGFpbmdva3VsMUBnbWFpbC5jb20iLCJpYXQiOjE3MzMzMTY5MzYsImV4cCI6MTczMzQwMzMzNn0.-VjyHe7_NvR8SmXWzrCUtqpZKz2jvnaKaJp4HIksSKk
+}
+
+body:json {
+  {
+    "Team_Name": "Rockers",
+    "Sports_Name": "BasketBall",
+    "TotalPlayers": "2",
+    "playersList": [
+      {"Player_id":"sTKKJVUcyQEwTFi3RMKmd", "Position":"2" },
+      {"Player_id":"Jy9Jt5LKDyv9XaWX8FYMY", "Position":"1" }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+meta {
+  name: editSports_Certificate
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{Port}}/api/user/sports_edit/674051c95947dbdebb6f9149
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "Sports_Name": "Cricket",
+    "Year_Playing": "7",
+    "BestAt": "Batting"
+  }
+}

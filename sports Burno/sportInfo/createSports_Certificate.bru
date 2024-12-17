@@ -1,0 +1,22 @@
+meta {
+  name: createSports_Certificate
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{Port}}/api/user/sports_add
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "Sports_ImgURL": "https://placehold.co/300x300/pink/orange?text=Sport+Image+2",
+    "Sports_Name": "FootBall",
+    "Year_Playing": "5",
+    "BestAt": "Forward",
+    "Matches": "5",
+    "Video_ImgURL": "https://placehold.co/700x400/pink/orange?text=Sport+Video+2"
+  }
+}

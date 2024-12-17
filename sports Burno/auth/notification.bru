@@ -1,0 +1,15 @@
+meta {
+  name: notification
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{Port}}/api/auth/notification
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NWZmMTI3MzA1MTUwNTNhZDg0NjRjOCIsInV1aWQiOiI3VDVQYk95djhLclc2X2xkV19nRzQiLCJFbWFpbF9JRCI6Imd1ZXN0dXNlcjFAZ21haWwuY29tIiwiaWF0IjoxNzM0MzQxODU1LCJleHAiOjE3MzQ0MjgyNTV9.dSXwhRPiBV4EEA5ZZRzQod3B-Yoo3eNFkmxDpbgSrbs
+}

@@ -1,0 +1,15 @@
+meta {
+  name: admin
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{Port}}/api/auth/admin
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: 
+}

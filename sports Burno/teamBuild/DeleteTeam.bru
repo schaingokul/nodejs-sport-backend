@@ -1,0 +1,29 @@
+meta {
+  name: DeleteTeam
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{Port}}/api/team/deleteteam/6751b25e67b8db60bf4c44c6
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NTA0N2JjMmQ5ZWIzNjExOWUwM2Q4ZiIsInV1aWQiOiJzVEtLSlZVY3lRRXdURmkzUk1LbWQiLCJFbWFpbF9JRCI6InNjaGFpbmdva3VsMUBnbWFpbC5jb20iLCJpYXQiOjE3MzM0MDM1MzYsImV4cCI6MTczMzQ4OTkzNn0.f6exJiWUTrpU_CNwsdcHL0AbLup_KgjEyIgFcRQ2dL4
+}
+
+body:json {
+  {
+    "Team_Name": "Mockers",
+    "Sports_Name": "Basket",
+    "TotalPlayers": "4",
+    "playersList": [
+      {"Player_id":"G1WLvwTOzQETOubIdMkln", "Position":"1" },
+      {"Player_id":"JT5yvVOXp3J6PGoctHg4S", "Position":"2" },
+      {"Player_id":"GyV8DWom_xYU4qR9WMV__", "Position":"3" },
+      {"Player_id":"rAQMDTkWK2niESjPxBAYH", "Position":"4" }
+    ]
+  }
+}

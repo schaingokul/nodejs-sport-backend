@@ -1,0 +1,17 @@
+meta {
+  name: activeSports
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{Port}}/api/user/sports_edit/674051c95947dbdebb6f9149
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "isActive":true
+  }
+}

@@ -1,0 +1,21 @@
+meta {
+  name: SendMessage
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{Port}}/api/message/send/675047bc2d9eb36119e03d8f
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NTA0ODZhMmQ5ZWIzNjExOWUwM2Q5NSIsInV1aWQiOiJ0ODBQSlU1ZlVDLWN2VW5tN28zM2YiLCJFbWFpbF9JRCI6InNjaGFpbmdva3VsM0BnbWFpbC5jb20iLCJpYXQiOjE3MzM0NjI4MjgsImV4cCI6MTczMzU0OTIyOH0.ASB2f2PDPU1yC90flpKwtkjV3mpNSC4gHCqXYvCYqyk
+}
+
+body:json {
+  {
+    "message": "How Are U "
+  }
+}

@@ -1,0 +1,21 @@
+meta {
+  name: signup_google
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{Port}}/api/auth/google
+  body: json
+  auth: none
+}
+
+headers {
+  x-google-auth-token: google-access
+}
+
+body:json {
+  {
+    "Email": "guestuser10@gmail.com"
+  }
+}

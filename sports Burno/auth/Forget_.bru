@@ -1,0 +1,17 @@
+meta {
+  name: Forget_
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{Port}}/api/auth/forget_password
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+   "Email": "User11@gmail.com"
+  }
+}

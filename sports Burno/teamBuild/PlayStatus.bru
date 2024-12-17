@@ -1,0 +1,28 @@
+meta {
+  name: PlayStatus
+  type: http
+  seq: 8
+}
+
+put {
+  url: {{Port}}/api/team/status/6751b4cbdeaae084e4198138
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NTA0ODZhMmQ5ZWIzNjExOWUwM2Q5NSIsInV1aWQiOiJ0ODBQSlU1ZlVDLWN2VW5tN28zM2YiLCJFbWFpbF9JRCI6InNjaGFpbmdva3VsM0BnbWFpbC5jb20iLCJpYXQiOjE3MzM0MDYyNjksImV4cCI6MTczMzQ5MjY2OX0.i2VfXmxU4EB-UK01gNgAYQPbRNLfJLWefWXtdx-dDC0
+}
+
+body:json {
+  {
+    "Team_Name": "Rockers",
+    "Sports_Name": "BasketBall",
+    "TotalPlayers": "3",
+    "playersList": [
+      {"Player_id":"sTKKJVUcyQEwTFi3RMKmd", "Position":"1" },
+      {"Player_id":"Jy9Jt5LKDyv9XaWX8FYMY", "Position":"2" },
+      {"Player_id":"t80PJU5fUC-cvUnm7o33f", "Position":"3" }
+    ]
+  }
+}

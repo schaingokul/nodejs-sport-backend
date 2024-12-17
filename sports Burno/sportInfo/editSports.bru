@@ -1,0 +1,31 @@
+meta {
+  name: editSports
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{Port}}/api/user/sports_edit/675c2bf223bb169030cc2e28
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NWMyYmYyMjNiYjE2OTAzMGNjMmUyNyIsInV1aWQiOiJTSWNCS1dpcU14Z3JkQlFYby1BYnciLCJFbWFpbF9JRCI6Imd1ZXN0dXNlcjVAZ21haWwuY29tIiwiaWF0IjoxNzM0MDkzODQzLCJleHAiOjE3MzQxODAyNDN9.scz2akgfz7gKqF1LR0usYMq9CM4Rr0I6VwN3FQC8H70
+}
+
+body:json {
+  {
+    "Sports_Name": "Cricket",
+    "Year_Playing": "7",
+    "BestAt": "Batting"
+  }
+}
+
+body:multipart-form {
+  Sports_ProfileImage_URL: @file(C:\Users\schai\Downloads\colorful-beautiful-flowers-background-blossom-floral-bouquet-decoration-garden-flowers-plant-pattern-wallpapers-greeting-cards-postcards-design-wedding-invites.jpg)
+  Year_Playing: 5
+  BestAt: Backward
+  Matches: 6
+  Sports_Name: footballs
+}

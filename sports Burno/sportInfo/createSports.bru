@@ -1,0 +1,36 @@
+meta {
+  name: createSports
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{Port}}/api/user/sports_add
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NWE4OGM4NGFmMDdlNGJhZmNjODc3MSIsInV1aWQiOiJFT3dVczRGcmd0djh6cTNNZmh0ZmMiLCJFbWFpbF9JRCI6Imd1ZXN0dXNlcjJAZ21haWwuY29tIiwiaWF0IjoxNzMzOTg2ODIwLCJleHAiOjE3MzQwNzMyMjB9.9Sc_enyMe-qjEBJJ4Cz5P_52h4fbeqSkBlkCb5msW-U
+}
+
+body:json {
+  {
+    "Sports_ImgURL": "https://placehold.co/300x300/pink/orange?text=Sport+Image+2",
+    "Sports_Name": "FootBall",
+    "Year_Playing": "5",
+    "BestAt": "Forward",
+    "Matches": "5",
+    "Video_ImgURL": "https://placehold.co/700x400/pink/orange?text=Sport+Video+2"
+  }
+}
+
+body:multipart-form {
+  Sports_ProfileImage_URL: @file(C:\Users\schai\Downloads\Gokul (2).jpg)
+  Sports_PostImage_URL: @file(C:\Users\schai\Downloads\GOKU-HEROSCREEN-100424B.jpg)
+  Sports_videoImageURL: @file(C:\Users\schai\Downloads\#FullStackDeveloper.mp4)
+  Sports_Name: Football
+  Year_Playing: 5
+  BestAt: Backward
+  Matches: 6
+}

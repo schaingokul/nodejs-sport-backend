@@ -1,0 +1,21 @@
+meta {
+  name: verification_Code
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{Port}}/api/auth/verify
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NjExYzdhNjJjMDZmZjkxNDNlMDgzYiIsInV1aWQiOiJiSmI3bWxYR3lyOWlTaGNicDJmUFoiLCJFbWFpbF9JRCI6Imd1ZXN0dXNlcjFAZ21haWwuY29tIiwiaWF0IjoxNzM0NDE3NTMzLCJleHAiOjE3MzQ1MDM5MzN9.Y8yORTadTz5SszU_SRsKXg8OQHFmTvJjMdl9J0tq4Vc
+}
+
+body:json {
+  {
+   "code": "733427"
+  }
+}

@@ -1,0 +1,30 @@
+meta {
+  name: Create
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{Port}}/api/user/post
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NjExYzdhNjJjMDZmZjkxNDNlMDgzYiIsInV1aWQiOiJiSmI3bWxYR3lyOWlTaGNicDJmUFoiLCJFbWFpbF9JRCI6Imd1ZXN0dXNlcjFAZ21haWwuY29tIiwiaWF0IjoxNzM0NDE3NTYyLCJleHAiOjE3MzQ1MDM5NjJ9.bOvkY_i1PTl1INmsnamm58jzcXYLIXdV3PVYA-VDxng
+}
+
+body:json {
+  {
+      "PostImage_URL":"https://placehold.co/300x300/pink/orange?text=Post+Image+1" ,
+      "Location":"Madurai",
+      "description": "This is My Second Description"
+  }
+}
+
+body:multipart-form {
+  location: Chennai
+  description: Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of \"de Finibus Bonorum et Malorum\" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance.
+  URL: @file(C:\Users\schai\Downloads\Assassin's Creed Shadows (2).jpg)
+  type: image
+}

@@ -1,0 +1,52 @@
+meta {
+  name: SaveProfile_
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{Port}}/api/user/profile_save
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NWQ2ZmRhYzFkOTAwYzVjYmRhYzRmYiIsInV1aWQiOiJOdDlJVmFUa0gwcU1jdWFhdmE1V1kiLCJFbWFpbF9JRCI6Imd1ZXN0dXNlcjFAZ21haWwuY29tIiwiaWF0IjoxNzM0MTc2NzU5LCJleHAiOjE3MzQyNjMxNTl9.eJPHkP9EepYeKvjzjZ8YU_Mdxfay7A8iUOvQCz9D_2g
+}
+
+body:json {
+  {
+    "Nickname": "JohnDoe",
+    "Phone_Number": "9876543210",
+    "Date_of_Birth": "1990-01-01",
+    "Gender": "Male",
+    "Education": {
+      "school": [
+        "High School A"
+      ],
+      "college": [
+        "University A"
+      ]
+    },
+    "Work": "Software Engineer",
+    "Club": "Tech Club"
+  }
+}
+
+body:form-urlencoded {
+  : 
+}
+
+body:multipart-form {
+  Nickname: Schain
+  Phone_Number: +918608107567
+  Date_of_Birth: 1997-05-15
+  Gender: Male
+  Work: Software Developer SDE
+  Club: TamilClubs
+  Education[school][0]: School A
+  Education[school][1]: School B
+  Education[college][0]: College A
+  Education[college][1]: College B
+  Profile_ImgURL: @file(C:\Users\schai\Downloads\Gokul (2).jpg)
+}

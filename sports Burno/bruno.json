@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "sports",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
