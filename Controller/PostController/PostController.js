@@ -272,6 +272,7 @@ export const myProfile = async (req, res) => {
         // Simplify post details
         const postDetails = posts.map((post) => ({
             postId: post.id,
+            type: post.type,
             URL: post.URL[0], // Convert URL array to single string
         }));
 
@@ -328,6 +329,7 @@ export const otherProfile = async (req, res) => {
         // Simplify post details
         const postDetails = posts.map((post) => ({
             postId: post.id,
+            type: post.type,
             URL: post.URL[0], // Convert URL array to single string
         }));
 
