@@ -235,7 +235,7 @@ export const viewCurrentPost = async(req,res) => {
         if (!user) {
             return res.status(404).json({status: false ,message: "User not found" });
         }
-        
+
         const filteredPosts = await PostImage.findById(postId);
 
         const obj = {
@@ -253,119 +253,6 @@ export const viewCurrentPost = async(req,res) => {
     } catch (error) {
         console.log(error.message)
         res.status(500).json({status: false, message: "View Post Route Causes Error"});
-    }
-};
-
-export const myProfile = async (req, res) => {
-    const { uuid: userUuid, id: userId } = req.user;
-
-    try {
-        const user = await UserDetails.findById(userId).select("-Password");
-        if (!user) {
-            return res.status(404).json({ status: false, message: "User not found." });
-        }
-
-        // Fetch all posts
-        const postIds = user.myPostKeys.map((postid) => postid.toString());
-        const posts = await PostImage.find({ _id: { $in: postIds } });
-
-        // Simplify post details
-        const postDetails = posts.map((post) => ({
-            postId: post.id,
-            type: post.type,
-            URL: post.URL[0], // Convert URL array to single string
-        }));
-
-        // Simplify sportsInfo details with shortened property names
-        const simplifiedSportsInfo = user.sportsInfo.map((sport) => ({
-            sp: sport.Sports_ProfileImage_URL,   
-            sURL: sport.Sports_PostImage_URL[0],  
-            sName: sport.Sports_Name,            
-            year: sport.Year_Playing,            
-            best: sport.BestAt,                   
-            matches: sport.Matches,              
-            sVURL: sport.Sports_videoImageURL[0], 
-            isActive: sport.isActive,
-            _id: sport._id,
-        }));
-
-        // Flattened response object
-        const response = {
-            id: user._id,
-            uuid: user.uuid,
-            userName: user.First_Name,
-            sportsInfo: simplifiedSportsInfo,
-            followingCount: user.following.length,
-            followersCount: user.followers.length,
-            myPostKeysCount: user.myPostKeys.length,
-            myPostKeys: postDetails,
-            MyTeamBuildCount: user.MyTeamBuild.length,
-            MyTeamBuild: user.MyTeamBuild,
-            PlayForCount: user.PlayFor.length,
-            PlayFor: user.PlayFor,
-        };
-
-        res.status(200).json({ status: true, message: "My Profile", info: response });
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).json({ status: false, message: "My Profile Causes Error", error: error.message });
-    }
-};
-export const otherProfile = async (req, res) => {
-    const { id: userId } = req.user;
-    const { id: otherUserId } = req.params;
-
-    try {
-        const current = await UserDetails.findById(userId).select("-Password");
-        if (!current) return res.status(404).json({ status: false, message: "User not found." });
-
-        const user = await UserDetails.findById(otherUserId).select("-Password");
-        if (!user) return res.status(404).json({ status: false, message: "User not found." });
-
-        // Fetch all posts
-        const postIds = user.myPostKeys.map((postid) => postid.toString());
-        const posts = await PostImage.find({ _id: { $in: postIds } });
-
-        // Simplify post details
-        const postDetails = posts.map((post) => ({
-            postId: post.id,
-            type: post.type,
-            URL: post.URL[0], // Convert URL array to single string
-        }));
-
-        // Simplify sportsInfo details with shortened property names
-        const simplifiedSportsInfo = user.sportsInfo.map((sport) => ({
-            sp: sport.Sports_ProfileImage_URL,   
-            sURL: sport.Sports_PostImage_URL[0],  
-            sName: sport.Sports_Name,            
-            year: sport.Year_Playing,            
-            best: sport.BestAt,                   
-            matches: sport.Matches,              
-            sVURL: sport.Sports_videoImageURL[0], 
-            isActive: sport.isActive,
-            _id: sport._id,
-        }));
-
-        // Flattened response object
-        const response = {
-            id: user._id,
-            uuid: user.uuid,
-            userName: user.First_Name,
-            sportsInfo: simplifiedSportsInfo,
-            followingCount: user.following.length,
-            followersCount: user.followers.length,
-            myPostKeysCount: user.myPostKeys.length,
-            myPostKeys: postDetails,
-            MyTeamBuildCount: user.MyTeamBuild.length,
-            MyTeamBuild: user.MyTeamBuild,
-            PlayForCount: user.PlayFor.length,
-            PlayFor: user.PlayFor,
-        };
-
-        res.status(200).json({ status: true, message: "Others Profile", info: response });
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).json({ status: false, message: "Error fetching profile", error: error.message });
     }
 };
 

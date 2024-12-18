@@ -1,0 +1,30 @@
+meta {
+  name: CreatePost
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{Port}}/api/user/post
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NjI2NjYzN2JlZWFmMGJiZGYyZmZhZCIsInV1aWQiOiJLa2tCM3FjMHRiLTFranl4Tm5QR1ciLCJFbWFpbF9JRCI6Imd1ZXN0dXNlcjFAZ21haWwuY29tIiwiaWF0IjoxNzM0NTAyMDE5LCJleHAiOjE3MzQ1ODg0MTl9.hynnn70Cf0pMdf4U42ID_h6omuVXtDgAjh-uMuLriiU
+}
+
+body:json {
+  {
+      "PostImage_URL":"https://placehold.co/300x300/pink/orange?text=Post+Image+1" ,
+      "Location":"Madurai",
+      "description": "This is My Second Description"
+  }
+}
+
+body:multipart-form {
+  location: Chennai
+  description: sections 1.10.32 and 1.10.33 of \"de Finibus Bonorum et Malorum\" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of \"de Finibus Bonorum et Malorum\" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance.
+  URL: @file(C:\Users\schai\Downloads\HEROSCREEN220524A.png)
+  type: image
+}

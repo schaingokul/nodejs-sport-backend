@@ -1,0 +1,15 @@
+meta {
+  name: Post_Type
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{Port}}/api/user/home/video
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NjI2NjYzN2JlZWFmMGJiZGYyZmZhZCIsInV1aWQiOiJLa2tCM3FjMHRiLTFranl4Tm5QR1ciLCJFbWFpbF9JRCI6Imd1ZXN0dXNlcjFAZ21haWwuY29tIiwiaWF0IjoxNzM0NTAyMDE5LCJleHAiOjE3MzQ1ODg0MTl9.hynnn70Cf0pMdf4U42ID_h6omuVXtDgAjh-uMuLriiU
+}
