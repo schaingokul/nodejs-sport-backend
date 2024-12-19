@@ -44,17 +44,18 @@ export const SaveUserProfile = async (req, res) => {
     const saveFields = req.body;
 
     try {
+        // Check if the user exists
+        const user = await UserDetails.findOne({ uuid });
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User not found" });
+        }
 
         if (saveFields.NickName) {
             
             saveFields.NickName = Nickname; // Update NickName in saveFields
         }
 
-        // Check if the user exists
-        const user = await UserDetails.findOne({ uuid });
-        if (!user) {
-            return res.status(404).json({ status: false, message: "User not found" });
-        }
+        
 
         // Handle profile image
         let profileImageUrl = "";

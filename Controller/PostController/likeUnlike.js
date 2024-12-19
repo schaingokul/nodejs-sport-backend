@@ -1,7 +1,7 @@
 import PostImage from '../../Model/ImageModel.js';
 import UserDetails from '../../Model/UserModelDetails.js';
 import Notification from '../../Model/NotificationModel.js';
-
+import {sendErrorResponse} from '../../utilis/ErrorHandlingMiddleware.js'
 
 // Like-UnLike Session
 export const likeUnLikePost = async (req, res) => {
@@ -25,8 +25,8 @@ export const likeUnLikePost = async (req, res) => {
 
         // Extract user details for response
         const response = {
-            profile: userInfo.userInfo?.Profile_ImgURL || null,
-            username: userInfo.userInfo?.Nickname || "Unknown User",
+            profile: userInfo.userInfo?.Profile_ImgURL,
+            username: userInfo.userInfo?.Nickname ,
         };
 
         // Check if the user has already liked the post
@@ -39,17 +39,6 @@ export const likeUnLikePost = async (req, res) => {
             // User has already liked the post, so remove the like
             postInfo.likes.splice(likeIndex, 1);
             await postInfo.save();
-
-            // Send notification to the post owner
-            const notification = new Notification({
-                fromUserId: userId, // Liker's user ID
-                toUserId: postInfo.postedBy.id, // Post owner's user ID
-                field: postId,
-                type: 'like', // Type of action
-                message: `${response.username} unliked your post`, // Notification message
-            });
-
-            await notification.save();
 
             return res.status(200).json({ status: true, message: `${response.username} unliked this post by ${postInfo.postedBy.name}`, userInfo: response,
                 data: { postId, likesCount: postInfo.likes.length }, });

@@ -9,7 +9,7 @@ export const createPost = async (req, res) => {
         const { id: loginId } = req.user;
         const { location, description , type} = req.body;
         
-        const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys");
+        const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys userInfo");
         
         if (!user) {
             return res.status(404).json({status: false, message: "User not found" });
@@ -45,7 +45,7 @@ export const createPost = async (req, res) => {
         }
 
         const addPost = {
-            postedBy: { id: loginId, name: `${user.First_Name} ${user.Last_Name}` },
+            postedBy: { id: loginId, name: `${user.userInfo?.Nickname}` },
             location: location,
             description: description,
             type: type
@@ -143,8 +143,9 @@ export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
     let { page, limit } = req.query;
     try {
+        // Default limit if not provided
+        const limitNum = parseInt(limit, 10) || 100;
         const pageNum = parseInt(page, 10) || 1;
-        const limitNum = parseInt(limit, 10) || 10;
 
         // Fetch user details
         const user = await UserDetails.findById(userId).select("uuid _id following");
@@ -152,14 +153,13 @@ export const getHomeFeed = async (req, res) => {
             return res.status(404).json({ status: false, message: "User not found" });
         }
 
-        const following = user.following || []; // Users the current user follows
+        const following = user.following || [];
         let feed = []; // Array to hold the final feed
 
         // Step 1: HashSet for liked posts
         const likedPosts = new Set(
-            (
-                await PostImage.find({ "likes.likedById": userUuid }).select("_id")
-            ).map((post) => post._id.toString())
+            (await PostImage.find({ "likes.likedById": userUuid }).select("_id"))
+                .map((post) => post._id.toString())
         );
 
         // Step 2: Fetch posts from followed users
@@ -172,16 +172,15 @@ export const getHomeFeed = async (req, res) => {
             });
         }
 
-        // Step 3: Priority Queue (Max Heap) for trending posts
+        // Step 3: Fetch trending posts (popular posts)
         const trendingPosts = await PostImage.find({
             type: { $in: ["video", "reel", "image", "event"] }
-        })
-            .sort({ likesCount: -1 }) // Sort by likes count
+        }).sort({ likesCount: -1 }) // Sort by likes count
             .limit(limitNum);
 
         feed.push(...trendingPosts);
 
-        // Step 4: Random posts for new users
+        // Step 4: Fetch random posts for new users
         if (following.length === 0) {
             const randomPosts = await PostImage.aggregate([{ $sample: { size: limitNum } }]);
             feed = feed.concat(randomPosts);
@@ -193,9 +192,18 @@ export const getHomeFeed = async (req, res) => {
             [feed[i], feed[j]] = [feed[j], feed[i]];
         }
 
-        // Paginate the feed
-        const startIndex = (pageNum - 1) * limitNum;
-        const paginatedFeed = feed.slice(startIndex, startIndex + limitNum);
+        // Calculate total number of posts
+        const totalPosts = feed.length;
+
+        // If there are not enough posts, loop from the beginning
+        const startIndex = ((pageNum - 1) * limitNum) % totalPosts; // Get the start index in a cyclic manner
+        const paginatedFeed = [];
+
+        // Push posts until the limit is met, starting from the startIndex
+        for (let i = 0; i < limitNum; i++) {
+            const index = (startIndex + i) % totalPosts; // Cycle through posts
+            paginatedFeed.push(feed[index]);
+        }
 
         // Step 5: Format the response (Resolve all promises)
         const response = await Promise.all(
@@ -205,11 +213,12 @@ export const getHomeFeed = async (req, res) => {
                     localId: index + 1,
                     postId: post._id,
                     userId: post.postedBy.id,
-                    userProfile: prf?.userInfo?.Profile_ImgURL || null,
-                    userName: post.postedBy.name,
+                    userProfile: prf?.userInfo?.Profile_ImgURL,
+                    userName: prf?.userInfo?.Nickname,
                     description: post.description,
                     type: post.type,
-                    URL: post.URL,
+                    URL: post.URL[0],
+                    lc: post.likes.length,
                     location: post.location
                 };
             })
@@ -225,6 +234,7 @@ export const getHomeFeed = async (req, res) => {
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
 };
+
 
 export const viewCurrentPost = async(req,res) => {
     const {id: userId} = req.user;
@@ -455,3 +465,95 @@ export const searchAlgorithm = async (req, res) => {
         return res.status(500).json({ status: false, message: "Error while executing search algorithm" });
     }
 };
+
+
+/* home feed
+
+export const getHomeFeed = async (req, res) => {
+    const { id: userId, uuid: userUuid } = req.user;
+    let { page, limit } = req.query;
+    try {
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+
+        // Fetch user details
+        const user = await UserDetails.findById(userId).select("uuid _id following");
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User not found" });
+        }
+
+        const following = user.following || []; // Users the current user follows
+        let feed = []; // Array to hold the final feed
+
+        // Step 1: HashSet for liked posts
+        const likedPosts = new Set(
+            (
+                await PostImage.find({ "likes.likedById": userUuid }).select("_id")
+            ).map((post) => post._id.toString())
+        );
+
+        // Step 2: Fetch posts from followed users
+        if (following.length > 0) {
+            const followedPosts = await PostImage.find({ "postedBy.id": { $in: following } });
+            followedPosts.forEach((post) => {
+                if (!likedPosts.has(post._id.toString())) {
+                    feed.push(post);
+                }
+            });
+        }
+
+        // Step 3: Priority Queue (Max Heap) for trending posts
+        const trendingPosts = await PostImage.find({
+            type: { $in: ["video", "reel", "image", "event"] }
+        })
+            .sort({ likesCount: -1 }) // Sort by likes count
+            .limit(limitNum);
+
+        feed.push(...trendingPosts);
+
+        // Step 4: Random posts for new users
+        if (following.length === 0) {
+            const randomPosts = await PostImage.aggregate([{ $sample: { size: limitNum } }]);
+            feed = feed.concat(randomPosts);
+        }
+
+        // Shuffle the feed array (Fisher-Yates shuffle)
+        for (let i = feed.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [feed[i], feed[j]] = [feed[j], feed[i]];
+        }
+
+        // Paginate the feed
+        const startIndex = (pageNum - 1) * limitNum;
+        const paginatedFeed = feed.slice(startIndex, startIndex + limitNum);
+
+        // Step 5: Format the response (Resolve all promises)
+        const response = await Promise.all(
+            paginatedFeed.map(async (post, index) => {
+                const prf = await UserDetails.findById(post.postedBy.id).select("userInfo");
+                return {
+                    localId: index + 1,
+                    postId: post._id,
+                    userId: post.postedBy.id,
+                    userProfile: prf?.userInfo?.Profile_ImgURL || null,
+                    userName: post.postedBy.name,
+                    description: post.description,
+                    type: post.type,
+                    URL: post.URL,
+                    location: post.location
+                };
+            })
+        );
+
+        return res.status(200).json({
+            status: true,
+            message: "Home feed fetched successfully",
+            posts: response,
+        });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
+    }
+};
+
+*/

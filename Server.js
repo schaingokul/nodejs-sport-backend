@@ -40,7 +40,7 @@ app.get("/", (req,res) => {
 });
 
 /* ------------------------------------------ http://:localhost:4500 ------------------------------------------ */ 
-// app.listen(PORT,async () => {
+// app.listen(PORT, async () => {
 //     try {
 //         await connectDB();
 //         console.log(`Server is running on ${HOST}:${PORT}`);
