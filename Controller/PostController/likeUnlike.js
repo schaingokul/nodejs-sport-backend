@@ -12,7 +12,7 @@ export const likeUnLikePost = async (req, res) => {
         // Fetch both post and user info in parallel
         const [postInfo, userInfo] = await Promise.all([
             PostImage.findById(postId),
-            UserDetails.findById(userId).select('userInfo'),
+            UserDetails.findById(userId)
         ]);
 
         // Validate post and user existence

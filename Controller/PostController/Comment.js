@@ -20,7 +20,7 @@ export const viewPostComments = async (req, res) => {
                  return {
                     ...comment.toObject(),
                     username: user?.userInfo?.Nickname || 'Unknown', // Add the username
-                    profileImage: user?.userInfo?.Profile_ImgURL || '', // Add the profile image
+                    Img: user?.userInfo?.Profile_ImgURL || '', // Add the profile image
                 };
             })
         ); 

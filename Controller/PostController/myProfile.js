@@ -19,7 +19,7 @@ export const myProfile = async (req, res) => {
 
         // Simplify post details
         const postDetails = posts.map((post) => ({
-            postId: post.id,
+            postId: post._id,
             type: post.type,
             URL: post.URL[0], // Convert URL array to single string
         }));
@@ -71,7 +71,7 @@ export const myPost = async(req,res) => {
 
         // Simplify post details
         const postDetails = posts.map((post) => ({
-            postId: post.postedBy.id,
+            postId: post._id,
             location: post.location,
             likes: post.likes.length,
             comments: post.comments.length,

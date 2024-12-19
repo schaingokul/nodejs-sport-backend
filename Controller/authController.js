@@ -73,28 +73,57 @@ export const googlesignUp = async (req,res, next) => {
     }
 };
 
+export const signUp = async (req, res) => {
+    const { firstName, lastName, Email, Password, Phone_Number } = req.body;
 
-export const signUp = async (req,res, next) => {
-
-    const {firstName, lastName, Email, Password, Phone_Number } = req.body;
     try {
+        // Check if the email is already registered
+        const existingUser = await UserDetails.findOne({ Email_ID: Email });
 
-        const isValidEmail = await UserDetails.findOne({Email_ID: Email});
-        if(isValidEmail){
-            //return next( new ErrorHandler(400, "Email already in use"))
-            return res.status(404).json({status: false, message: "Email already in use."})
+        if (existingUser) {
+            if (existingUser.isVerified) {
+                return res.status(400).json({ status: false, message: "Email already in use." });
+            } else {
+                // If the user exists but is not verified, resend verification code
+                const encryptedPassword = await bcrypt.hash(Password, 10);
+                const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+                existingUser.verificationCode = code;
+                existingUser.Password = encryptedPassword;
+
+                const isEmailSent = await emailConfig({ code, Email });
+                if (!isEmailSent) {
+                    return res.status(500).json({
+                        status: false,
+                        message: "User created but Invalid Email Account, sending failed."
+                    });
+                }
+
+                const token = generateToken(
+                    { id: existingUser._id, uuid: existingUser.uuid, Email_ID: existingUser.Email_ID },
+                    res
+                );
+
+                await existingUser.save();
+                return res.status(201).json({
+                    status: true,
+                    message: "User registered successfully",
+                    data: token,
+                    Verification: code,
+                });
+            }
         }
-        
+
+        // Encrypt password
         const encryptedPassword = await bcrypt.hash(Password, 10);
 
-        const code = Math.floor(100000+ Math.random()*900000).toString();
+        // Generate verification code, unique ID, and nickname
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
         const uniqueId = nanoid();
-
-        // Generate unique nickname
         const username = await generateUniqueNickname(firstName);
 
-        var newUser = new UserDetails(
-            {
+        // Create new user
+        const newUser = new UserDetails({
             uuid: uniqueId,
             First_Name: firstName,
             Last_Name: lastName,
@@ -103,32 +132,46 @@ export const signUp = async (req,res, next) => {
             verificationCode: code,
             "userInfo.Phone_Number": Phone_Number,
             "userInfo.Nickname": username,
-            "userInfo.Profile_ImgURL": "https://placehold.co/150/orange/white?text=Profile"
+            "userInfo.Profile_ImgURL": "https://placehold.co/150/orange/white?text=Profile",
         });
 
-        sportsDefault.map((sport) => {
-            newUser.sportsInfo.push(sport)
-        })
-        
-        const isEmailSent  = await emailConfig({code, Email});
-        if (!isEmailSent ) {
-            // return next(new ErrorHandler(400, "User created but email sending failed"));
-            await UserDetails.findByIdAndDelete(newUser._id);
-            return res.status(404).json({status: false, message: "User created but Invalid Email Account, sending failed."})
+        // Add default sports information
+        sportsDefault.forEach((sport) => newUser.sportsInfo.push(sport));
+
+        // Send verification email
+        const isEmailSent = await emailConfig({ code, Email });
+        if (!isEmailSent) {
+            await UserDetails.findByIdAndDelete(newUser._id); // Cleanup
+            return res.status(500).json({
+                status: false,
+                message: "User created but Invalid Email Account, sending failed."
+            });
         }
-        const token =  generateToken({ id: newUser._id, uuid: newUser.uuid, Email_ID: newUser.Email_ID },res);
+
+        // Generate token and save user
+        const token = generateToken(
+            { id: newUser._id, uuid: newUser.uuid, Email_ID: newUser.Email_ID },
+            res
+        );
 
         await newUser.save();
-        console.log(`Step 6 Completed: User saved to database ${newUser.id}`);
-        
-        res.status(201).json({ status: true, message: "User registered successfully", data: token, Verification: code});
-    
+        console.log(`User created successfully: ${newUser._id}`);
+
+        res.status(201).json({
+            status: true,
+            message: "User registered successfully",
+            data: token,
+            Verification: code,
+        });
+
     } catch (error) {
         console.error("Sign-up error:", error.message);
-        // next(error.message);
-        await UserDetails.findByIdAndDelete(newUser._id);
-        
-        res.status(500).json({status: false, message: "Sign-up Route error"})
+
+        if (newUser && newUser._id) {
+            await UserDetails.findByIdAndDelete(newUser._id); // Cleanup if user was partially created
+        }
+
+        res.status(500).json({ status: false, message: "Sign-up Route error" });
     }
 };
 
