@@ -1,7 +1,7 @@
 import PostImage from '../../Model/ImageModel.js';
 import UserDetails from '../../Model/UserModelDetails.js';
 import { deleteFile } from '../../utilis/userUtils.js';
-import {HOST, PORT} from '../../env.js'
+import {HOST, PORT, IP} from '../../env.js'
 
 export const createPost = async (req, res) => {
     let URL = [];
@@ -25,9 +25,9 @@ export const createPost = async (req, res) => {
 
                     // Validate based on 'type' parameter
                     if (type === "image" || type === "event" && isImage) {
-                        URL.push(`${HOST}:${PORT}/Uploads/images/${file.filename}`);
+                        URL.push(`${IP}/Uploads/images/${file.filename}`);
                     } else if ((type === "video" || type === "reel" || type === "event") && isVideo) {
-                        URL.push(`${HOST}:${PORT}/Uploads/videos/${file.filename}`);
+                        URL.push(`${IP}/Uploads/videos/${file.filename}`);
                     } else {
                         // Invalid file type for the specified 'type'
                         deleteFile(file.path, isImage ? "image" : "video");

@@ -43,7 +43,7 @@ export const checkAndCreateDir = (dir) => {
 export const deleteFile = (filePath, fileType) => {
     // Extract the file name from the filePath (removes the base URL if present)
     console.log("filePath - ", filePath, ' // fileType ', fileType)
-    const extractedFileName = path.basename(filePath); 
+    const extractedFileName = path.basename(filePath);
     // Determine the correct file path based on file type
     let filePathLoc = '';
     

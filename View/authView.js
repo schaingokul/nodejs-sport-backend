@@ -77,7 +77,7 @@ export const adminUserDelete = async (req, res) => {
                     }
                 }
             }
-
+            
             // Optionally: Delete the user document after all file deletions
             await UserDetails.findByIdAndDelete(id);
         }
