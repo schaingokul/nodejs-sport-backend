@@ -72,6 +72,8 @@ export const myPost = async(req,res) => {
         // Simplify post details
         const postDetails = posts.map((post) => ({
             postId: post._id,
+            userName: userFound.userInfo.Nickname,
+            profile: userFound.userInfo.Profile_ImgURL,
             location: post.location,
             likes: post.likes.length,
             comments: post.comments.length,
@@ -83,8 +85,6 @@ export const myPost = async(req,res) => {
         const response = {
             id: userFound._id,
             uuid: userFound.uuid,
-            userName: userFound.userInfo.Nickname,
-            profile: userFound.userInfo.Profile_ImgURL,
             myPostKeys: postDetails,
         };
 

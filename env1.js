@@ -8,6 +8,7 @@ export const PORT = process.X_ZOHO_CATALYST_LISTEN_PORT || 4500;
 export const HOST = 'http://localhost';
 export const MONGO_URI = "mongodb+srv://schaingokul:schaingokul@cluster0.yrr9x.mongodb.net/sportsApp?retryWrites=true&w=majority&appName=Cluster0";
 export const IP = "http://localhost:4500"
+
 export const sportsDefault = [
     {
         "Sports_ProfileImage_URL": "https://placehold.co/150/orange/white?text=FootBall",

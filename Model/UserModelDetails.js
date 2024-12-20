@@ -89,6 +89,13 @@ const PlayForSchema = mongoose.Schema({
 },
 { _id: false });
 
+const chatSchema = new mongoose.Schema(
+  {
+    cid: { type: String },
+  },
+  { timestamps: true }
+);
+
 // Main User Schema
 const userDetailsSchema = new mongoose.Schema(
   {
@@ -103,6 +110,7 @@ const userDetailsSchema = new mongoose.Schema(
     followers: [followerSchema],
     myPostKeys: [{ type: String, default: [] }],     
     MyTeamBuild: [TeamBuildSchema],
+    chatList: [chatSchema],
     PlayFor: [PlayForSchema],
     isVerified: { type: Boolean, default: false },
     verificationCode: { type: String, default: "N/A" },

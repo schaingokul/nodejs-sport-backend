@@ -14,7 +14,7 @@ export const viewPostComments = async (req, res) => {
         }
         const { comments } = post; // Extract comments array
         // Map over comments to add user details
-        const commentsWithUserDetails = await Promise.all(
+        const data = await Promise.all(
              comments.map(async (comment) => {
                 const user = await UserDetails.findById(comment.commentBy);
                  return {
@@ -25,7 +25,7 @@ export const viewPostComments = async (req, res) => {
             })
         ); 
 
-        return res.status(200).json({status: true, message:`ViewAllComments`, data: {commentsWithUserDetails}});
+        return res.status(200).json({status: true, message:`ViewAllComments`, data});
     } catch (error) {
         sendErrorResponse(res, 500, "View Comments Failed to process the request.", error.message, "VIEW_COMMENT_ERROR")
     }
