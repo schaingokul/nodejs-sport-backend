@@ -1,0 +1,15 @@
+meta {
+  name: image
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{Port}}/api/auth/admin
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: 
+}

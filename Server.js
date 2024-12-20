@@ -13,7 +13,7 @@ import { PORT, HOST } from "./env.js";
 import { Server } from "socket.io";
 import http from 'http';
 import {getCoversation, sendMessage}  from "./Controller/Chat/userAppController.js";
-import {PostImage} from './Model/ImageModel.js';
+import PostImage from './Model/ImageModel.js';
 
 // import MessageRoute from './View/ChatView/messageRoute.js'
 // import userAppRoute from './View/ChatView/userAppRoute.js';
@@ -103,7 +103,7 @@ app.get("/image", async(req,res) => {
     try {
         // Find all posts that have URLs starting with 'http://localhost:4500/Uploads/images/'
         const posts = await PostImage.find({
-            "URL": { $elemMatch: { $regex: "^http://localhost:4500/Uploads/" } }
+            "URL": { $elemMatch: { $regex: "^https://sportspersonz.com/Uploads/" } }
         });
 
         if (!posts.length) {
