@@ -39,27 +39,33 @@ export const checkAndCreateDir = (dir) => {
     }
 };
 
-// File deletion function
-export const deleteFile = (filePath, fileType) => {
-    // Extract the file name from the filePath (removes the base URL if present)
-    console.log("filePath - ", filePath, ' // fileType ', fileType)
-    const extractedFileName = path.basename(filePath);
-    // Determine the correct file path based on file type
-    let filePathLoc = '';
-    
-    if (fileType === 'image') {
-        filePathLoc = path.join('Uploads', 'images', extractedFileName); // Correct file path
-    } else if (fileType === 'video') {
-        filePathLoc = path.join('Uploads', 'videos', extractedFileName); // Correct file path
+// production is for VPS Server
+// development is for Local Server
+
+// Set base directory based on environment
+const basePath = process.env.NODE_ENV === 'production'
+    ? '/var/www/nodejs-sport-backend/Uploads'   // Full path on VPS server
+    : 'Uploads';  // Local path for local development
+
+// Function to delete a file
+export const deleteFile = (filePath, fileType, uuid) => {
+    const extractedFileName = path.basename(filePath);  // Extract file name from path
+    let filePathLoc = "";
+
+    // Construct the correct path for deletion based on environment
+    if (fileType === "image") {
+        filePathLoc = path.join(basePath, uuid, 'images', extractedFileName);
+    } else if (fileType === "video") {
+        filePathLoc = path.join(basePath, uuid, 'videos', extractedFileName);
     } else {
-        console.log(`Invalid file type: ${fileType}`);
-        return; // Exit if file type is invalid
+        console.error(`Invalid file type: ${fileType}`);
+        return;
     }
 
     // Check if the file exists and delete it
     if (fs.existsSync(filePathLoc)) {
         try {
-            fs.unlinkSync(filePathLoc);
+            fs.unlinkSync(filePathLoc);  // Delete the file synchronously
             console.log(`File deleted: ${filePathLoc}`);
         } catch (error) {
             console.error(`Error deleting file: ${error.message}`);
@@ -69,26 +75,35 @@ export const deleteFile = (filePath, fileType) => {
     }
 };
 
+
 const special = '@';
+
 export const generateUniqueNickname = async (firstName) => {
-    // Fetch all nicknames that start with the given firstName
-    let username = firstName.toString().toLowerCase();
+    const MAX_ATTEMPTS = 1000; // Maximum number of retries to generate a unique username
+    let baseUsername = `${special}${firstName.toString().toLowerCase()}`;
+
+    // Fetch all nicknames that start with the base username
     const existingNicknames = await UserDetails.find(
-        { "userInfo.Nickname": { $regex: `^${username}` } },
+        { "userInfo.Nickname": { $regex: `^${baseUsername}` } },
         { "userInfo.Nickname": 1, _id: 0 }
     );
 
-    // Extract the nicknames into an array
+    // Extract the nicknames into a set for quick lookup
     const nicknameSet = new Set(existingNicknames.map(user => user.userInfo.Nickname));
 
-    let randomNumber = Math.floor(Math.random() * (username.length * 100)) + 1;
+    // Initialize a counter for uniqueness
     let counter = 1;
-    
-    // Generate a new unique nickname
-    while (nicknameSet.has(username)) {
-        username = `${special}${firstName.toString().toLowerCase()}${randomNumber}`;
+    let uniqueUsername = baseUsername;
+
+    // Increment the counter until a unique nickname is found or MAX_ATTEMPTS is reached
+    while (nicknameSet.has(uniqueUsername)) {
+        uniqueUsername = `${baseUsername}${counter}`;
         counter++;
+
+        if (counter > MAX_ATTEMPTS) {
+            throw new Error("Username should be unique. Unable to generate a unique nickname.");
+        }
     }
 
-    return username;
+    return uniqueUsername;
 };

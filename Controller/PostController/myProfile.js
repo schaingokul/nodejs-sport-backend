@@ -26,13 +26,13 @@ export const myProfile = async (req, res) => {
 
         // Simplify sportsInfo details with shortened property names
         const simplifiedSportsInfo = user.sportsInfo.map((sport) => ({
-            sp: sport.Sports_ProfileImage_URL,   
-            sURL: sport.Sports_PostImage_URL[0],  
-            sName: sport.Sports_Name,            
-            year: sport.Year_Playing,            
-            best: sport.BestAt,                   
-            matches: sport.Matches,              
-            sVURL: sport.Sports_videoImageURL[0], 
+            sp: sport.sp,   
+            sURL: sport.sURL[0],  
+            sName: sport.sName,            
+            year: sport.year,            
+            best: sport.best,                   
+            matches: sport.matches,              
+            sVURL: sport.sVURL[0], 
             isActive: sport.isActive,
             _id: sport._id,
         }));
@@ -92,4 +92,4 @@ export const myPost = async(req,res) => {
     } catch (error) {
         sendErrorResponse(res, 500, "My Post. Failed to process the request.", error.message, "MY_POST_CAUSES_ERROR")
     }
-}
+};

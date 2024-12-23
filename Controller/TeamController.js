@@ -303,8 +303,8 @@ Player Status: Accept or Decline Team Participation
 export const MyTeams = async (req, res) => {
     const {id} = req.user
     try {
-        const userDetails = await UserDetails.findById(id).lean().select("MyTeamBuild");
-        return res.status(200).json({ status: true, message: `MyTeams`, myTeams:userDetails  });
+        const MyTeams = await UserDetails.findById(id).lean().select("MyTeamBuild");
+        return res.status(200).json({ status: true, message: `MyTeams`, MyTeams  });
     } catch (error) {
         console.log(error.message)
         return res.status(200).json({ status: false, message: `MyTeams Causes Route Error: ${error.message}` }); 
@@ -315,8 +315,8 @@ export const MyCurrentTeams = async (req, res) => {
     const {id} = req.user
     const {teamid} = req.params
     try {
-        const userDetails = await UserDetails.findOne({_id: id, 'MyTeamBuild._id': teamid }).lean().select("MyTeamBuild");
-        return res.status(200).json({ status: true, message: `MyTeams ${userDetails.MyTeamBuild.Team_Name}`, TeamInfo: userDetails});
+        const MyCurrentTeam = await UserDetails.findOne({_id: id, 'MyTeamBuild._id': teamid }).lean().select("MyTeamBuild");
+        return res.status(200).json({ status: true, message: `MyTeams ${MyCurrentTeam.MyTeamBuild.Team_Name}`, MyCurrentTeam});
     } catch (error) {
         console.log(error.message)
         return res.status(200).json({ status: false, message: `Team PalyerStatus Causes Route Error: ${error.message}` }); 

@@ -6,6 +6,12 @@ import UserDetails from '../Model/UserModelDetails.js';
 import { deleteFile } from '../utilis/userUtils.js';
 import {getNotificationsForUser} from '../Controller/getNotificationContollers.js';
 import PostImage from '../Model/ImageModel.js';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 const router = express.Router();
 
@@ -34,60 +40,124 @@ export const adminUser = async(req,res) => {
 
 export const adminUserDelete = async (req, res) => {
     const { userId } = req.body;
+
     try {
-        // Loop through each user ID to delete associated data
-        for (const id of userId) {
-            const store = await UserDetails.findById(id);
-            if (!store) {
-                return res.status(404).json({ status: false, message: "User not found" });
+        const deletionTasks = userId.map(async (id) => {
+            const user = await UserDetails.findById(id);
+
+            if (!user) {
+                console.log(`User not found: ${id}`);
+                return { id, status: false, message: "User not found" };
             }
 
-            // Delete profile image if it exists
-            if (store?.userInfo?.Profile_ImgURL) {
-                await deleteFile(store?.userInfo?.Profile_ImgURL, 'image');
-            }
+            try {
+                const deletionPromises = [];
 
-            // Delete sports profile images if they exist
-            const sportsProfileImages = store.sportsInfo.map(file => file.Sports_ProfileImage_URL).filter(Boolean);
-            for (const image of sportsProfileImages) {
-                await deleteFile(image, 'image');
-            }
-
-            // Delete sports post images if they exist
-            for (const file of store.sportsInfo) {
-                for (const image of file.Sports_PostImage_URL || []) {
-                    await deleteFile(image, 'image');
-                }
-            }
-
-            // Delete sports video URLs if they exist
-            for (const file of store.sportsInfo) {
-                for (const video of file.Sports_videoImageURL || []) {
-                    await deleteFile(video, 'video');
-                }
-            }
-
-            // Delete post videos if they exist
-            for (const postId of store.myPostKeys) {
-                const post = await PostImage.findById(postId);
-                if (post?.URL) {
-                    for (const file of post.URL) {
-                        await deleteFile(file, 'image');
-                        await deleteFile(file, 'video');
+                // Delete associated post images
+                for (const postId of user.myPostKeys) {
+                    const post = await PostImage.findById(postId);
+                    if (post) {
+                        // Delete the PostImage document itself
+                        deletionPromises.push(PostImage.findByIdAndDelete(postId));
                     }
                 }
-            }
-            
-            // Optionally: Delete the user document after all file deletions
-            await UserDetails.findByIdAndDelete(id);
-        }
 
-        return res.status(200).json({ status: true, message: "User and associated files successfully deleted." });
+                // Wait for all deletions to complete
+                await Promise.all(deletionPromises);
+
+                // Delete user-specific folder
+                const userFolderPath = path.join(__dirname, `../Uploads/${user.uuid}`);
+                if (fs.existsSync(userFolderPath)) {
+                    fs.rmSync(userFolderPath, { recursive: true, force: true });
+                    console.log(`Deleted folder for user: ${user.uuid}`);
+                }
+
+                // Delete the user document
+                await UserDetails.findByIdAndDelete(id);
+
+                return { id, status: true, message: "User and associated files successfully deleted" };
+            } catch (error) {
+                console.error(`Error deleting user ${id}:`, error.message);
+                return { id, status: false, message: error.message };
+            }
+        });
+
+        const results = await Promise.all(deletionTasks);
+
+        const successCount = results.filter(result => result.status).length;
+        const failureCount = results.length - successCount;
+
+        return res.status(200).json({
+            status: true,
+            message: `${successCount} user(s) deleted successfully, ${failureCount} failed.`,
+            results,
+        });
     } catch (error) {
-        console.error(error.message);
+        console.error("Error deleting users:", error.message);
         return res.status(500).json({ status: false, message: "Error deleting user data.", error: error.message });
     }
 };
+
+/* old
+export const adminUserDelete = async (req, res) => {
+    const { userId } = req.body;
+
+    try {
+        const deletionTasks = userId.map(async (id) => {
+            const user = await UserDetails.findById(id);
+
+            if (!user) {
+                console.log(`User not found: ${id}`);
+                return { id, status: false, message: "User not found" };
+            }
+
+            try {
+                const deletionPromises = [];
+
+                // Delete associated post images
+                for (const postId of user.myPostKeys) {
+                    const post = await PostImage.findById(postId);
+                    if (post) {
+                        if (post.URL) {
+                            for (const file of post.URL) {
+                                await deleteFile(file, 'image');
+                                await deleteFile(file, 'video');
+                            }
+                        }
+                        // Delete the PostImage document itself
+                        deletionPromises.push(PostImage.findByIdAndDelete(postId));
+                    }
+                }
+
+                // Wait for all deletions to complete
+                await Promise.all(deletionPromises);
+
+                // Delete the user document
+                await UserDetails.findByIdAndDelete(id);
+
+                return { id, status: true, message: "User and associated files successfully deleted" };
+            } catch (error) {
+                console.error(`Error deleting user ${id}:`, error.message);
+                return { id, status: false, message: error.message };
+            }
+        });
+
+        const results = await Promise.all(deletionTasks);
+
+        const successCount = results.filter(result => result.status).length;
+        const failureCount = results.length - successCount;
+
+        return res.status(200).json({
+            status: true,
+            message: `${successCount} user(s) deleted successfully, ${failureCount} failed.`,
+            results,
+        });
+    } catch (error) {
+        console.error("Error deleting users:", error.message);
+        return res.status(500).json({ status: false, message: "Error deleting user data.", error: error.message });
+    }
+};*/
+
 
 router.get("/admin", adminUser);
 router.delete("/admin", adminUserDelete);

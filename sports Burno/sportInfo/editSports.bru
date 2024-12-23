@@ -5,13 +5,13 @@ meta {
 }
 
 patch {
-  url: {{Port}}/api/user/sports_edit/675c2bf223bb169030cc2e28
+  url: {{Port}}/api/user/sports_edit/67691fb995284fe51c58e584
   body: multipartForm
   auth: bearer
 }
 
 auth:bearer {
-  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NWMyYmYyMjNiYjE2OTAzMGNjMmUyNyIsInV1aWQiOiJTSWNCS1dpcU14Z3JkQlFYby1BYnciLCJFbWFpbF9JRCI6Imd1ZXN0dXNlcjVAZ21haWwuY29tIiwiaWF0IjoxNzM0MDkzODQzLCJleHAiOjE3MzQxODAyNDN9.scz2akgfz7gKqF1LR0usYMq9CM4Rr0I6VwN3FQC8H70
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NjkxZmI5OTUyODRmZTUxYzU4ZTU4MyIsInV1aWQiOiJ2NTdEWV9EVlYya25RUFVKckM2Q2YiLCJFbWFpbF9JRCI6Imd1ZXN0MUBnbWFpbC5jb20iLCJpYXQiOjE3MzQ5NDI2NzIsImV4cCI6MTczNTAyOTA3Mn0.25Tc20R_X4GoEh-Le2Ijhjld4pQduE8gmkFJsXQaR4I
 }
 
 body:json {
@@ -23,9 +23,11 @@ body:json {
 }
 
 body:multipart-form {
-  Sports_ProfileImage_URL: @file(C:\Users\schai\Downloads\colorful-beautiful-flowers-background-blossom-floral-bouquet-decoration-garden-flowers-plant-pattern-wallpapers-greeting-cards-postcards-design-wedding-invites.jpg)
-  Year_Playing: 5
-  BestAt: Backward
-  Matches: 6
-  Sports_Name: footballs
+  sp: @file(C:\Users\schai\Downloads\GOKU-HEROSCREEN-100424B.jpg)
+  sURL: @file(C:\Users\schai\Downloads\HEROSCREEN220524A.png)
+  sVURL: @file(C:\Users\schai\Downloads\React-Redux.mp4)
+  sName: footballs
+  year: 5
+  best: Backward
+  matches: 6
 }

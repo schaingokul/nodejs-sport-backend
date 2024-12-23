@@ -3,10 +3,12 @@ import UserDetails from '../../Model/UserModelDetails.js';
 import { deleteFile } from '../../utilis/userUtils.js';
 import {HOST, PORT, IP} from '../../env.js'
 
+
+
 export const createPost = async (req, res) => {
     let URL = [];
     try {
-        const { id: loginId } = req.user;
+        const { id: loginId , uuid: userUuid} = req.user;
         const { location, description , type} = req.body;
         
         const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys userInfo");
@@ -15,7 +17,7 @@ export const createPost = async (req, res) => {
             return res.status(404).json({status: false, message: "User not found" });
         }
         
-                // Process and validate uploaded files
+        // Process and validate uploaded files
         if (req?.files?.URL && req.files.URL.length > 0) {
             req.files.URL.forEach((file) => {
                 try {
@@ -25,17 +27,13 @@ export const createPost = async (req, res) => {
 
                     // Validate based on 'type' parameter
                     if (type === "image" || type === "event" && isImage) {
-                        URL.push(`${IP}/Uploads/images/${file.filename}`);
+                        URL.push(`${IP}/Uploads/${userUuid}/images/${file.filename}`);
                     } else if ((type === "video" || type === "reel" || type === "event") && isVideo) {
-                        URL.push(`${IP}/Uploads/videos/${file.filename}`);
+                        URL.push(`${IP}/Uploads/${userUuid}/videos/${file.filename}`);
                     } else {
                         // Invalid file type for the specified 'type'
-                        deleteFile(file.path, isImage ? "image" : "video");
-                        throw new Error(
-                            `Invalid file type: ${file.mimetype}. Expected ${
-                                type === "image" ? "images" : "videos"
-                            }.`
-                        );
+                        deleteFile(file.path, isImage ? "image" : "video", userUuid);
+                        throw new Error(`Invalid file type: ${file.mimetype}. Expected ${type === "image" ? "images" : "videos"}.`);
                     }
                 } catch (error) {
                     console.error(`File validation error: ${error.message}`);
@@ -73,20 +71,19 @@ export const createPost = async (req, res) => {
             description: newPost.description,
             type: newPost.type,
             URL: newPost.URL,
-        }
+        };
 
         res.status(201).json({ status: true, message: "Post added successfully!", info: response });
 
     } catch (error) {
-
         if (URL.length > 0 && error) {
             URL.forEach((filePath) => {
                 const fileType = filePath.includes("/images/") ? "image" : "video";
-                deleteFile(filePath, fileType);
+                deleteFile(filePath, fileType, userUuid); // Correct userUuid here
             });
         }
-        console.log("Posted Images are removed due to error");
-        console.log(error.message);
+        console.log("Posted Images are removed due to error: ", error.message);
+        
         res.status(500).json({ status: false, message: "An error occurred while posting & Posted Images are removed due to error", error: error.message });
     }
 };
@@ -94,7 +91,7 @@ export const createPost = async (req, res) => {
 export const deletePost = async (req, res) => {
 
     try {
-        const { id: loginId } = req.user;
+        const { id: loginId, uuid: userUuid } = req.user;
         const { id: postId } = req.params;
 
         // Fetch the user
@@ -119,7 +116,7 @@ export const deletePost = async (req, res) => {
             await Promise.all(
                 post.URL.map(async (filePath) => {
                     const fileType = filePath.includes("/images/") ? "image" : "video";
-                    deleteFile(filePath, fileType);
+                    deleteFile(filePath, fileType, userUuid);
                 })
             );
         }

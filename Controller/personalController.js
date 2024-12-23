@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { findUser, deleteFile , generateUniqueNickname} from '../utilis/userUtils.js';
 import { PORT, HOST, IP } from '../env.js';
+import { error } from 'console';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,47 +40,52 @@ export const viewUserProfile = async(req,res) => {
     }
 };
 
+
 export const SaveUserProfile = async (req, res) => {
-    const { uuid } = req.user;
+    const { uuid: userUuid } = req.user;
     const saveFields = req.body;
 
     try {
         // Check if the user exists
-        const user = await UserDetails.findOne({ uuid });
+        const user = await UserDetails.findOne({ uuid: userUuid });
         if (!user) {
             return res.status(404).json({ status: false, message: "User not found" });
         }
 
+        // Validate nickname uniqueness
         if (saveFields.NickName) {
-            
-            saveFields.NickName = Nickname; // Update NickName in saveFields
+            try {
+                saveFields.NickName = await generateUniqueNickname(saveFields.NickName);
+            } catch (error) {
+                console.error("Nickname error:", error.message);
+                return res.status(400).json({ status: false, message: error.message });
+            }
         }
 
-        
-
-        // Handle profile image
+        // Handle profile image upload
         let profileImageUrl = "";
         if (req?.files?.Profile_ImgURL?.length > 0) {
-            profileImageUrl = `${IP}/Uploads/images/${req.files.Profile_ImgURL[0].filename}`;
+            const file = req.files.Profile_ImgURL[0];
+            profileImageUrl = `${IP}/Uploads/${userUuid}/images/${file.filename}`;
 
-            // Delete the existing image if any
-            if (user.userInfo?.Profile_ImgURL) {
-                const existingFileName = path.basename(user.userInfo.Profile_ImgURL);
-                await deleteFile(existingFileName, "image");
+            // Delete the existing image if it's not the placeholder
+            if (user.userInfo?.Profile_ImgURL !== "https://placehold.co/150/orange/white?text=Profile") {
+                const existingImage = user.userInfo?.Profile_ImgURL;
+                await deleteFile(existingImage, "image", userUuid);
             }
         }
 
         // Prepare update object
         const saveObj = {};
         if (typeof saveFields === "object" && saveFields !== null) {
-            Object.keys(saveFields).forEach(field => {
+            Object.keys(saveFields).forEach((field) => {
                 saveObj[`userInfo.${field}`] = saveFields[field];
             });
         } else {
             return res.status(400).json({ status: false, message: "Invalid data format" });
         }
 
-        // Add the profile image URL to the update object
+        // Add profile image URL to update object
         if (profileImageUrl) {
             saveObj["userInfo.Profile_ImgURL"] = profileImageUrl;
         }
@@ -91,198 +97,302 @@ export const SaveUserProfile = async (req, res) => {
 
         // Update user in the database
         const updatedUser = await UserDetails.findOneAndUpdate(
-            { uuid },
+            { uuid: userUuid },
             { $set: saveObj },
             { new: true }
         ).select("userInfo");
 
-        res.status(200).json({ status: true, message: "User profile updated successfully", updateInformation: updatedUser });
+        res.status(200).json({ status: true, message: "User profile updated successfully", updateInformation: updatedUser, });
     } catch (error) {
         console.error("Error updating user profile:", error.message);
-        res.status(500).json({ status: false, message: error.message });
+
+        // Delete newly uploaded profile image on error
+        if (req?.files?.Profile_ImgURL?.length > 0) {
+            const file = req.files.Profile_ImgURL[0];
+            console.error("Cleaning up uploaded file due to error:", file.filename);
+            await deleteFile(file.filename, "image", userUuid);
+        }
+
+        res.status(500).json({ status: false, message: "An unexpected error occurred while updating the profile", });
     }
 };
+
 
 export const sportsView = async(req,res) => {
-    const {uuid} = req.user;
+    const {uuid: userUuid} = req.user;
     try {
-        const sportsInfo = await UserDetails.findOne({uuid}).select("sportsInfo")
-        console.log(sportsInfo.sportsInfo[0]);
-        const message = sportsInfo.sportsInfo.length > 0 ? "ViewSports Success" : "No sports found.";
+        const user = await UserDetails.findOne({uuid: userUuid})
+        const simplifiedSportsInfo = user.sportsInfo.map((sport) => ({
+            sp: sport.sp,   
+            sURL: sport.sURL[0],  
+            sName: sport.sName,            
+            year: sport.year,            
+            best: sport.best,                   
+            matches: sport.matches,              
+            sVURL: sport.sVURL[0], 
+            isActive: sport.isActive,
+            _id: sport._id,
+        }));
 
-        res.status(200).json({status: true, message, UserInfo: sportsInfo});
+
+        const message = user.sportsInfo.length > 0 ? "ViewSports Success" : "No sports found.";
+
+        res.status(200).json({status: true, message, UserInfo: simplifiedSportsInfo});
     } catch (error) {
-        res.status(500).json({status: false, message: "ViewSports Causes Route Error"});
+        res.status(500).json({status: false, message: "ViewSports Causes Route Error", error: error.message});
     }
 };
 
-export const sportsAdd = async(req,res) => {
-    const {uuid} = req.user;
-    const {Sports_Name, Year_Playing, BestAt, Matches} = req.body;
-    try { //Sports_ImgURL Video_ImgURL
+export const sportsAdd = async (req, res) => {
+    const { uuid: userUuid } = req.user;
+    const { sName, year, best, matches } = req.body;
 
-        let Sports_ProfileImage_URL = '';
-        let Sports_PostImage_URL = [];
-        let Sports_videoImageURL = [];
+    let sp = '';
+    let sURL = [];
+    let sVURL = [];
 
-        if (req?.files?.Sports_ProfileImage_URL?.[0]) {
-            Sports_ProfileImage_URL = `${IP}/Uploads/images/${req.files.Sports_ProfileImage_URL[0].filename}`;
+    try {
+        // Handling image uploads
+        if (req?.files?.sp?.[0]) {
+            sp = `${IP}/Uploads/${userUuid}/images/${req.files.sp[0].filename}`;
         }
 
-        if (req?.files?.Sports_PostImage_URL?.length > 0) {
-            Sports_PostImage_URL = req.files.Sports_PostImage_URL.map(file => `${IP}/Uploads/images/${file.filename}`);
+        // Handling post image uploads
+        if (req?.files?.sURL?.length > 0) {
+            sURL = req.files.sURL.map(file => `${IP}/Uploads/${userUuid}/images/${file.filename}`);
         }
 
-        if (req?.files?.Sports_videoImageURL?.length > 0) {
-            Sports_videoImageURL = req.files.Sports_videoImageURL.map(file => `${IP}/Uploads/videos/${file.filename}`);
+        // Handling video uploads
+        if (req?.files?.sVURL?.length > 0) {
+            sVURL = req.files.sVURL.map(file => `${IP}/Uploads/${userUuid}/videos/${file.filename}`);
         }
-        
-        const user = await UserDetails.findOne({ uuid });
-        
+
+        // Check if user exists
+        const user = await UserDetails.findOne({ uuid: userUuid });
         if (!user) {
-            return res.status(404).json({ status: false, message: "User not found" });
+            const error = new Error("User not found" );
+            error.statusCode = 404; // Set the custom status code
+            throw error;
         }
 
-        const existingSport = user.sportsInfo.find(sport => sport.Sports_Name.toLowerCase() === Sports_Name.toLowerCase());
-          if (existingSport) {
-            return res.status(404).json({ status: false, message: "Sport with this name already exists." });
-          }
+        // Check if the sport already exists
+        const existingSport = user.sportsInfo.find(sport => sport.sName.toLowerCase() === sName.toLowerCase());
+        if (existingSport) {
+            const error = new Error("Sport with this name already exists.");
+            error.statusCode = 400; // Set the custom status code
+            throw error;
 
+        }
+
+        // Create new sports entry
         const newSports = {
-            Sports_ProfileImage_URL, 
-            Sports_Name : Sports_Name.toLowerCase(),
-            Year_Playing,
-            BestAt,
-            Matches,
-            Sports_PostImage_URL,
-            Sports_videoImageURL,
+            sp,
+            sName: sName.toLowerCase(),
+            year,
+            best,
+            matches,
+            sURL,
+            sVURL,
             isActive: false
-        }
+        };
+
+        // Save the new sport to the user's sportsInfo
         user.sportsInfo.push(newSports);
         await user.save();
-        const sendInfo = await UserDetails.findOne({ uuid: user.uuid }).select("uuid _id userInfo.Nickname userInfo.Profile_ImgURL");
 
-        res.status(200).json({status: true,  message: "Sports Details added successfully.", sport: newSports, sendInfo });
-        
+        // Respond with the new sports details
+        return res.status(200).json({ status: true, message: "Sports Details added successfully.", sport: newSports });
+
     } catch (error) {
-        if(error) {
-            if (req?.files?.Sports_ProfileImage_URL) {
-                deleteFile(path.basename(req?.files?.Sports_ProfileImage_URL), "image");
-            }
-    
-            // Clean up uploaded files if an error occurs
-            if (req?.files?.Sports_PostImage_URL) {
-                req.files.Sports_PostImage_URL.forEach(file =>
-                    deleteFile(`Uploads/images/${file.filename}`, "image")
-                );
-            }
-            if (req?.files?.Sports_videoImageURL) {
-                req.files.Sports_videoImageURL.forEach(file =>
-                    deleteFile(`Uploads/videos/${file.filename}`, "video")
-                );
-            }
-           }
+        console.error("Error adding sports details:", error.message);
 
-        res.status(500).json({status: false, message: `Sports Details Causes Route Error, ${error.message}`});
+        // Clean up uploaded files in case of error (using finally block)
+        try {
+            // Check if files are uploaded and delete them
+            if (req?.files?.sp) {
+                await deleteFile(req.files.sp[0].filename, "image", userUuid);
+            }
 
+            if (req?.files?.sURL) {
+                for (let file of req.files.sURL) {
+                    await deleteFile(file.filename, "image", userUuid);
+                }
+            }
 
+            if (req?.files?.sVURL) {
+                for (let file of req.files.sVURL) {
+                    await deleteFile(file.filename, "video", userUuid);
+                }
+            }
+        } catch (deleteError) {
+            console.error("Error deleting uploaded files:", deleteError.message);
+        }
+
+        // Return a generic error message if something goes wrong
+        return res.status(500).json({ status: false, message: `Sports Details Route Error: ${error.message}` });
     }
 };
 
-export const sportsEdit = async(req, res) => {
-    const {sportid} = req.params;
-    const {uuid} = req.user;
-    const updateFields = {...req.body}; 
-    try {
+export const sportsEdit = async (req, res) => {
+    const { sportid } = req.params;
+    const { uuid: userUuid } = req.user;
+    const updateFields = { ...req.body };
 
-        const user = await UserDetails.findOne({ uuid });
+    try {
+        // Find the user
+        const user = await UserDetails.findOne({ uuid: userUuid });
         if (!user) {
-            return res.status(404).json({ status: false, message: "User not found." });
+            const error = new Error("User not found.");
+            error.statusCode = 404; // User not found should return a 404 status code
+            throw error;
         }
 
+        // Find the sport to update
         const sport = user.sportsInfo.find(sport => sport._id.toString() === sportid);
         if (!sport) {
-            return res.status(404).json({ status: false, message: "Sport not found." });
+            const error = new Error("Sport not found.");
+            error.statusCode = 404; // Sport not found should return a 404 status code
+            throw error;
         }
 
-        if (updateFields.Sports_Name) {
+        // Check if the new sport name already exists (excluding the current sport)
+        if (updateFields.sName) {
             const existingSport = user.sportsInfo.find(
-                s => s.Sports_Name.toLowerCase() === updateFields.Sports_Name.toLowerCase() && s._id.toString() !== sportid
+                s => s.sName.toLowerCase() === updateFields.sName.toLowerCase() && s._id.toString() !== sportid
             );
             if (existingSport) {
-                return res.status(404).json({ status: false, message: "Sport with this name already exists." });
+                const error = new Error("Sport with this name already exists.");
+                error.statusCode = 400; // Conflict status code for duplicate name
+                throw error;
             }
         }
 
         const updateObj = {};
 
-        // Handle profile image update
-        if (req?.files?.Sports_ProfileImage_URL?.[0]) {
-            if (sport.Sports_ProfileImage_URL) {
-                deleteFile(path.basename(sport.Sports_ProfileImage_URL), "image");
+        // Handle profile image update (sp)
+        if (req?.files?.sp?.[0]) {
+            if (sport.sp) {
+                await deleteFile(sport.sp[0], "image", userUuid); // Delete existing profile image
             }
-            updateObj['sportsInfo.$.Sports_ProfileImage_URL'] = `${IP}/Uploads/images/${req.files.Sports_ProfileImage_URL[0].filename}`;
+            updateObj['sportsInfo.$.sp'] = `${IP}/Uploads/${userUuid}/images/${req.files.sp[0].filename}`;
         }
 
-        // Handle post image updates
-        if (req?.files?.Sports_PostImage_URL?.length > 0) {
-            sport.Sports_PostImage_URL.forEach(oldPath => deleteFile(path.basename(oldPath), "image"));
-            updateObj['sportsInfo.$.Sports_PostImage_URL'] = req.files.Sports_PostImage_URL.map(file => `${IP}/Uploads/images/${file.filename}`);
+        // Handle post image updates (sURL)
+        if (req?.files?.sURL?.length > 0) {
+            sport.sURL.forEach(oldPath => deleteFile(oldPath, "image", userUuid)); // Delete existing post images
+            updateObj['sportsInfo.$.sURL'] = req.files.sURL.map(file => `${IP}/Uploads/${userUuid}/images/${file.filename}`);
         }
 
-        // Handle video image updates
-        if (req?.files?.Sports_videoImageURL?.length > 0) {
-            sport.Sports_videoImageURL.forEach(oldPath => deleteFile(path.basename(oldPath), "video"));
-            updateObj['sportsInfo.$.Sports_videoImageURL'] = req.files.Sports_videoImageURL.map(file => `${IP}/Uploads/videos/${file.filename}`);
+        // Handle video image updates (sVURL)
+        if (req?.files?.sVURL?.length > 0) {
+            sport.sVURL.forEach(oldPath => deleteFile(oldPath, "video", userUuid)); // Delete existing video images
+            updateObj['sportsInfo.$.sVURL'] = req.files.sVURL.map(file => `${IP}/Uploads/${userUuid}/videos/${file.filename}`);
         }
 
-        // Dynamically update additional fields
+        // Dynamically update other fields (sName, year, best, etc.)
         Object.keys(updateFields).forEach(field => {
-            updateObj[`sportsInfo.$.${field}`] = updateFields[field];
+            if (field !== 'sName') { // To avoid modifying the name twice if it's present
+                updateObj[`sportsInfo.$.${field}`] = updateFields[field];
+            }
         });
 
+        // Update the user's sports info
         const userUpdate = await UserDetails.findOneAndUpdate(
-            { uuid, "sportsInfo._id": sportid },
+            { uuid: userUuid, "sportsInfo._id": sportid },
             { $set: updateObj },
             { new: true }
         ).select("sportsInfo");
 
         res.status(200).json({ status: true, message: "Sport updated successfully.", sport: userUpdate });
+
     } catch (error) {
-        res.status(500).json({status: false, message: `Updates Causes Route Error ${error.message}`});
+        // Clean up uploaded files in case of error
+        try {
+            if (req?.files?.sp) {
+                await deleteFile(req.files.sp[0].filename, "image", userUuid);
+            }
+
+            if (req?.files?.sURL) {
+                for (let file of req.files.sURL) {
+                    await deleteFile(file.filename, "image", userUuid);
+                }
+            }
+
+            if (req?.files?.sVURL) {
+                for (let file of req.files.sVURL) {
+                    await deleteFile(file.filename, "video", userUuid);
+                }
+            }
+        } catch (deleteError) {
+            console.error("Error deleting uploaded files:", deleteError.message);
+        }
+
+        // Respond with error details
+        const statusCode = error.statusCode || 500; // Use custom status code or default to 500
+        res.status(statusCode).json({ status: false, message: error.message });
     }
 };
 
-export const sportsClear = async(req, res) => {
-    const {sportid} = req.params;
-    const {uuid} = req.user;
+export const sportsClear = async (req, res) => {
+    const { sportid } = req.params;
+    const { uuid: userUuid } = req.user;
+
     try {
-        const user = await UserDetails.findOne({ uuid });
+        // Find the user by UUID
+        const user = await UserDetails.findOne({ uuid: userUuid });
         if (!user) {
             return res.status(404).json({ status: false, message: "User not found." });
         }
 
+        // Find the sport to be deleted
         const sport = user.sportsInfo.find(s => s._id.toString() === sportid);
         if (!sport) {
             return res.status(404).json({ status: false, message: "Sport not found." });
         }
 
-        if (sport.Sports_ProfileImage_URL) {
-            deleteFile(path.basename(sport.Sports_ProfileImage_URL), "image");
+        // Delete the profile image (if exists)
+        if (sport.sp) {
+            try {
+                await deleteFile(sport.sp[0], "image", userUuid);  // Handle single image deletion safely
+            } catch (error) {
+                console.error("Error deleting profile image:", error.message);
+            }
         }
 
-        sport.Sports_PostImage_URL.forEach(file => deleteFile(path.basename(file), "image"));
-        sport.Sports_videoImageURL.forEach(file => deleteFile(path.basename(file), "video"));
+        // Delete all post images (sURL)
+        if (sport.sURL?.length > 0) {
+            for (const file of sport.sURL) {
+                try {
+                    await deleteFile(file, "image", userUuid);  // Handle multiple image deletions
+                } catch (error) {
+                    console.error("Error deleting post image:", error.message);
+                }
+            }
+        }
 
+        // Delete all video files (sVURL)
+        if (sport.sVURL?.length > 0) {
+            for (const file of sport.sVURL) {
+                try {
+                    await deleteFile(file, "video", userUuid);  // Handle multiple video deletions
+                } catch (error) {
+                    console.error("Error deleting video file:", error.message);
+                }
+            }
+        }
+
+        // Remove the sport from the user's sportsInfo
         await UserDetails.findOneAndUpdate(
-            { uuid },
+            { uuid: userUuid },
             { $pull: { sportsInfo: { _id: sportid } } },
             { new: true }
         );
 
-        res.status(200).json({status: true,  message: "Sport removed successfully"});
+        res.status(200).json({ status: true, message: "Sport removed successfully" });
+
     } catch (error) {
-        res.status(500).json({status: false, message: "Updates Causes Route Error"});
+        console.error("Error during sport removal:", error.message);
+        res.status(500).json({ status: false, message: "Failed to remove sport", error: error.message });
     }
 };
 

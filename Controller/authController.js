@@ -103,7 +103,6 @@ export const signUp = async (req, res) => {
                     { id: existingUser._id, uuid: existingUser.uuid, Email_ID: existingUser.Email_ID },
                     res
                 );
-
                 await existingUser.save();
                 return res.status(201).json({
                     status: true,
@@ -120,7 +119,8 @@ export const signUp = async (req, res) => {
         // Generate verification code, unique ID, and nickname
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const uniqueId = nanoid();
-        const username = await generateUniqueNickname(firstName);
+
+        const nickname = await generateUniqueNickname(firstName);
 
         // Create new user
         const newUser = new UserDetails({
@@ -131,7 +131,7 @@ export const signUp = async (req, res) => {
             Password: encryptedPassword,
             verificationCode: code,
             "userInfo.Phone_Number": Phone_Number,
-            "userInfo.Nickname": username,
+            "userInfo.Nickname": nickname,
             "userInfo.Profile_ImgURL": "https://placehold.co/150/orange/white?text=Profile",
         });
 
@@ -157,17 +157,12 @@ export const signUp = async (req, res) => {
         await newUser.save();
         console.log(`User created successfully: ${newUser._id}`);
 
-        res.status(201).json({
-            status: true,
-            message: "User registered successfully",
-            data: token,
-            Verification: code,
-        });
+        res.status(201).json({ status: true, message: "User registered successfully", data: token, Verification: code, });
 
     } catch (error) {
         console.error("Sign-up error:", error.message);
 
-        if (newUser && newUser._id) {
+        if (newUser.length > 0 && newUser._id) {
             await UserDetails.findByIdAndDelete(newUser._id); // Cleanup if user was partially created
         }
 
@@ -263,7 +258,6 @@ export const verifycationCode = async (req, res) => {
         res.status(500).json({status: false, message: "Reset password Route error"})
     }
 };
-
 
 export const resetPassword = async (req, res) => {
     const {Password} = req.body;

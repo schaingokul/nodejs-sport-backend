@@ -99,55 +99,9 @@ app.get("/", (req,res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.get("/image", async(req,res) => {
-    try {
-        // Find all posts that have URLs starting with 'http://localhost:4500/Uploads/images/'
-        const posts = await PostImage.find({
-            "URL": { $elemMatch: { $regex: "^https://sportspersonz.com/Uploads/" } }
-        });
-
-        if (!posts.length) {
-            return res.status(404).json({ message: 'No posts found with the old URL format.' });
-        }
-
-        // Loop through each post and update the URLs in the array
-        for (const post of posts) {
-            // Map through the URL array and replace the old base URL with the new one
-            const updatedUrls = post.URL.map(url => {
-                if (url.startsWith('http://localhost:4500/Uploads/')) {
-                    // Replace the old URL base with the new one
-                    return url.replace('http://localhost:4500/Uploads/', 'https://sportspersonz.com/Uploads/');
-                }
-                return url; // Return URL as is if it doesn't match the old base URL
-            });
-
-            // Update the post document with the new URL array
-            post.URL = updatedUrls;
-            await post.save(); // Save the updated post document
-        }
-
-        console.log('Image URLs updated successfully.');
-        return res.status(200).json({ message: 'Image URLs updated successfully.' });
-
-    } catch (error) {
-        console.error('Error updating image URLs in posts:', error);
-        return res.status(500).json({ message: 'Error updating image URLs', error: error.message });
-    }
-});
-
 
 /* ------------------------------------------ http://:localhost:4500 ------------------------------------------ */ 
-server.listen(PORT, async () => {
-    try {
-        await connectDB();
-        console.log(`Server is running on ${PORT}`);
-    } catch (error) {
-        console.log(`Server failed to connect to database: ${error.message}`);
-    }
-});
-
-/* --------------------------------------------- Hositing Server --------------------------------------------- */ 
-// app.listen(PORT, HOST.replace("http://", ""), async () => {
+// server.listen(PORT, async () => {
 //     try {
 //         await connectDB();
 //         console.log(`Server is running on ${PORT}`);
@@ -155,6 +109,16 @@ server.listen(PORT, async () => {
 //         console.log(`Server failed to connect to database: ${error.message}`);
 //     }
 // });
+
+/* --------------------------------------------- Hositing Server --------------------------------------------- */ 
+app.listen(PORT, HOST.replace("http://", ""), async () => {
+    try {
+        await connectDB();
+        console.log(`Server is running on ${PORT}`);
+    } catch (error) {
+        console.log(`Server failed to connect to database: ${error.message}`);
+    }
+});
 
 /*app.use('/api/message', MessageRoute);
 app.use('/api/user', userAppRoute);*/

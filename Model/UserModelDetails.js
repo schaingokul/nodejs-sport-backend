@@ -29,13 +29,13 @@ export const certificateInfoSchema = new mongoose.Schema(
 // Sports Information Subdocument Schema
 export const sportInfoSchema = new mongoose.Schema(
   {
-    Sports_ProfileImage_URL: { type: String },
-    Sports_PostImage_URL: { type: [String] }, // Sports Image URL
-    Sports_Name: { type: String, required: true, set: (value) => value.toLowerCase() }, // Game's Sports Name
-    Year_Playing: { type: String, required: true, min: 0  }, // Years of Experience
-    BestAt: { type: String, required: true }, // Best Position
-    Matches: { type: String, required: true , min: 0 }, // Matches Played
-    Sports_videoImageURL: { type: [String] }, // Video URL
+    sp: { type: String },
+    sURL: { type: [String] }, // Sports Image URL
+    sName: { type: String, required: true, set: (value) => value.toLowerCase() }, // Game's Sports Name
+    year: { type: String, required: true, min: 0  }, // Years of Experience
+    best: { type: String, required: true }, // Best Position
+    matches: { type: String, required: true , min: 0 }, // Matches Played
+    sVURL: { type: [String] }, // Video URL
     isActive: { type: Boolean, default: false },
     Certificate: certificateInfoSchema // Active State
   },

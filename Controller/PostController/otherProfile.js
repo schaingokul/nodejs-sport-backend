@@ -25,15 +25,15 @@ export const otherProfile = async (req, res) => {
             URL: post.URL[0], // Convert URL array to single string
         }));
 
-        // Simplify sportsInfo details with shortened property names
-        const simplifiedSportsInfo = user.sportsInfo.map((sport) => ({
-            sp: sport.Sports_ProfileImage_URL,   
-            sURL: sport.Sports_PostImage_URL[0],  
-            sName: sport.Sports_Name,            
-            year: sport.Year_Playing,            
-            best: sport.BestAt,                   
-            matches: sport.Matches,              
-            sVURL: sport.Sports_videoImageURL[0], 
+         // Simplify sportsInfo details with shortened property names
+         const simplifiedSportsInfo = user.sportsInfo.map((sport) => ({
+            sp: sport.sp,   
+            sURL: sport.sURL[0],  
+            sName: sport.sName,            
+            year: sport.year,            
+            best: sport.best,                   
+            matches: sport.matches,              
+            sVURL: sport.sVURL[0], 
             isActive: sport.isActive,
             _id: sport._id,
         }));
