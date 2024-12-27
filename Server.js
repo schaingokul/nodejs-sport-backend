@@ -48,9 +48,10 @@ app.use('/chat', userAppRoute);
 const socketIP = "https://sportspersonz.com";
 
 const io = new Server(server, {
-    cors : {
-        origin:"*",
-        methods:["GET", "POST"],
+    cors: {
+        origin: "https://sportspersonz.com",  // Replace with your React Native app's URL
+        methods: ["GET", "POST"],
+        credentials: true
     },
 });
 
