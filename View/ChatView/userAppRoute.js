@@ -1,10 +1,20 @@
 import express from 'express';
 import protectRoute from '../../middleware/ProtectRoute.js';
-import { getUsersForSidebar, chatSearch } from '../../Controller/Chat/userAppController.js';
+import {  chatSearch } from '../../Controller/Chat/userAppController.js';
+import Message from '../../Model/ChatModel/MessageModel.js';
 
 const router = express.Router();
 
-router.get("/", protectRoute, getUsersForSidebar);
 router.get("/search", protectRoute, chatSearch);
+
+router.get("/chat-data/:id", async(req,res) => {
+    const {id} = req.params;
+    try {
+        const viewMessages = await Message.find({cid: id}).sort({createdAt: -1});
+        res.status(200).json({status: true, message: "Successfully Fetched", viewMessages})     
+    } catch (error) {
+        res.status(500).json({status: false, message: "Failed to Fetched"})     
+    }
+});
 
 export default router;

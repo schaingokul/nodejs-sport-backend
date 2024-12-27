@@ -60,6 +60,18 @@ const followerSchema = new mongoose.Schema(
   { _id: false } 
 );
 
+const matchRequestSchema = new mongoose.Schema(
+  {
+    reqTo: { type: String, required: true }, // Opponent Team ID
+    reqBy: { type: String, required: true }, // Requesting Team ID
+    status: { type: String, enum: ["pending", "accepted", "declined"], default: "pending" },
+    matchDetails: { type: String }, // Match ID or Details
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+  },
+  { _id: true }
+);
+
 const playersListSchema = mongoose.Schema({
   Player_id:{type : String, required :true},
   Position: {type : String, required :true},
@@ -74,7 +86,8 @@ const TeamBuildSchema = mongoose.Schema({
   Sports_Name:{type : String, required :true},
   TotalPlayers:{type : String, required :true, default: "0"},
   playersList:[playersListSchema],
-  isReady:{type : Boolean, required :true, default: false}
+  isReady:{type : Boolean, required :true, default: false},
+  matchRequests: [matchRequestSchema] 
 },
 { _id: true });
 
@@ -96,6 +109,16 @@ const chatSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const matchHistorySchema = new mongoose.Schema(
+  {
+    matchId: { type: String, required: true },
+    opponentTeam: { type: String, required: true }, // Opponent Team Name
+    result: { type: String, enum: ["win", "loss", "draw", "pending"], default: "pending" },
+    date: { type: Date, required: true }
+  },
+  { _id: true }
+);
+
 // Main User Schema
 const userDetailsSchema = new mongoose.Schema(
   {
@@ -105,12 +128,14 @@ const userDetailsSchema = new mongoose.Schema(
     Email_ID: { type: String, required: true },
     Password: { type: String, required: true },
     userInfo: userInfoSchema,
+    athletic: {type: String},
     sportsInfo: [sportInfoSchema],
     following: [followingSchema],
     followers: [followerSchema],
     myPostKeys: [{ type: String, default: [] }],     
     MyTeamBuild: [TeamBuildSchema],
     chatList: [chatSchema],
+    teamMatchHistory: [matchHistorySchema],
     PlayFor: [PlayForSchema],
     isVerified: { type: Boolean, default: false },
     verificationCode: { type: String, default: "N/A" },

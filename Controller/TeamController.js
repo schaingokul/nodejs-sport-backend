@@ -1,10 +1,12 @@
 import UserDetails from "../Model/UserModelDetails.js";
+import { mergeSort } from "../utilis/TeamAlgorithm.js";
 
 export const buildTeam = async(req,res) => {
     const {id: userId, uuid: userUuid} = req.user;
     const {Team_Name, Sports_Name, TotalPlayers, playersList} = req.body;
 
-    try {   
+    try {   let createField = {};
+
         // Fetch current user by ID
         const currentUser = await UserDetails.findById(userId)
         if (!currentUser) {
@@ -46,6 +48,8 @@ export const buildTeam = async(req,res) => {
             return res.status(200).json({ status: false, message: `The following player IDs are missing: ${missingPlayers.join(", ")}`});
         }
 
+        playersList = mergeSort(playersList);
+
         // Prepare a list of players to add to the team
         const local = playersList.map(player => {
             return {
@@ -62,7 +66,7 @@ export const buildTeam = async(req,res) => {
 
         // Create a new team and save it to the database
         const createTeam = ({
-            createdBy: uuid,
+            createdBy: userUuid,
             Team_Name: Team_Name,
             Sports_Name: Sports_Name,
             TotalPlayers: TotalPlayers,
@@ -75,7 +79,7 @@ export const buildTeam = async(req,res) => {
         const newTeamid = updatedUser.MyTeamBuild[updatedUser.MyTeamBuild.length - 1]._id;
 
         const sendplayerDetails = {
-            createdBy: uuid,
+            createdBy: userUuid,
             Team_Id: newTeamid,
             Team_Name: Team_Name,
             Sports_Name: Sports_Name,
@@ -147,15 +151,217 @@ export const DeleteTeam = async(req,res) => {
         res.status(200).json({status: false, message: `Delete Team Causes Route Error: ${error.message}`});
     }
 };
-
+/*
 export const UpdateTeam = async (req, res) => {
-    const { id, uuid } = req.user; // Extract user ID from request
+    const { id, uuid : userUuid} = req.user; // Extract user ID from request
     const { teamIdToFind } = req.params; // Extract team ID from the request params
     const { Team_Name, Sports_Name, TotalPlayers, playersList } = req.body; // Extract team details and players from the request body
 
     try {
         // Step 1: Fetch the user's data from the database using their ID
-        const user = await UserDetails.findById(id).select("First_Name Last_Name MyTeamBuild PlayFor");
+        const user = await UserDetails.findById(id).select("uuid First_Name Last_Name MyTeamBuild PlayFor");
+        if (!user) {
+            return res.status(200).json({ status: false, message: "User not found." });
+        }
+
+        // Step 2: Create hash maps to quickly find teams and players by their IDs
+        const MyTeamBuildHashMap = createHashMap(user.MyTeamBuild, "_id"); // HashMap for teams in "MyTeamBuild"
+        console.log("MyTeamBuildHashMap", MyTeamBuildHashMap)
+        const PlayForHashMap = createHashMap(user.PlayFor, "Team_Id"); // HashMap for players in "PlayFor"
+        console.log("PlayForHashMap", PlayForHashMap)
+        // Step 3: Find the current team and players based on the teamIdToFind
+        const currentTeam = findInHashMap(MyTeamBuildHashMap, teamIdToFind);
+
+        // const currentPlayers = findInHashMap(PlayForHashMap, teamIdToFind);
+        const oldTeam = user.MyTeamBuild.find(team => team._id.toString() === teamIdToFind); // Single team match
+        const oldUserId = oldTeam ? oldTeam.playersList.map(player => player.Player_id) : []; // Old player IDs
+
+        // If no team is found
+        if (!currentTeam) {
+            return res.status(200).json({ status: false, message: "Team not found." });
+        }
+
+        // Step 4: Validate player positions
+        const positions = playersList.map(player => player.Position);
+        if (new Set(positions).size !== positions.length) {
+            return res.status(200).json({ status: false, message: "Player positions must be unique." });
+        }
+
+        const totalPlayersNumber = parseInt(TotalPlayers);
+        const positionOutOfRange = positions.find(position => position < 1 || position > totalPlayersNumber);
+        if (positionOutOfRange) {
+            return res.status(200).json({ status: false, message: `Player positions must be between 1 and ${totalPlayersNumber}.` });
+        }
+
+        // Step 5: Prepare a list of user IDs to validate their existence
+        const updateUserId = playersList.map(player => player.Player_id);
+        const foundUser = await UserDetails.find({ uuid: { $in: updateUserId } });
+
+        // If not all users are found, return missing player IDs
+        if (foundUser.length !== playersList.length) {
+            const missingPlayers = updateUserId.filter(id => !foundUser.find(user => user.uuid === id));
+            return res.status(200).json({ status: false, message: `The following player IDs are missing: ${missingPlayers.join(", ")}` });
+        }
+
+        // Step 6: Create local player objects with positions and initial status
+        const local = playersList.map(player => ({
+            Player_id: player.Player_id,
+            Position: player.Position,
+            Status: "N/A" // Default status for new players
+        }));
+
+        // Step 7: Validate if the number of players matches TotalPlayers
+        if (local.length !== totalPlayersNumber) {
+            return res.status(200).json({ status: false, message: `The total number of players (${local.length}) does not match the expected TotalPlayers (${TotalPlayers}).` });
+        }
+
+        const updatedUser = await UserDetails.findOneAndUpdate(
+            { _id: id, "MyTeamBuild._id": teamIdToFind },
+            { 
+                $set: { 
+                    "MyTeamBuild.$.Team_Name": Team_Name,
+                    "MyTeamBuild.$.Sports_Name": Sports_Name,
+                    "MyTeamBuild.$.TotalPlayers": TotalPlayers,
+                    "MyTeamBuild.$.playersList": local
+                },
+            },
+            { new: true }
+        ).select("id uuid MyTeamBuild PlayFor");
+
+        if (!updatedUser) {
+            return res.status(200).json({ status: false, message: "Team update failed." });
+        };
+
+        const sendplayerDetails = {
+            createdBy: userUuid,
+            Team_Id: teamIdToFind,
+            Team_Name: Team_Name,
+            Sports_Name: Sports_Name,
+            TotalPlayers: TotalPlayers,
+            playersList: local
+        }
+        
+        const long = oldUserId.length >= foundUser.length ? oldUserId : foundUser;
+
+        for (const playerId of long) {
+            // Step 4: Check if the player is in the shorter list (new or old)
+            const playerInNewTeam = updateUserId.includes(playerId);
+            
+            // If the player is in the new team, remove their old team info and update PlayFor
+            if (playerInNewTeam) {
+                const playerUser = await UserDetails.findOne({ uuid: playerId }).select("PlayFor");
+
+                if (playerUser) {
+                    // Remove the old team details from PlayFor
+                    playerUser.PlayFor = playerUser.PlayFor.filter(team => team.Team_Id.toString() !== teamIdToFind);
+                    // Add the new team details to PlayFor
+                    playerUser.PlayFor.push(sendplayerDetails);
+                    await playerUser.save();
+                }
+            } else {
+                // If the player is not in the new team, remove them from PlayFor
+                const playerUser = await UserDetails.findOne({ uuid: playerId }).select("PlayFor");
+
+                if (playerUser) {
+                    // Remove the team from PlayFor array
+                    playerUser.PlayFor = playerUser.PlayFor.filter(team => team.Team_Id.toString() !== teamIdToFind);
+                    await playerUser.save();
+                }
+            }
+        }
+
+        // Step 11: Send a successful response with the updated team and players
+        return res.status(200).json({ status: true, message: `Team updated successfully.`, team: updatedUser});
+
+    } catch (error) {
+        console.log(error.message)
+        return res.status(200).json({ status: false, message: `Update Team Causes Route Error: ${error.message}` });
+    }
+};*/
+
+/*
+Apis Ready to Check 
+Team Creation: Building a Team and Assigning Players
+Team Deletion: Removing a Team and Associated Player Data
+Team Update: Modifying Team Information and Player Assignments
+
+Pending Task
+Player Status: Accept or Decline Team Participation
+*/
+
+export const MyTeams = async (req, res) => {
+    const {id} = req.user
+    try {
+        const MyTeams = await UserDetails.findById(id).lean().select("MyTeamBuild");
+        return res.status(200).json({ status: true, message: `MyTeams`, MyTeams  });
+    } catch (error) {
+        console.log(error.message)
+        return res.status(200).json({ status: false, message: `MyTeams Causes Route Error: ${error.message}` }); 
+    }
+};
+
+export const MyCurrentTeams = async (req, res) => {
+    const {id} = req.user
+    const {teamid} = req.params
+    try {
+        const MyCurrentTeam = await UserDetails.findOne({_id: id, 'MyTeamBuild._id': teamid }).lean().select("MyTeamBuild");
+        return res.status(200).json({ status: true, message: `MyTeams ${MyCurrentTeam.MyTeamBuild.Team_Name}`, MyCurrentTeam});
+    } catch (error) {
+        console.log(error.message)
+        return res.status(200).json({ status: false, message: `Team PalyerStatus Causes Route Error: ${error.message}` }); 
+    }
+};
+
+export const PlayForStatus = async (req, res) => {
+    const {id} = req.user
+    try {
+        const userDetails = await UserDetails.findById(id).lean().select("PlayFor");
+        return res.status(200).json({ status: true, message: `MyTeams`, TeamsPlayFor: userDetails  });
+    } catch (error) {
+        console.log(error.message)
+        return res.status(200).json({ status: false, message: `Team PalyerStatus Causes Route Error: ${error.message}` }); 
+    }
+}
+
+export const CurrentPlayerStatus = async (req, res) => {
+    const {id} = req.user
+    const {teamid} = req.params
+    try {
+        const userDetails = await UserDetails.findOne({_id: id, 'PlayFor.Team_Id': teamid }).lean().select("PlayFor");
+        const teamDetails = userDetails.PlayFor.find((team) => team.Team_Id.toString() === teamid);
+        return res.status(200).json({ status: true, message: `MyTeams `, TeamInfo: teamDetails});
+    } catch (error) {
+        console.log(error.message)
+        return res.status(200).json({ status: false, message: `Team PalyerStatus Causes Route Error: ${error.message}` }); 
+    }
+};
+
+export const PlayerStatus = async (req, res) => {
+    const { id, uuid } = req.user; // Current user ID and UUID
+    const { teamid } = req.params; // Team ID from request parameters
+
+    try {
+        const Info = await UserDetails.find({ $or: [{ 'MyTeamBuild._id': teamid },{ 'PlayFor.Team_Id': teamid }]}).select("uuid MyTeamBuild PlayFor");
+        console.log(Info)
+        
+        return res.status(200).json({ status: true, message: "Status Updated" ,Info });
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ status: false, message: `Team Player Status Causes Route Error: ${error.message}` });
+    }
+};
+
+/* team Updates
+
+
+export const UpdateTeam = async (req, res) => {
+    const { id, uuid : userUuid} = req.user; // Extract user ID from request
+    const { teamIdToFind } = req.params; // Extract team ID from the request params
+    const { Team_Name, Sports_Name, TotalPlayers, playersList } = req.body; // Extract team details and players from the request body
+
+    try {
+        // Step 1: Fetch the user's data from the database using their ID
+        const user = await UserDetails.findById(id).select("uuid First_Name Last_Name MyTeamBuild PlayFor");
         if (!user) {
             return res.status(200).json({ status: false, message: "User not found." });
         }
@@ -227,7 +433,7 @@ export const UpdateTeam = async (req, res) => {
         };
 
         const sendplayerDetails = {
-            createdBy: uuid,
+            createdBy: userUuid,
             Team_Id: teamIdToFind,
             Team_Name: Team_Name,
             Sports_Name: Sports_Name,
@@ -290,74 +496,100 @@ function findInHashMap(hashMap, id) {
     return hashMap[id] || null;
 }
 
-/*
-Apis Ready to Check 
-Team Creation: Building a Team and Assigning Players
-Team Deletion: Removing a Team and Associated Player Data
-Team Update: Modifying Team Information and Player Assignments
-
-Pending Task
-Player Status: Accept or Decline Team Participation
 */
-
-export const MyTeams = async (req, res) => {
-    const {id} = req.user
-    try {
-        const MyTeams = await UserDetails.findById(id).lean().select("MyTeamBuild");
-        return res.status(200).json({ status: true, message: `MyTeams`, MyTeams  });
-    } catch (error) {
-        console.log(error.message)
-        return res.status(200).json({ status: false, message: `MyTeams Causes Route Error: ${error.message}` }); 
-    }
-};
-
-export const MyCurrentTeams = async (req, res) => {
-    const {id} = req.user
-    const {teamid} = req.params
-    try {
-        const MyCurrentTeam = await UserDetails.findOne({_id: id, 'MyTeamBuild._id': teamid }).lean().select("MyTeamBuild");
-        return res.status(200).json({ status: true, message: `MyTeams ${MyCurrentTeam.MyTeamBuild.Team_Name}`, MyCurrentTeam});
-    } catch (error) {
-        console.log(error.message)
-        return res.status(200).json({ status: false, message: `Team PalyerStatus Causes Route Error: ${error.message}` }); 
-    }
-};
-
-export const PlayForStatus = async (req, res) => {
-    const {id} = req.user
-    try {
-        const userDetails = await UserDetails.findById(id).lean().select("PlayFor");
-        return res.status(200).json({ status: true, message: `MyTeams`, TeamsPlayFor: userDetails  });
-    } catch (error) {
-        console.log(error.message)
-        return res.status(200).json({ status: false, message: `Team PalyerStatus Causes Route Error: ${error.message}` }); 
-    }
-}
-
-export const CurrentPlayerStatus = async (req, res) => {
-    const {id} = req.user
-    const {teamid} = req.params
-    try {
-        const userDetails = await UserDetails.findOne({_id: id, 'PlayFor.Team_Id': teamid }).lean().select("PlayFor");
-        const teamDetails = userDetails.PlayFor.find((team) => team.Team_Id.toString() === teamid);
-        return res.status(200).json({ status: true, message: `MyTeams `, TeamInfo: teamDetails});
-    } catch (error) {
-        console.log(error.message)
-        return res.status(200).json({ status: false, message: `Team PalyerStatus Causes Route Error: ${error.message}` }); 
-    }
-};
-
-export const PlayerStatus = async (req, res) => {
-    const { id, uuid } = req.user; // Current user ID and UUID
-    const { teamid } = req.params; // Team ID from request parameters
+export const UpdateTeam = async (req, res) => {
+    const { id, uuid: userUuid } = req.user; // Extract user ID and UUID
+    const { teamIdToFind } = req.params; // Extract team ID from params
+    const updateField = req.body; // Extract team update fields
 
     try {
-        const Info = await UserDetails.find({ $or: [{ 'MyTeamBuild._id': teamid },{ 'PlayFor.Team_Id': teamid }]}).select("uuid MyTeamBuild PlayFor");
-        console.log(Info)
+        if (!updateField) {
+            return res.status(400).json({ status: false, message: "No update fields provided." });
+        }
         
-        return res.status(200).json({ status: true, message: "Status Updated" ,Info });
+        // Step 1: Fetch the user's data
+        const user = await UserDetails.findById(id).select("uuid MyTeamBuild PlayFor");
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User not found." });
+        }
+
+        const teamMap = new Map(user.MyTeamBuild.map(team => [team._id.toString(), team]));
+        const currentTeam = teamMap.get(teamIdToFind);
+
+        if(currentTeam.createdBy !== userUuid ){
+            return res.status(404).json({ status: false, message: "Only the team creator can modify this team."});
+        }
+
+        if (!currentTeam) {
+            return res.status(404).json({ status: false, message: "Team not found." });
+        }
+        // Step 2: Build the update object for MyTeamBuild
+        const updateFields = {};
+        if (updateField.Team_Name) updateFields["MyTeamBuild.$.Team_Name"] = updateField.Team_Name;
+        if (updateField.Sports_Name) updateFields["MyTeamBuild.$.Sports_Name"] = updateField.Sports_Name;
+        if (updateField.TotalPlayers) updateFields["MyTeamBuild.$.TotalPlayers"] = updateField.TotalPlayers;
+
+        if (updateField.playersList) {
+            // Ensure unique positions and validate player positions
+            const positionsSet = new Set();
+            const totalPlayers = parseInt(updateField.TotalPlayers || currentTeam.TotalPlayers);
+
+            for (const player of updateField.playersList) {
+                if (positionsSet.has(player.Position)) {
+                    return res.status(400).json({ status: false, message: "Player positions must be unique." });
+                }
+                if (player.Position < 1 || player.Position > totalPlayers) {
+                    return res.status(400).json({
+                        status: false,
+                        message: `Player positions must be between 1 and ${totalPlayers}.`
+                    });
+                }
+                positionsSet.add(player.Position);
+            }
+            updateField.playersList = mergeSort(updateField.playersList);
+            updateFields["MyTeamBuild.$.playersList"] = updateField.playersList.map(player => ({
+                Player_id: player.Player_id,
+                Position: player.Position,
+                Status: player.Status || "N/A"
+            }));
+        }
+        const updatedUser = await UserDetails.findOneAndUpdate(
+            { uuid: userUuid, "MyTeamBuild._id": teamIdToFind },
+            { $set: updateFields },
+            { new: true } // Step 3: Update the team in MyTeamBuild
+        ).select("uuid MyTeamBuild PlayFor");
+
+        // Update each player's PlayFor list
+        const oldPlayers = new Set(currentTeam.playersList.map(player => player.Player_id));
+        const newPlayerIds = new Set(updateField.playersList?.map(player => player.Player_id) || []);
+
+        // Remove old team references
+        await UserDetails.updateMany(
+            { uuid: { $in: [...oldPlayers] } },
+            { $pull: { PlayFor: { Team_Id: teamIdToFind } } }
+        );
+
+        // Add updated team references
+        const sendplayerDetails = {
+            Team_Id: teamIdToFind,
+            Team_Name: updateField.Team_Name || currentTeam.Team_Name,
+            Sports_Name: updateField.Sports_Name || currentTeam.Sports_Name,
+            TotalPlayers: updateField.TotalPlayers || currentTeam.TotalPlayers,
+            createdBy: userUuid
+        };
+
+        await UserDetails.updateMany(
+            { uuid: { $in: [...newPlayerIds] } },
+            { $push: { PlayFor: sendplayerDetails } }
+        );
+
+        if (!updatedUser) {
+            return res.status(500).json({ status: false, message: "Team update failed." });
+        }
+
+        return res.status(200).json({ status: true, message: "Team updated successfully.", team: updatedUser });
     } catch (error) {
         console.error(error.message);
-        return res.status(500).json({ status: false, message: `Team Player Status Causes Route Error: ${error.message}` });
+        return res.status(500).json({ status: false, message: `Error updating team: ${error.message}` });
     }
 };

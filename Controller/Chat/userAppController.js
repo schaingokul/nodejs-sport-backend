@@ -48,45 +48,48 @@ export const chatSearch = async (req, res) => {
     }
 };
 
-export const getCoversation = async(type = null, participants = null, groupName = null, cid = null ) => {
+export const getCoversation = async (type = null, participants = null, groupName = null, cid = null) => {
     try {
         let conversation;
-        if(cid){
+        if (cid) {
             conversation = await Conversation.findById(cid);
-        }else if(type === "one-on-one"){
-            conversation = await Conversation.findOne({ type: 'one-on-one', participants: {$all: participants} });
-
-        }else if(type === "group"){
+        } else if (type === "one-on-one") {
+            conversation = await Conversation.findOne({ type: 'one-on-one', participants: { $all: participants } });
+        } else if (type === "group") {
             conversation = await Conversation.findOne({ type: 'group', groupName: groupName });
-        }else {
+        } else {
             throw new Error('Invalid conversation type');
         }
 
-        if(!conversation){
+        console.log("Participants:", participants);
+
+        // If no conversation exists, create a new one
+        if (!conversation) {
             conversation = new Conversation({ type, participants, groupName });
             await conversation.save();
         }
 
-        const message = await Message.find({cid: conversation._id}).sort({timestamp: 1});
         // Fetch participant details
         const participantDetails = await Promise.all(
             conversation.participants.map(async (participant) => {
-                const user = await UserDetails.findOne({ uuid: participant.uuid });
+                const user = await UserDetails.findOne({ uuid: participant.uuid }).select("userInfo");
+                console.log(user)
                 return {
-                    ...participant, // Ensure participant structure supports this
+                    cid: participant._id, // Ensure participant structure supports this
+                    type: participant.type, 
                     profile: user?.userInfo?.Profile_ImgURL || null,
                     username: user?.userInfo?.Nickname || null,
                 };
             })
         );
 
-        return { conversation: { ...conversation.toObject(), participants: participantDetails }, message}
+        // Return both conversation and messages
+        return { conversation: { ...conversation.toObject(), participants: participantDetails }};
     } catch (error) {
         console.error('Error fetching or creating conversation:', error);
-        throw error
+        throw error;
     }
 };
-
 
 export const sendMessage = async(cid, sender, message) => {
     try {

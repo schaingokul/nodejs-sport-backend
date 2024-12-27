@@ -14,9 +14,12 @@ import { Server } from "socket.io";
 import http from 'http';
 import {getCoversation, sendMessage}  from "./Controller/Chat/userAppController.js";
 import PostImage from './Model/ImageModel.js';
+import Message from "./Model/ChatModel/MessageModel.js";
+import Axios from 'axios';
 
 // import MessageRoute from './View/ChatView/messageRoute.js'
-// import userAppRoute from './View/ChatView/userAppRoute.js';
+import userAppRoute from './View/ChatView/userAppRoute.js';
+import UserDetails from "./Model/UserModelDetails.js";
 // import {app, server} from './socket/Socket.js'
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,15 +42,17 @@ app.use('/api/user', userRouter);
 app.use('/api/user', postRouter);
 app.use('/api/team', TeamRouter);
 app.use('/machine', machineRoute);
+app.use('/chat', userAppRoute);
 
+// const socketIP = "http://localhost:4500";
+const socketIP = "https://sportspersonz.com";
 
 const io = new Server(server, {
     cors : {
-        origin:"http://localhost:3000",
+        origin:"*",
         methods:["GET", "POST"],
     },
 });
-
 
 io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
@@ -56,16 +61,28 @@ io.on("connection", (socket) => {
         const { type, participants, groupName, cid } = data;
 
         try {
-            const { conversation, messages } = await getCoversation(type, participants, groupName, cid);
+            // Fetch the conversation
+            const { conversation } = await getCoversation(type, participants, groupName, cid);
+            let store ={
+                cid: conversation._id
+            }
+            await UserDetails.chatList.push(store)
+            if (conversation?._id.toString()) {
+                // Fetch chat data
+                const response = await Axios.get(`${socketIP}/chat/chat-data/${conversation._id.toString()}`);
+                const chatData = response.data.viewMessages;
 
-            socket.emit("chat_data", { conversation, messages });
+                // Emit the fetched chat data to the client
+                socket.emit("chat_data", { conversation, chatData});
 
-            if (conversation?._id) {
+                // Join the socket room with the conversation ID
                 socket.join(conversation._id.toString());
                 console.log(`User joined room: ${conversation._id}`);
+            } else {
+                throw new Error("Conversation not found or invalid.");
             }
         } catch (error) {
-            console.error("Error in join_chat:", error);
+            console.error("Error in join_chat:", error.message);
             socket.emit("error", { message: error.message || "Failed to join or create chat" });
         }
     });
@@ -94,6 +111,7 @@ io.on("connection", (socket) => {
         console.log(`User disconnected: ${socket.id}`);
     });
 });
+
 
 app.get("/", (req,res) => {
     res.sendFile(path.join(__dirname, "index.html"));
