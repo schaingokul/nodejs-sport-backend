@@ -136,9 +136,11 @@ export const deletePost = async (req, res) => {
     }
 };
 
+
 export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
     let { page, limit } = req.query;
+
     try {
         // Default limit if not provided
         const limitNum = parseInt(limit, 10) || 100;
@@ -155,8 +157,9 @@ export const getHomeFeed = async (req, res) => {
 
         // Step 1: HashSet for liked posts
         const likedPosts = new Set(
-            (await PostImage.find({ "likes.likedById": userUuid }).select("_id"))
-                .map((post) => post._id.toString())
+            (await PostImage.find({ "likes.likedById": userUuid }).select("_id")).map((post) =>
+                post._id.toString()
+            )
         );
 
         // Step 2: Fetch posts from followed users
@@ -171,8 +174,9 @@ export const getHomeFeed = async (req, res) => {
 
         // Step 3: Fetch trending posts (popular posts)
         const trendingPosts = await PostImage.find({
-            type: { $in: ["video", "reel", "image", "event"] }
-        }).sort({ likesCount: -1 }) // Sort by likes count
+            type: { $in: ["video", "reel", "image", "event"] },
+        })
+            .sort({ likesCount: -1 }) // Sort by likes count
             .limit(limitNum);
 
         feed.push(...trendingPosts);
@@ -216,7 +220,8 @@ export const getHomeFeed = async (req, res) => {
                     type: post.type,
                     URL: post.URL[0],
                     lc: post.likes.length,
-                    location: post.location
+                    location: post.location,
+                    isLiked: likedPosts.has(post._id.toString()) ? 1 : 0, // Add like status (1 if liked, else 0)
                 };
             })
         );
@@ -231,7 +236,6 @@ export const getHomeFeed = async (req, res) => {
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
 };
-
 
 export const viewCurrentPost = async(req,res) => {
     const {id: userId} = req.user;
