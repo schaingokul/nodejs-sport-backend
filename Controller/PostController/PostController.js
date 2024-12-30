@@ -3,8 +3,6 @@ import UserDetails from '../../Model/UserModelDetails.js';
 import { deleteFile } from '../../utilis/userUtils.js';
 import {HOST, PORT, IP} from '../../env.js'
 
-
-
 export const createPost = async (req, res) => {
     let URL = [];
     try {
