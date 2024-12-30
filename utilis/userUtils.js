@@ -75,7 +75,6 @@ export const deleteFile = (filePath, fileType, uuid) => {
     }
 };
 
-
 const special = '@';
 
 export const generateUniqueNickname = async (firstName) => {
