@@ -7,7 +7,7 @@ export const userInfoSchema = new mongoose.Schema(
     Nickname: { type: String },// Nickname
     Phone_Number: { type: String, sparse: true, default: "N/A"},// Contact Number
     Date_of_Birth: { type: Date},// Date of Birth
-    Gender: {type: String, enum: ["Male", "Female", "Transgender"]},// Gender
+    Gender: {type: String, enum: ["Male", "Female", "Transgender", ""] , default: ""},// Gender
     Education: { school: [{ type: String }], college: [{ type: String }]},// Education
     Work: { type: String },// Work
     Club: { type: String },// Club
@@ -60,18 +60,8 @@ const followerSchema = new mongoose.Schema(
   { _id: false } 
 );
 
-const matchRequestSchema = new mongoose.Schema(
-  {
-    reqTo: { type: String, required: true }, // Opponent Team ID
-    reqBy: { type: String, required: true }, // Requesting Team ID
-    status: { type: String, enum: ["pending", "accepted", "declined"], default: "pending" },
-    matchDetails: { type: String }, // Match ID or Details
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
-  },
-  { _id: true }
-);
 
+//Players List
 const playersListSchema = mongoose.Schema({
   Player_id:{type : String, required :true},
   Position: {type : String, required :true},
@@ -80,27 +70,28 @@ const playersListSchema = mongoose.Schema({
   { _id: false }
 );
 
+//Created for Owner
 const TeamBuildSchema = mongoose.Schema({
   createdBy: {type : String, required: true},
+  role: {type: String, enum: ["admin", "player"], require: true},
   Team_Name: {type : String, required :true},
   Sports_Name:{type : String, required :true},
   TotalPlayers:{type : String, required :true, default: "0"},
   playersList:[playersListSchema],
   isReady:{type : Boolean, required :true, default: false},
-  matchRequests: [matchRequestSchema] 
 },
 { _id: true });
 
-
-const PlayForSchema = mongoose.Schema({
-  createdBy: {type : String, required: true},
-  Team_Id: {type : String, required: true},
-  Team_Name: {type : String, required :true},
-  Sports_Name:{type : String, required :true},
-  TotalPlayers:{type : String, required :true},
-  playersList:[playersListSchema]
-},
-{ _id: false });
+// Middleware to convert Team_Name and Sports_Name to lowercase before saving
+TeamBuildSchema.pre('save', function (next) {
+  if (this.Team_Name) {
+    this.Team_Name = this.Team_Name.toLowerCase();
+  }
+  if (this.Sports_Name) {
+    this.Sports_Name = this.Sports_Name.toLowerCase();
+  }
+  next();
+});
 
 const chatSchema = new mongoose.Schema(
   {
@@ -136,7 +127,7 @@ const userDetailsSchema = new mongoose.Schema(
     MyTeamBuild: [TeamBuildSchema],
     chatList: [chatSchema],
     teamMatchHistory: [matchHistorySchema],
-    PlayFor: [PlayForSchema],
+    eventKeys: [{ type: String, default: [] }],
     isVerified: { type: Boolean, default: false },
     verificationCode: { type: String, default: "N/A" },
     IsDeactivated: { type: Boolean, default: false }
