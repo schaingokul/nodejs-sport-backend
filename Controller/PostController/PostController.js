@@ -135,6 +135,8 @@ export const deletePost = async (req, res) => {
         res.status(500).json({ status: false, message: "An error occurred while posting", error: error.message });
     }
 };
+
+
 export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
     let { page, limit } = req.query;
@@ -153,21 +155,15 @@ export const getHomeFeed = async (req, res) => {
         const following = user.following || [];
         let feed = []; // Array to hold the final feed
 
-        // Step 1: HashSet for liked posts
+        // Step 1: HashSet for liked posts (UUID of liked posts)
         const likedPosts = new Set(
-            (await PostImage.find({ "likes.likedById": userUuid }).select("_id")).map((post) =>
-                post._id.toString()
-            )
+            (await PostImage.find({ "likes.likedById": userUuid.toString() }).select("uuid"))
         );
-
+        console.log(likedPosts)
         // Step 2: Fetch posts from followed users
         if (following.length > 0) {
             const followedPosts = await PostImage.find({ "postedBy.id": { $in: following } });
-            followedPosts.forEach((post) => {
-                if (!likedPosts.has(post._id.toString())) {
-                    feed.push(post);
-                }
-            });
+            feed.push(...followedPosts);
         }
 
         // Step 3: Fetch trending posts (popular posts)
@@ -207,10 +203,10 @@ export const getHomeFeed = async (req, res) => {
         // Step 5: Format the response (Resolve all promises)
         const response = await Promise.all(
             paginatedFeed.map(async (post, index) => {
-                const prf = await UserDetails.findById(post.postedBy.id).select("userInfo");
+                const prf = await UserDetails.findById(post.postedBy.id).select("uuid userInfo");
                 return {
                     localId: index + 1,
-                    postId: post._id,
+                    postId: post.uuid, // UUID of the post
                     userId: post.postedBy.id,
                     userProfile: prf?.userInfo?.Profile_ImgURL,
                     userName: prf?.userInfo?.Nickname,
@@ -219,11 +215,11 @@ export const getHomeFeed = async (req, res) => {
                     URL: post.URL[0],
                     lc: post.likes.length,
                     location: post.location,
-                    isLiked: likedPosts.has(post._id.toString()) ? true : false, // Add like status (1 if liked, else 0)
+                    isLiked: post.likes.some((like) => like.likedByUuid === userUuid.toString())  // Check if post UUID is in likedPosts
                 };
             })
         );
-        
+
         return res.status(200).json({
             status: true,
             message: "Home feed fetched successfully",
