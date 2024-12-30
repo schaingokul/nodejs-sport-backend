@@ -206,7 +206,7 @@ export const getHomeFeed = async (req, res) => {
                 const prf = await UserDetails.findById(post.postedBy.id).select("uuid userInfo");
                 return {
                     localId: index + 1,
-                    postId: post.uuid, // UUID of the post
+                    postId: post._id,
                     userId: post.postedBy.id,
                     userProfile: prf?.userInfo?.Profile_ImgURL,
                     userName: prf?.userInfo?.Nickname,
