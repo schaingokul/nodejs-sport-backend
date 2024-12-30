@@ -5,6 +5,7 @@ import { MONGO_URI } from "../env.js";
 // Function to ensure collections exist
 const ensureCollectionsExist = async (db) => {
   try {
+    
     // Check if the collection "userdetails" exists
     const userDetailsCollectionExists = await db.listCollections({ name: 'userdetails' }).hasNext();
     if (!userDetailsCollectionExists) {
@@ -37,7 +38,8 @@ const connectDB = async () => {
 
     // Access the database object directly
     const db = mongoose.connection.db;
-
+    mongoose.connection.setMaxListeners(20);
+    
     // Ensure collections exist
     await ensureCollectionsExist(db);
 
