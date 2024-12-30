@@ -8,8 +8,7 @@ export const createPost = async (req, res) => {
     const { id: loginId , uuid: userUuid} = req.user;
     const { location, description , type} = req.body;
     try {
-        
-        
+        console.log("Step1 loginId:", loginId,"userUuid :", userUuid )
         const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys userInfo");
         
         if (!user) {
