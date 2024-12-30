@@ -135,8 +135,6 @@ export const deletePost = async (req, res) => {
         res.status(500).json({ status: false, message: "An error occurred while posting", error: error.message });
     }
 };
-
-
 export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
     let { page, limit } = req.query;
@@ -221,11 +219,11 @@ export const getHomeFeed = async (req, res) => {
                     URL: post.URL[0],
                     lc: post.likes.length,
                     location: post.location,
-                    isLiked: likedPosts.has(post._id.toString()) ? 1 : 0, // Add like status (1 if liked, else 0)
+                    isLiked: likedPosts.has(post._id.toString()) ? true : false, // Add like status (1 if liked, else 0)
                 };
             })
         );
-
+        
         return res.status(200).json({
             status: true,
             message: "Home feed fetched successfully",
