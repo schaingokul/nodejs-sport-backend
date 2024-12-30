@@ -5,9 +5,10 @@ import {HOST, PORT, IP} from '../../env.js'
 
 export const createPost = async (req, res) => {
     let URL = [];
+    const { id: loginId , uuid: userUuid} = req.user;
+    const { location, description , type} = req.body;
     try {
-        const { id: loginId , uuid: userUuid} = req.user;
-        const { location, description , type} = req.body;
+        
         
         const user = await UserDetails.findById(loginId).select("uuid _id First_Name Last_Name myPostKeys userInfo");
         
