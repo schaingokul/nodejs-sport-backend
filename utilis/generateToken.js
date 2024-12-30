@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 const KEY = process.env.JWT_SECRET || "SPORTS"
-const TOKEN_EXPIRATION = process.env.TOKEN_EXPIRATION || "1d"
+const TOKEN_EXPIRATION = process.env.TOKEN_EXPIRATION || "365d"
 
 export const generateToken = ({id, uuid, Email_ID}, res) => {
     try {

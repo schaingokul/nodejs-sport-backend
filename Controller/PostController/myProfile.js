@@ -3,7 +3,6 @@ import UserDetails from '../../Model/UserModelDetails.js';
 import { sendErrorResponse } from '../../utilis/ErrorHandlingMiddleware.js';
 
 
-// No_Changes
 export const myProfile = async (req, res) => {
     const { uuid: userUuid, id: userId } = req.user;
 
@@ -14,49 +13,45 @@ export const myProfile = async (req, res) => {
         }
 
         // Fetch all posts
-        const postIds = user.myPostKeys.map((postid) => postid.toString());
+        const postIds = user.myPostKeys?.map((postid) => postid.toString()) || [];
         const posts = await PostImage.find({ _id: { $in: postIds } });
 
         // Simplify post details
         const postDetails = posts.map((post) => ({
             postId: post._id,
             type: post.type,
-            URL: post.URL[0], // Convert URL array to single string
+            URL: post.URL?.[0] || "", // Handle empty or missing URL
         }));
 
         // Simplify sportsInfo details with shortened property names
-        const simplifiedSportsInfo = user.sportsInfo.map((sport) => ({
-            sp: sport.sp,   
-            sURL: sport.sURL[0],  
-            sName: sport.sName,            
-            year: sport.year,            
-            best: sport.best,                   
-            matches: sport.matches,              
-            sVURL: sport.sVURL[0], 
+        const simplifiedSportsInfo = user.sportsInfo?.map((sport) => ({
+            sp: sport.sp,
+            sURL: sport.sURL?.[0], // Handle empty or missing sURL
+            sName: sport.sName,
+            year: sport.year,
+            best: sport.best,
+            matches: sport.matches,
+            sVURL: sport.sVURL?.[0], // Handle empty or missing sVURL
             isActive: sport.isActive,
             _id: sport._id,
-        }));
+        })) || [];
 
         // Flattened response object
         const response = {
             id: user._id,
             uuid: user.uuid,
-            userName: user.userInfo.Nickname,
-            profile: user.userInfo.Profile_ImgURL,
+            userName: user.userInfo?.Nickname,
+            profile: user.userInfo?.Profile_ImgURL,
             sportsInfo: simplifiedSportsInfo,
-            followingCount: user.following.length,
-            followersCount: user.followers.length,
-            myPostKeysCount: user.myPostKeys.length,
-            myPostKeys: postDetails,
-            MyTeamBuildCount: user.MyTeamBuild.length,
-            MyTeamBuild: user.MyTeamBuild,
-            PlayForCount: user.PlayFor.length,
-            PlayFor: user.PlayFor,
+            followingCount: user.following?.length ,
+            followersCount: user.followers?.length ,
+            myPostKeysCount: user.myPostKeys?.length,
+            myPostKeys: postDetails
         };
 
         res.status(200).json({ status: true, message: "My Profile", info: response });
     } catch (error) {
-        sendErrorResponse(res, 500, "My Profile. Failed to process the request.", error.message, "MY_PROFILE_CAUSES_ERROR")
+        sendErrorResponse(res, 500, "My Profile. Failed to process the request.", error.message, "MY_PROFILE_CAUSES_ERROR");
     }
 };
 
