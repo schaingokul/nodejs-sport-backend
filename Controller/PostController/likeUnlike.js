@@ -78,14 +78,7 @@ export const likeCount = async (req, res) => {
         ]);
 
         if (!postInfo) {
-            return sendErrorResponse(
-                res,
-                404,
-                "Post not found. Failed to process the request.",
-                null,
-                "LIKE_POST_COUNT_ERROR"
-            );
-        }
+            return sendErrorResponse( res, 404, "Post not found. Failed to process the request.", null, "LIKE_POST_COUNT_ERROR" );}
 
         const likesCount = postInfo[0].likesCount;
 

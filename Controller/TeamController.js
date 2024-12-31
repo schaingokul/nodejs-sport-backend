@@ -5,7 +5,7 @@ export const buildTeam = async(req,res) => {
     const {id: userId, uuid: userUuid} = req.user;
     const {Team_Name, Sports_Name, TotalPlayers, playersList} = req.body;
 
-    try {   let createField = {};
+    try {
 
         // Fetch current user by ID
         const currentUser = await UserDetails.findById(userId)
@@ -48,10 +48,10 @@ export const buildTeam = async(req,res) => {
             return res.status(200).json({ status: false, message: `The following player IDs are missing: ${missingPlayers.join(", ")}`});
         }
 
-        playersList = mergeSort(playersList);
+        const sortedPlayersList  = mergeSort(playersList);
 
         // Prepare a list of players to add to the team
-        const local = playersList.map(player => {
+        const local = sortedPlayersList.map(player => {
             return {
                 Player_id: player.Player_id,
                 Position: player.Position,
@@ -69,6 +69,7 @@ export const buildTeam = async(req,res) => {
             createdBy: userUuid,
             Team_Name: Team_Name,
             Sports_Name: Sports_Name,
+            role:"captain",
             TotalPlayers: TotalPlayers,
             playersList: local
         });
@@ -76,23 +77,27 @@ export const buildTeam = async(req,res) => {
         currentUser.MyTeamBuild.push(createTeam);
         const updatedUser = await currentUser.save();
 
-        const newTeamid = updatedUser.MyTeamBuild[updatedUser.MyTeamBuild.length - 1]._id;
+        
+        // Now the team has an _id
+        const teamId = updatedUser.MyTeamBuild[updatedUser.MyTeamBuild.length - 1]._id;
 
-        const sendplayerDetails = {
-            createdBy: userUuid,
-            Team_Id: newTeamid,
-            Team_Name: Team_Name,
-            Sports_Name: Sports_Name,
-            TotalPlayers: TotalPlayers,
-            playersList: local
-        }
-        users.forEach(async(list) => { 
-            let localStore = await UserDetails.findOne({uuid: list.uuid});
-            if (localStore) {
-                localStore.PlayFor.push(sendplayerDetails);
+        // Add the team to the other players
+        await Promise.all(users.map(async (list) => {
+            let localStore = await UserDetails.findOne({ uuid: list.uuid });
+            if (localStore && list.uuid !== userUuid) {
+                const setObj = {
+                    _id: teamId, // Now the _id is available
+                    createdBy: userUuid,
+                    Team_Name: Team_Name,
+                    Sports_Name: Sports_Name,
+                    role: "player", // Other players are assigned the "player" role
+                    TotalPlayers: TotalPlayers,
+                    playersList: local // Keep the same list of players for other users
+                };
+                localStore.MyTeamBuild.push(setObj);
                 await localStore.save();
-              }
-        })
+            }
+        }));
 
         res.status(200).json({status: true, message: `Create Team Sucessfully by ${currentUser.First_Name}`, TeamMembers: createTeam });
     } catch (error) {
@@ -112,45 +117,54 @@ send individual playerlist to that paritucular user to store data
 
 */
 
-export const DeleteTeam = async(req,res) => {
-    const {id} = req.user;
-    const {teamid} = req.params
-    try {
-        // Fetch the user and the team
-        const user = await UserDetails.findById(id).select("uuid MyTeamBuild");
+export const DeleteTeam = async (req, res) => {
+    const { id, uuid: userUuid } = req.user;
+    const { teamid } = req.params;
 
+    try {
+        // Validate teamid
+        if (!teamid) {
+            return res.status(400).json({ status: false, message: "Team ID is required." });
+        }
+
+        // Fetch the user's teams
+        const user = await UserDetails.findById(id).select("uuid MyTeamBuild");
         if (!user) {
             return res.status(404).json({ status: false, message: "User not found." });
         }
 
-        // Find the team to delete
-        const currentTeam = user.MyTeamBuild.find((team) => team._id.toString() === teamid);
-
+        // Find the team
+        const currentTeam = user.MyTeamBuild.find((team) => team?._id?.toString() === teamid);
         if (!currentTeam) {
             return res.status(404).json({ status: false, message: "Team not found." });
         }
 
-        // Get the list of player IDs in the team
-        const playerIDs = currentTeam.playersList.map(player => player.Player_id);
+        // Validate admin or creator rights
+        if (currentTeam.role !== "captain" && currentTeam.createdBy !== userUuid) {
+            return res.status(403).json({ status: false, message: "Only admins or team creators can delete this team." });
+        }
 
-        // Remove the team from the user's MyTeamBuild array
-        user.MyTeamBuild = user.MyTeamBuild.filter(team => team._id.toString() !== teamid);
-        await user.save();  // Save updated user document
+        // Remove the team from user's MyTeamBuild
+        await UserDetails.updateOne(
+            { _id: id },
+            { $pull: { MyTeamBuild: { _id: teamid } } }
+        );
 
         // Remove the team from each player's PlayFor array
-        for (const playerID of playerIDs) {
-            const currentPlayerUser = await UserDetails.findOne({ uuid: playerID }).select("PlayFor");
+        const playerIDs = currentTeam.playersList?.map((player) => player.Player_id) || [];
+        await Promise.all(
+            playerIDs.map(async (playerID) => {
+                await UserDetails.updateOne({ uuid: playerID }, { $pull: { MyTeamBuild: { _id: teamid } } } );
+            })
+        );
 
-            if (currentPlayerUser) {
-                currentPlayerUser.PlayFor = currentPlayerUser.PlayFor.filter(team => team.Team_Id.toString() !== teamid);
-                await currentPlayerUser.save();  // Save updated player document
-            }
-        }
-        res.status(200).json({status: true, message: `Team ${currentTeam.Team_Name} deleted successfully.`, team: currentTeam});
+        res.status(200).json({ status: true, message: `Team "${currentTeam.Team_Name}" deleted successfully.`, });
     } catch (error) {
-        res.status(200).json({status: false, message: `Delete Team Causes Route Error: ${error.message}`});
+        res.status(500).json({ status: false, message: "Delete Team Causes Route Error", error: error.message, });
     }
 };
+
+
 /*
 export const UpdateTeam = async (req, res) => {
     const { id, uuid : userUuid} = req.user; // Extract user ID from request
@@ -290,7 +304,7 @@ Player Status: Accept or Decline Team Participation
 */
 
 export const MyTeams = async (req, res) => {
-    const {id} = req.user
+    const {id} = req.user;
     try {
         const MyTeams = await UserDetails.findById(id).lean().select("MyTeamBuild");
         return res.status(200).json({ status: true, message: `MyTeams`, MyTeams  });
@@ -302,9 +316,9 @@ export const MyTeams = async (req, res) => {
 
 export const MyCurrentTeams = async (req, res) => {
     const {id} = req.user
-    const {teamid} = req.params
+    const {teamid, role} = req.params
     try {
-        const MyCurrentTeam = await UserDetails.findOne({_id: id, 'MyTeamBuild._id': teamid }).lean().select("MyTeamBuild");
+        const MyCurrentTeam = await UserDetails.findOne({_id: id, 'MyTeamBuild._id': teamid, 'MyTeamBuild.$.role': role }).lean().select("MyTeamBuild");
         return res.status(200).json({ status: true, message: `MyTeams ${MyCurrentTeam.MyTeamBuild.Team_Name}`, MyCurrentTeam});
     } catch (error) {
         console.log(error.message)

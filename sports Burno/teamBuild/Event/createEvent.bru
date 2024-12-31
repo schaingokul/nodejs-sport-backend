@@ -1,0 +1,25 @@
+meta {
+  name: createEvent
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{Port}}/api/team/event
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NzM5YzFmZGQ1NGU1M2RjNWI5MDYwYSIsInV1aWQiOiJJYk1jVWhpNGlnRVZ3dGpLSjkxbWQiLCJFbWFpbF9JRCI6Imd1ZXN0MUBnbWFpbC5jb20iLCJpYXQiOjE3MzU2Mzg4NDcsImV4cCI6MTc2NzE3NDg0N30.iC8gJKocePoxU_DH0J6z8cJstzgMhbg6cQS1A2DSfYU
+}
+
+body:json {
+  {
+    "teamId":"6773b056cd4dc5b9f4096e30",
+    "loc":"loc",
+    "link": "link",
+    "date":"2024-12-30",
+    "time":"10:10 AM"
+  }
+}

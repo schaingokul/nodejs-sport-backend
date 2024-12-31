@@ -7,7 +7,8 @@ const JWT_SECRET = "SPORTS" || process.env.JWT_SECRET;
 const protectRoute = async (req, res, next) => {
 	try {
 		const token = req.headers.authorization?.startsWith("Bearer") ? req.headers.authorization.split(" ")[1] : null;
-        console.log("Generate_Token: ", token);
+        // console.log("Generate_Token: ", token);
+		console.log("MiddleWare Pass");
 
 		if (!token) {
 			return res.status(200).json({status: false, message: "Unauthorized: No token provided"})

@@ -1,0 +1,23 @@
+meta {
+  name: SearchTeam
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{Port}}/api/team/teams?type=myteam
+  body: none
+  auth: bearer
+}
+
+params:query {
+  type: myteam
+  ~search: 
+  ~page: 
+  ~limit: 
+  ~teamId: 
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NzM5YzUyZGQ1NGU1M2RjNWI5MDY0MCIsInV1aWQiOiJnRkg3d0NJYlhDRGkyNHdzUm9oYXkiLCJFbWFpbF9JRCI6Imd1ZXN0M0BnbWFpbC5jb20iLCJpYXQiOjE3MzU2MzUyNTIsImV4cCI6MTc2NzE3MTI1Mn0.E_feAPbOelaHUXFEk3iB166azuoZiTxOp6djdK9SA3w
+}

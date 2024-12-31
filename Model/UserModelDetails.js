@@ -73,7 +73,7 @@ const playersListSchema = mongoose.Schema({
 //Created for Owner
 const TeamBuildSchema = mongoose.Schema({
   createdBy: {type : String, required: true},
-  role: {type: String, enum: ["admin", "player"], require: true},
+  role: {type: String, enum: ["captain", "player"], require: true},
   Team_Name: {type : String, required :true},
   Sports_Name:{type : String, required :true},
   TotalPlayers:{type : String, required :true, default: "0"},

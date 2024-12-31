@@ -1,0 +1,15 @@
+meta {
+  name: ViewEvent
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{Port}}/api/team/view
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NzM5YzFmZGQ1NGU1M2RjNWI5MDYwYSIsInV1aWQiOiJJYk1jVWhpNGlnRVZ3dGpLSjkxbWQiLCJFbWFpbF9JRCI6Imd1ZXN0MUBnbWFpbC5jb20iLCJpYXQiOjE3MzU2Mzg4NDcsImV4cCI6MTc2NzE3NDg0N30.iC8gJKocePoxU_DH0J6z8cJstzgMhbg6cQS1A2DSfYU
+}

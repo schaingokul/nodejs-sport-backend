@@ -72,7 +72,7 @@ export const getCoversation = async (type = null, participants = null, groupName
         // Fetch participant details
         const participantDetails = await Promise.all(
             conversation.participants.map(async (participant) => {
-                const user = await UserDetails.findOne({ uuid: participant.uuid }).select("userInfo");
+                const user = await UserDetails.findOne({ uuid: participant.uuid })
                 console.log(user)
                 return {
                     cid: participant._id, // Ensure participant structure supports this

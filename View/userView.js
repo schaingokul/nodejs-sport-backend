@@ -6,7 +6,7 @@ import {upload} from '../utilis/uploadFiles.js'
 const router = express.Router();
 
 /*Personal Details*/
-router.get("/profile",ProtectRoute, viewUserProfile);
+router.get("/profile", ProtectRoute, viewUserProfile);
 router.post("/profile_save", ProtectRoute, upload.fields([{ name: 'Profile_ImgURL', maxCount: 1 }]), SaveUserProfile);
 
 /*SportsInfo*/

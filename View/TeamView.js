@@ -1,6 +1,7 @@
 import express from 'express';
 import protectRoute from '../middleware/ProtectRoute.js';
 import { buildTeam, DeleteTeam, UpdateTeam, MyTeams, MyCurrentTeams, PlayForStatus, CurrentPlayerStatus, PlayerStatus} from '../Controller/TeamController.js';
+import {searchTeam, createEvent, viewTeamDetails, viewEvent } from '../Controller/Event/evenControllers.js';
 import UserDetails from '../Model/UserModelDetails.js'
 
 const router = express.Router();
@@ -14,8 +15,10 @@ router.get("/myplayfor/", protectRoute, PlayForStatus);
 router.get("/myplayfor/:teamid", protectRoute, CurrentPlayerStatus);
 router.put("/status/:teamid", protectRoute, PlayerStatus);
 
-
-
+router.get("/teams" ,protectRoute, searchTeam);
+router.post("/event",protectRoute, createEvent);
+router.get("/event", protectRoute ,viewTeamDetails);
+router.get("/view" , protectRoute , viewEvent);
 
 router.delete("/delete/:userid/:id", async (req, res) => {
     const { id, userid } = req.params;

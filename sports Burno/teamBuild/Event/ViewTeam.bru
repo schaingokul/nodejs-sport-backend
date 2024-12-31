@@ -1,13 +1,18 @@
 meta {
-  name: sportsProfile_
+  name: ViewTeam
   type: http
-  seq: 1
+  seq: 2
 }
 
 get {
-  url: {{Port}}/api/user/sports_view
-  body: json
+  url: {{Port}}/api/team/event
+  body: none
   auth: bearer
+}
+
+params:query {
+  ~t_id: 
+  ~op_id: 
 }
 
 auth:bearer {

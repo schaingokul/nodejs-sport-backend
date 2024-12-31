@@ -49,12 +49,13 @@ const socketIP = "https://sportspersonz.com";
 
 const io = new Server(server, {
     cors: {
-        origin: "https://sportspersonz.com",  // Replace with your React Native app's URL
+        origin: "https://sportspersonz.com", // "*", // Replace with your React Native app's URL
         methods: ["GET", "POST"],
         credentials: true
     },
 });
 
+try {
 io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
 
@@ -64,11 +65,8 @@ io.on("connection", (socket) => {
         try {
             // Fetch the conversation
             const { conversation } = await getCoversation(type, participants, groupName, cid);
-            let store ={
-                cid: conversation._id
-            }
-            await UserDetails.chatList.push(store)
-            if (conversation?._id.toString()) {
+
+            if (conversation?._id) {
                 // Fetch chat data
                 const response = await Axios.get(`${socketIP}/chat/chat-data/${conversation._id.toString()}`);
                 const chatData = response.data.viewMessages;
@@ -112,10 +110,19 @@ io.on("connection", (socket) => {
         console.log(`User disconnected: ${socket.id}`);
     });
 });
-
+    
+} catch (error) {
+    console.log(error);
+}
 
 app.get("/", (req,res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+    try {
+        console.log("Running URL:", req.url); // Logs the URL of the request
+        console.log("Inside root handler"); // Logs when the handler is triggered
+        return res.sendFile(path.join(__dirname, "index.html"));
+    } catch (error) {
+        console.log(error)
+    }
 });
 
 
