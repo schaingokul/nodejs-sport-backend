@@ -1,0 +1,27 @@
+meta {
+  name: UpdateTeam
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{Port}}/api/team/67765205f0eda83ab5d0146f
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NzM5YzFmZGQ1NGU1M2RjNWI5MDYwYSIsInV1aWQiOiJJYk1jVWhpNGlnRVZ3dGpLSjkxbWQiLCJFbWFpbF9JRCI6Imd1ZXN0MUBnbWFpbC5jb20iLCJpYXQiOjE3MzU4MDc0NzIsImV4cCI6MTc2NzM0MzQ3Mn0.UgtDNGyuzbjGsKIpVZXt1y4IfuRKSn2bzDRVIMTCAu0
+}
+
+body:json {
+  {
+    "Team_Name": "Madurai",
+    "Sports_Name": "Cricket",
+    "TotalPlayers": "2",
+    "playersList": [
+      {"Player_id":"IbMcUhi4igEVwtjKJ91md", "Position":"1" },
+      {"Player_id":"XGMhjDAqMKOEAbuhatnEg", "Position":"2" }
+    ]
+  }
+}

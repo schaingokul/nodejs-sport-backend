@@ -1,0 +1,20 @@
+meta {
+  name: myTeam
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{Port}}/api/team?type=player
+  body: json
+  auth: bearer
+}
+
+params:query {
+  type: player
+  ~type: captain
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NzM5YzNhZGQ1NGU1M2RjNWI5MDYyNSIsInV1aWQiOiJYR01oakRBcU1LT0VBYnVoYXRuRWciLCJFbWFpbF9JRCI6Imd1ZXN0MkBnbWFpbC5jb20iLCJpYXQiOjE3MzU3OTk2NzQsImV4cCI6MTc2NzMzNTY3NH0._Rm5JWbNJkPEiMnefNBobNar3KmhOiPU5l6NZUSzjpY
+}

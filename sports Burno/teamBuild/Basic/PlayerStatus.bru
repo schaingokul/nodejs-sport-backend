@@ -1,0 +1,22 @@
+meta {
+  name: PlayerStatus
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{Port}}/api/team/status/67765e96bf02cef5276c6a3e
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NzM5YzFmZGQ1NGU1M2RjNWI5MDYwYSIsInV1aWQiOiJJYk1jVWhpNGlnRVZ3dGpLSjkxbWQiLCJFbWFpbF9JRCI6Imd1ZXN0MUBnbWFpbC5jb20iLCJpYXQiOjE3MzU4MDc0NzIsImV4cCI6MTc2NzM0MzQ3Mn0.UgtDNGyuzbjGsKIpVZXt1y4IfuRKSn2bzDRVIMTCAu0
+}
+
+body:json {
+  {
+    "playerId":"IbMcUhi4igEVwtjKJ91md",
+    "status": "NotWilling"
+  }
+}

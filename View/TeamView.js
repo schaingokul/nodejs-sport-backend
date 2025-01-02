@@ -1,19 +1,17 @@
 import express from 'express';
 import protectRoute from '../middleware/ProtectRoute.js';
-import { buildTeam, DeleteTeam, UpdateTeam, MyTeams, MyCurrentTeams, PlayForStatus, CurrentPlayerStatus, PlayerStatus} from '../Controller/TeamController.js';
+import { buildTeam, DeleteTeam, UpdateTeam, MyTeams ,updatePlayerStatus } from '../Controller/TeamController.js';
 import {searchTeam, createEvent, viewTeamDetails, viewEvent } from '../Controller/Event/evenControllers.js';
 import UserDetails from '../Model/UserModelDetails.js'
 
 const router = express.Router();
 
-router.post("/createteam", protectRoute, buildTeam);
-router.delete("/deleteteam/:teamid", protectRoute, DeleteTeam);
-router.put("/updateteam/:teamIdToFind", protectRoute, UpdateTeam);
-router.get("/myteam/", protectRoute, MyTeams);
-router.get("/myteam/:teamid", protectRoute, MyCurrentTeams);
-router.get("/myplayfor/", protectRoute, PlayForStatus);
-router.get("/myplayfor/:teamid", protectRoute, CurrentPlayerStatus);
-router.put("/status/:teamid", protectRoute, PlayerStatus);
+router.get("/", protectRoute, MyTeams); // View Team as player or captain
+router.post("/", protectRoute, buildTeam); // Create Team
+router.delete("/:teamId", protectRoute, DeleteTeam); // Delete Team
+router.put("/:teamIdToFind", protectRoute, UpdateTeam); // Update Team
+router.put("/status/:teamIdToFind", protectRoute, updatePlayerStatus); // Player Status
+
 
 router.get("/teams" ,protectRoute, searchTeam);
 router.post("/event",protectRoute, createEvent);

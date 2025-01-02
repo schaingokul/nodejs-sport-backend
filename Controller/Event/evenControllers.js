@@ -117,9 +117,9 @@ export const viewTeamDetails = async( req,res) => {
     let {t_id, op_id} = req.query
     try {
         let teamView;
-            op_id = op_id.toString()
         if(op_id){
             teamView = await UserDetails.findOne({"MyTeamBuild._id": op_id }).select("MyTeamBuild");
+            console.log(teamView)
             
         }else {
             teamView = await UserDetails.findOne({ uuid: userUuid, "MyTeamBuild._id": t_id }).select("MyTeamBuild");
@@ -165,7 +165,7 @@ export const createEvent = async(req,res) => {
             reqTeam: teamId,
             loc: loc,
             link: link,
-            d_t: `${date} ${time}`
+            eventTime: `${date} ${time}`
         });
 
         newEvent.save();
