@@ -43,9 +43,9 @@ export const checkAndCreateDir = (dir) => {
 // development is for Local Server
 
 // Set base directory based on environment
-const basePath = process.env.NODE_ENV === 'production'
-    ? '/var/www/nodejs-sport-backend/Uploads'   // Full path on VPS server
-    : 'Uploads';  // Local path for local development
+let server = process.env.NODE_ENV  || 'production';
+
+const basePath = server === 'production' ? '/var/www/nodejs-sport-backend/Uploads' : 'Uploads' ;  // Local path for local development
 
 // Function to delete a file
 export const deleteFile = (filePath, fileType, uuid) => {

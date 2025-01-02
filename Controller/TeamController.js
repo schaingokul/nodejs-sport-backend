@@ -5,18 +5,46 @@ export const MyTeams = async (req, res) => {
     const {id: userLogin, uuid: userUuid} = req.user;
     let {type} = req.query;
 
-    try {let usersWithMatchingTeams;
+    try {
+        let usersWithMatchingTeams;
         let query = { uuid: userUuid };
 
         if (type === "player") {
-            usersWithMatchingTeams = await UserDetails.find(query).select({ uuid: 1, MyTeamBuild: { $elemMatch: { role: "player" } } }).sort({ updatedAt: -1 });
+            usersWithMatchingTeams = await UserDetails.aggregate([
+                { $match: query },
+                { $project: {
+                    uuid: 1,
+                    MyTeamBuild: {
+                        $filter: {
+                            input: "$MyTeamBuild",
+                            as: "team",
+                            cond: { $eq: ["$$team.role", "player"] }
+                        }
+                    }
+                }},
+                { $sort: { updatedAt: -1 } }
+            ]);
+
         } else if (type === "captain") {
-            usersWithMatchingTeams = await UserDetails.find(query).select({ uuid: 1, MyTeamBuild: { $elemMatch: { role: "captain" } } }).sort({ updatedAt: -1 });
+            usersWithMatchingTeams = await UserDetails.aggregate([
+                { $match: query },
+                { $project: {
+                    uuid: 1,
+                    MyTeamBuild: {
+                        $filter: {
+                            input: "$MyTeamBuild",
+                            as: "team",
+                            cond: { $eq: ["$$team.role", "captain"] }
+                        }
+                    }
+                }},
+                { $sort: { updatedAt: -1 } }
+            ]);
+            
         } else {
             return res.status(400).json({ status: false, message: "Invalid type parameter. Use 'player' or 'captain'."});
         }
 
-        
         return res.status(200).json({ status: true, message: `Team Details is Viewed Sucess`, usersWithMatchingTeams  });
     } catch (error) {
         console.log(error.message)
