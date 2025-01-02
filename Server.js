@@ -136,7 +136,7 @@ app.get("/", (req,res) => {
 // });
 
 /* --------------------------------------------- Hositing Server --------------------------------------------- */ 
-app.listen(PORT, HOST.replace("http://", ""), async () => {
+server.listen(PORT, HOST.replace("http://", ""), async () => {
     try {
         await connectDB();
         console.log(`Server is running on ${PORT}`);
