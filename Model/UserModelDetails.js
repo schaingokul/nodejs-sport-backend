@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import ImageModel from "./ImageModel.js";
 
 // User Information Subdocument Schema
 export const userInfoSchema = new mongoose.Schema(

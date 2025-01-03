@@ -1,18 +1,18 @@
 meta {
-  name: myTeam
+  name: account
   type: http
-  seq: 3
+  seq: 2
 }
 
 get {
-  url: {{Port}}/api/team?type=captain
+  url: {{Port}}/api/auth/account?type=following
   body: json
   auth: bearer
 }
 
 params:query {
-  type: captain
-  ~type: player
+  type: following
+  ~type: followers
 }
 
 auth:bearer {

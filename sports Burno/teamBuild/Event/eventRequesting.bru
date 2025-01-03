@@ -1,18 +1,18 @@
 meta {
-  name: myTeam
+  name: eventRequesting
   type: http
-  seq: 3
+  seq: 4
 }
 
-get {
-  url: {{Port}}/api/team?type=captain
+post {
+  url: {{Port}}/api/team/req?eventId=6777a12e21480b32a2ee1166&teamId=6777b91403d9033cf0097ea5
   body: json
   auth: bearer
 }
 
 params:query {
-  type: captain
-  ~type: player
+  eventId: 6777a12e21480b32a2ee1166
+  teamId: 6777b91403d9033cf0097ea5
 }
 
 auth:bearer {

@@ -4,23 +4,23 @@ meta {
   seq: 5
 }
 
-get {
-  url: {{Port}}/api/team/status?eventID=6773c2bf4479d9a9f10f5507
+post {
+  url: {{Port}}/api/team/status?eventID=6777a12e21480b32a2ee1166
   body: json
   auth: bearer
 }
 
 params:query {
-  eventID: 6773c2bf4479d9a9f10f5507
+  eventID: 6777a12e21480b32a2ee1166
 }
 
 auth:bearer {
-  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NzM5YzFmZGQ1NGU1M2RjNWI5MDYwYSIsInV1aWQiOiJJYk1jVWhpNGlnRVZ3dGpLSjkxbWQiLCJFbWFpbF9JRCI6Imd1ZXN0MUBnbWFpbC5jb20iLCJpYXQiOjE3MzU2Mzg4NDcsImV4cCI6MTc2NzE3NDg0N30.iC8gJKocePoxU_DH0J6z8cJstzgMhbg6cQS1A2DSfYU
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3Nzc5ZmYyMjE0ODBiMzJhMmVlMTBkYyIsInV1aWQiOiJrOW4wWTY4OXhoNmdfZ1NQY09zWVkiLCJFbWFpbF9JRCI6Imd1ZXN0MUBnbWFpbC5jb20iLCJpYXQiOjE3MzU4OTMwOTAsImV4cCI6MTc2NzQyOTA5MH0.BOkO0re7hqVEvE3JCTPWVa4V1jwc_sx94It7okUQRnE
 }
 
 body:json {
   {
-    "status": "accepted",
-    "teamOp":""
+    "status": "waiting",
+    "teamId":"6777b91403d9033cf0097ea5"
   }
 }

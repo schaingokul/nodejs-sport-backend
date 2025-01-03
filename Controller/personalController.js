@@ -1,4 +1,5 @@
 import UserDetails from '../Model/UserModelDetails.js';
+import ImageModel from '../Model/ImageModel.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { findUser, deleteFile , generateUniqueNickname} from '../utilis/userUtils.js';
@@ -42,7 +43,7 @@ export const viewUserProfile = async(req,res) => {
 
 
 export const SaveUserProfile = async (req, res) => {
-    const { uuid: userUuid } = req.user;
+    const {id: userId, uuid: userUuid } = req.user;
     const saveFields = req.body;
 
     try {
@@ -53,15 +54,15 @@ export const SaveUserProfile = async (req, res) => {
         }
 
         // Validate nickname uniqueness
-        if (saveFields.NickName) {
+        if (saveFields.Nickname) {
             try {
-                saveFields.NickName = await generateUniqueNickname(saveFields.NickName);
+                saveFields.NickName = await generateUniqueNickname(saveFields.Nickname);
             } catch (error) {
                 console.error("Nickname error:", error.message);
                 return res.status(400).json({ status: false, message: error.message });
             }
         }
-
+        console.log("saveFields.NickName", saveFields['Nickname']);
         // Handle profile image upload
         let profileImageUrl = "";
         if (req?.files?.Profile_ImgURL?.length > 0) {
@@ -102,7 +103,19 @@ export const SaveUserProfile = async (req, res) => {
             { new: true }
         ).select("userInfo");
 
-        res.status(200).json({ status: true, message: "User profile updated successfully", updateInformation: updatedUser, });
+        if (updatedUser) {
+            const updateResult = await ImageModel.updateMany(
+                { "postedBy.id": userId },
+                { $set: { "postedBy.name": updatedUser?.userInfo?.Nickname } }
+            );
+            console.log(`Updated ${updateResult.nModified} posts with new nickname.`);
+        }
+
+        if (!updatedUser) {
+            return res.status(500).json({ status: false, message: "Failed to update user profile" });
+        }
+                
+        res.status(200).json({ status: true, message: "User profile updated successfully", updateInformation: updatedUser });
     } catch (error) {
         console.error("Error updating user profile:", error.message);
 
@@ -113,9 +126,10 @@ export const SaveUserProfile = async (req, res) => {
             await deleteFile(file.filename, "image", userUuid);
         }
 
-        res.status(500).json({ status: false, message: "An unexpected error occurred while updating the profile", });
+        res.status(500).json({ status: false, message: "An unexpected error occurred while updating the profile" });
     }
 };
+
 
 
 export const sportsView = async(req,res) => {

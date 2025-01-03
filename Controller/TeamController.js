@@ -11,35 +11,13 @@ export const MyTeams = async (req, res) => {
 
         if (type === "player") {
             usersWithMatchingTeams = await UserDetails.aggregate([
-                { $match: query },
-                { $project: {
-                    uuid: 1,
-                    MyTeamBuild: {
-                        $filter: {
-                            input: "$MyTeamBuild",
-                            as: "team",
-                            cond: { $eq: ["$$team.role", "player"] }
-                        }
-                    }
-                }},
-                { $sort: { updatedAt: -1 } }
-            ]);
+                { $match: query }, 
+                { $project: { uuid: 1, MyTeamBuild: { $filter: { input: "$MyTeamBuild", as: "team", cond: { $eq: ["$$team.role", "player"] } } }}}, { $sort: { updatedAt: -1 } } ]);
 
         } else if (type === "captain") {
             usersWithMatchingTeams = await UserDetails.aggregate([
                 { $match: query },
-                { $project: {
-                    uuid: 1,
-                    MyTeamBuild: {
-                        $filter: {
-                            input: "$MyTeamBuild",
-                            as: "team",
-                            cond: { $eq: ["$$team.role", "captain"] }
-                        }
-                    }
-                }},
-                { $sort: { updatedAt: -1 } }
-            ]);
+                { $project: { uuid: 1,  MyTeamBuild: { $filter: { input: "$MyTeamBuild", as: "team", cond: { $eq: ["$$team.role", "captain"] }} } }},{ $sort: { updatedAt: -1 } } ]);
             
         } else {
             return res.status(400).json({ status: false, message: "Invalid type parameter. Use 'player' or 'captain'."});

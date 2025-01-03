@@ -43,6 +43,8 @@ export const checkAndCreateDir = (dir) => {
 // development is for Local Server
 
 // Set base directory based on environment
+
+// let server = process.env.NODE_ENV  || 'production';
 let server = process.env.NODE_ENV  || 'production';
 
 const basePath = server === 'production' ? '/var/www/nodejs-sport-backend/Uploads' : 'Uploads' ;  // Local path for local development
@@ -77,18 +79,24 @@ export const deleteFile = (filePath, fileType, uuid) => {
 
 const special = '@';
 
-export const generateUniqueNickname = async (firstName) => {
+export const generateUniqueNickname = async (NickName) => {
     const MAX_ATTEMPTS = 1000; // Maximum number of retries to generate a unique username
-    let baseUsername = `${special}${firstName.toString().toLowerCase()}`;
+    let baseUsername = `${special}${NickName.toString().toLowerCase()}`;
 
     // Fetch all nicknames that start with the base username
     const existingNicknames = await UserDetails.find(
-        { "userInfo.Nickname": { $regex: `^${baseUsername}` } },
+        { "userInfo.Nickname": { $regex: `^${NickName.toLowerCase()}` } },
         { "userInfo.Nickname": 1, _id: 0 }
     );
 
+     
     // Extract the nicknames into a set for quick lookup
     const nicknameSet = new Set(existingNicknames.map(user => user.userInfo.Nickname));
+
+    // If the base username is already taken, throw an error
+    if (nicknameSet.has(NickName)) {
+        throw new Error(`The nickname "${NickName}" is already in use.`);
+    }
 
     // Initialize a counter for uniqueness
     let counter = 1;

@@ -313,6 +313,7 @@ export const follow = async (req, res, next) => {
     }
 };
 
+
 export const following = async (req, res) => {
     const { id } = req.params; // following uuid
     const { uuid } = req.user; // logged-in user uuid
@@ -341,5 +342,48 @@ export const following = async (req, res) => {
         console.log(error);
         // next(error.message);
         res.status(500).json({status: false, message: "Follow Route error"})
+    }
+};
+
+
+export const follow_following = async(req, res) => {
+    const { id: userId, uuid: userUuid } = req.user; 
+    const { type } = req.query; 
+    try {
+        const user = await UserDetails.findById(userId).select("uuid following followers");
+        let response = [];
+
+        if (type === "following") {
+            response = await Promise.all(
+                user.following.map(async (list) => {
+                    const userList = await UserDetails.findOne({ uuid: list.followingBy_id });
+                    return {
+                        Name: userList.userInfo?.Nickname,
+                        Pic: userList.userInfo?.Profile_ImgURL,
+                        uuid: userList.uuid
+                    };
+                })
+            );
+        }
+
+        if (type === "followers") {
+            response = await Promise.all(
+                user.followers.map(async (list) => {
+                    const userList = await UserDetails.findOne({ uuid: list.follwersBy_id });
+                    return {
+                        Name: userList.userInfo?.Nickname,
+                        Pic: userList.userInfo?.Profile_ImgURL,
+                        uuid: userList.uuid
+                    };
+                })
+            );
+        }
+
+        console.log(`${type} List fetched`);
+        res.status(200).json({ status: true, message: `${type} List fetched successfully`, response }); 
+        
+    } catch (error) {
+        console.log(`${type} List error:`, error);
+        res.status(500).json({ status: false, message: `${type} List error`, error: error.message });
     }
 };
