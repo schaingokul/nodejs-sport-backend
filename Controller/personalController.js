@@ -56,7 +56,10 @@ export const SaveUserProfile = async (req, res) => {
         // Validate nickname uniqueness
         if (saveFields.Nickname) {
             try {
-                saveFields.NickName = await generateUniqueNickname(saveFields.Nickname);
+                if(user?.userInfo?.Nickname.toString().toLowerCase() !== saveFields.NickName.toString().toLowerCase()){
+                    saveFields.NickName = await generateUniqueNickname(saveFields.Nickname);
+                }
+                
             } catch (error) {
                 console.error("Nickname error:", error.message);
                 return res.status(400).json({ status: false, message: error.message });
