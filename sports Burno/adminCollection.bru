@@ -1,0 +1,17 @@
+meta {
+  name: adminCollection
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{Port}}/api/auth/collection?colName=notify
+  body: json
+  auth: none
+}
+
+params:query {
+  colName: notify
+  ~colName: event
+  ~colName: post
+}

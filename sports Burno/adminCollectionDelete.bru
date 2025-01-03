@@ -1,0 +1,18 @@
+meta {
+  name: adminCollectionDelete
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{Port}}/api/auth/deletecollection?colName=notify&id=6772a1005257c71d3256b89b
+  body: json
+  auth: none
+}
+
+params:query {
+  colName: notify
+  id: 6772a1005257c71d3256b89b
+  ~colName: event
+  ~colName: post
+}

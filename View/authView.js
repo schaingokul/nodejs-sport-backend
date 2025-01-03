@@ -9,6 +9,9 @@ import PostImage from '../Model/ImageModel.js';
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
+import ImageModel from '../Model/ImageModel.js';
+import Notification from '../Model/NotificationModel.js';
+import eventRequest from '../Model/eventRequestModel.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -102,7 +105,81 @@ export const adminUserDelete = async (req, res) => {
 
 router.get("/admin", adminUser);
 router.delete("/admin", adminUserDelete);
+router.get("/collection", async (req, res) => {
+    let { colName } = req.query;
+    
+    // Normalize collection name to lower case
+    colName = colName ? colName.toLowerCase() : "";
 
+    try {
+        let finded;
+        
+        // Map of collection names to corresponding models
+        const collectionMap = {
+            post: ImageModel,
+            notify: Notification,
+            event: eventRequest
+        };
+
+        // Check if the requested collection exists in the map
+        if (collectionMap[colName]) {
+            finded = await collectionMap[colName].find();
+        } else {
+            return res.status(404).json({ status: false, message: `Collection ${colName} not found` });
+        }
+
+        console.log(`Collection DB is ${colName}`);
+        return res.status(200).json({ status: true, message: `Collection DB is ${colName}`, finded });
+
+    } catch (error) {
+        console.error("Error fetching collection:", error.message);
+        return res.status(500).json({ status: false, message: "Error fetching collection data", error: error.message });
+    }
+});
+
+router.delete("/deletecollection", async (req, res) => {
+    let { colName, id } = req.query;
+
+    // Normalize collection name to lower case
+    colName = colName ? colName.toLowerCase() : "";
+
+    // Validate that the id is provided and valid
+    if (!id) {
+        return res.status(400).json({ status: false, message: "ID is required for deletion" });
+    }
+
+    try {
+        let finded;
+
+        // Map of collection names to corresponding models
+        const collectionMap = {
+            post: ImageModel,
+            notify: Notification,
+            event: eventRequest
+        };
+
+        // Check if the requested collection exists in the map
+        if (collectionMap[colName]) {
+            // Attempt to delete the document with the specified id
+            finded = await collectionMap[colName].findByIdAndDelete(id);
+
+            // If the document wasn't found, return a not found error
+            if (!finded) {
+                return res.status(404).json({ status: false, message: `No item found with ID: ${id} in ${colName}` });
+            }
+
+        } else {
+            return res.status(404).json({ status: false, message: `Collection ${colName} not found` });
+        }
+
+        console.log(`Collection ${colName} deleted, ID: ${id}`);
+        return res.status(200).json({ status: true, message: `Collection ${colName} deleted successfully`, deletedItem: finded });
+
+    } catch (error) {
+        console.error(`Error deleting collection ${colName}:`, error.message);
+        return res.status(500).json({ status: false, message: "Error deleting collection data", error: error.message });
+    }
+});
 
 router.use(ErrorHandler);
 

@@ -56,15 +56,16 @@ export const SaveUserProfile = async (req, res) => {
         // Validate nickname uniqueness
         if (saveFields.Nickname) {
             try {
-                if(user?.userInfo?.Nickname.toLowerCase() !== saveFields.NickName.toLowerCase()){
-                    saveFields.NickName = await generateUniqueNickname(saveFields.Nickname);
+                // Check if nickname needs to be changed
+                if (user?.userInfo?.Nickname?.toLowerCase() !== saveFields.Nickname.toLowerCase()) {
+                    saveFields.Nickname = await generateUniqueNickname(saveFields.Nickname);
                 }
-                
             } catch (error) {
                 console.error("Nickname error:", error.message);
                 return res.status(400).json({ status: false, message: error.message });
             }
         }
+
         console.log("saveFields.NickName", saveFields['Nickname']);
         // Handle profile image upload
         let profileImageUrl = "";

@@ -101,16 +101,6 @@ const chatSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const matchHistorySchema = new mongoose.Schema(
-  {
-    matchId: { type: String, required: true },
-    opponentTeam: { type: String, required: true }, // Opponent Team Name
-    result: { type: String, enum: ["win", "loss", "draw", "pending"], default: "pending" },
-    date: { type: Date, required: true }
-  },
-  { _id: true }
-);
-
 // Main User Schema
 const userDetailsSchema = new mongoose.Schema(
   {
@@ -127,7 +117,6 @@ const userDetailsSchema = new mongoose.Schema(
     myPostKeys: [{ type: String, default: [] }],     
     MyTeamBuild: [TeamBuildSchema],
     chatList: [chatSchema],
-    teamMatchHistory: [matchHistorySchema],
     eventKeys: [{ type: String, default: [] }],
     isVerified: { type: Boolean, default: false },
     verificationCode: { type: String, default: "N/A" },
