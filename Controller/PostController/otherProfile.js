@@ -5,13 +5,13 @@ import { sendErrorResponse } from '../../utilis/ErrorHandlingMiddleware.js';
 // No_Changes
 export const otherProfile = async (req, res) => {
     const { id: userId } = req.user;
-    const { id: otherUserUuid } = req.params;
+    const { id: otherUserID } = req.params;
 
     try {
         const current = await UserDetails.findById(userId).select("-Password");
         if (!current) return res.status(404).json({ status: false, message: "User not found." });
 
-        const user = await UserDetails.findOne({uuid: otherUserUuid }).select("-Password");
+        const user = await UserDetails.findById(otherUserID).select("-Password");
         if (!user) return res.status(404).json({ status: false, message: "User not found." });
 
         // Ensure properties exist and have default values
@@ -79,7 +79,7 @@ export const otherPost = async(req,res) => {
         const userFound = await UserDetails.findById(userId);
         if (!userFound) return res.status(404).json({ status: false, message: "User not found." });
 
-        const findUser = await UserDetails.findOne({uuid: otherUserUuid })
+        const findUser = await UserDetails.findById(otherUserUuid)
         if (!findUser) return res.status(404).json({ status: false, message: "Other User POST Not found." });
         // Fetch all posts
         const postIds = findUser.myPostKeys.map((postid) => postid.toString());
