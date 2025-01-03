@@ -5,14 +5,23 @@ import { sendErrorResponse } from '../../utilis/ErrorHandlingMiddleware.js';
 // No_Changes
 export const otherProfile = async (req, res) => {
     const { id: userId } = req.user;
-    const { id: otherUserId } = req.params;
+    const { id: otherUserUuid } = req.params;
 
     try {
         const current = await UserDetails.findById(userId).select("-Password");
         if (!current) return res.status(404).json({ status: false, message: "User not found." });
 
-        const user = await UserDetails.findById(otherUserId).select("-Password");
+        const user = await UserDetails.findOne({uuid: otherUserUuid }).select("-Password");
         if (!user) return res.status(404).json({ status: false, message: "User not found." });
+
+        // Ensure properties exist and have default values
+        user.following = user.following || [];
+        user.followers = user.followers || [];
+        user.myPostKeys = user.myPostKeys || [];
+        user.MyTeamBuild = user.MyTeamBuild || [];
+        user.PlayFor = user.PlayFor || [];
+        user.userInfo = user.userInfo || {};
+        user.sportsInfo = user.sportsInfo || [];
 
         // Fetch all posts
         const postIds = user.myPostKeys.map((postid) => postid.toString());
@@ -65,10 +74,13 @@ export const otherProfile = async (req, res) => {
 
 export const otherPost = async(req,res) => {
     const {uuid: userUuid, id: userId } = req.user
-    const {id: findId} = req.params
+    const {id: otherUserUuid} = req.params
     try {
-        const userFound = await UserDetails.findById(userId)
-        const findUser = await UserDetails.findById(findId)
+        const userFound = await UserDetails.findById(userId);
+        if (!userFound) return res.status(404).json({ status: false, message: "User not found." });
+
+        const findUser = await UserDetails.findOne({uuid: otherUserUuid })
+        if (!findUser) return res.status(404).json({ status: false, message: "Other User POST Not found." });
         // Fetch all posts
         const postIds = findUser.myPostKeys.map((postid) => postid.toString());
         const posts = await PostImage.find({ _id: { $in: postIds } });
