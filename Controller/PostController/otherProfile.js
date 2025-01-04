@@ -2,6 +2,7 @@ import PostImage from '../../Model/ImageModel.js';
 import UserDetails from '../../Model/UserModelDetails.js';
 import { sendErrorResponse } from '../../utilis/ErrorHandlingMiddleware.js';
 
+
 // No_Changes
 export const otherProfile = async (req, res) => {
     const { id: userId } = req.user;
@@ -71,7 +72,6 @@ export const otherProfile = async (req, res) => {
     }
 };
 
-
 export const otherPost = async(req,res) => {
     const {uuid: userUuid, id: userId } = req.user
     const {id: otherUserUuid} = req.params
@@ -79,28 +79,32 @@ export const otherPost = async(req,res) => {
         const userFound = await UserDetails.findById(userId);
         if (!userFound) return res.status(404).json({ status: false, message: "User not found." });
 
-        const findUser = await UserDetails.findById(otherUserUuid)
+        const otherUser = await UserDetails.findById(otherUserUuid)
         if (!findUser) return res.status(404).json({ status: false, message: "Other User POST Not found." });
         // Fetch all posts
-        const postIds = findUser.myPostKeys.map((postid) => postid.toString());
+        const postIds = otherUser.myPostKeys.map((postid) => postid.toString());
         const posts = await PostImage.find({ _id: { $in: postIds } });
 
         // Simplify post details
         const postDetails = posts.map((post) => ({
             postId: post._id,
-            location: post.location,
-            likes: post.likes.length,
-            comments: post.comments.length,
+            userId: post?.postedBy?.id,
+            userProfile: otherUser?.userInfo?.Profile_ImgURL,
+            userName: otherUser?.userInfo?.Nickname,
             description: post.description,
             type: post.type,
             URL: post.URL[0], // Convert URL array to single string
+            lc: post.likes.length,
+            location: post.location,
+            comments: post.comments.length,
+            isLiked: post.likes.some((like) => like.likedByUuid === userUuid.toString())  // Check if post UUID is in likedPosts
         }));
 
         const response = {
-            id: findUser._id,
-            uuid: findUser.uuid,
-            userName: findUser.userInfo.Nickname,
-            profile: findUser.userInfo.Profile_ImgURL,
+            id: otherUser._id,
+            uuid: otherUser.uuid,
+            userProfile: otherUser.userInfo.Profile_ImgURL,
+            userName: otherUser.userInfo.Nickname,
             myPostKeys: postDetails,
         };
 
@@ -109,3 +113,4 @@ export const otherPost = async(req,res) => {
         sendErrorResponse(res, 500, "My Post. Failed to process the request.", error.message, "MY_POST_CAUSES_ERROR")
     }
 };
+

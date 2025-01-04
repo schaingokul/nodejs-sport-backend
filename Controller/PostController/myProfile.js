@@ -58,28 +58,32 @@ export const myProfile = async (req, res) => {
 export const myPost = async(req,res) => {
     const {uuid: userUuid, id: userId } = req.user
     try {
-        const userFound = await UserDetails.findById(userId);
+        const currentUser = await UserDetails.findById(userId);
 
         // Fetch all posts
-        const postIds = userFound.myPostKeys.map((postid) => postid.toString());
+        const postIds = currentUser.myPostKeys.map((postid) => postid.toString());
         const posts = await PostImage.find({ _id: { $in: postIds } });
 
         // Simplify post details
         const postDetails = posts.map((post) => ({
             postId: post._id,
-            userName: userFound.userInfo.Nickname,
-            profile: userFound.userInfo.Profile_ImgURL,
-            location: post.location,
-            likes: post.likes.length,
-            comments: post.comments.length,
+            userId: post?.postedBy?.id,
+            userProfile: currentUser.userInfo.Profile_ImgURL,
+            userName: currentUser.userInfo.Nickname,
             description: post.description,
             type: post.type,
             URL: post.URL[0], // Convert URL array to single string
+            lc: post.likes.length,
+            location: post.location,
+            comments: post.comments.length,
+            isLiked: post.likes.some((like) => like.likedByUuid === userUuid.toString())  // Check if post UUID is in likedPosts
         }));
 
         const response = {
             id: userFound._id,
             uuid: userFound.uuid,
+            userProfile: currentUser?.userInfo?.Profile_ImgURL,
+            userName: currentUser?.userInfo?.Nickname,
             myPostKeys: postDetails,
         };
 
