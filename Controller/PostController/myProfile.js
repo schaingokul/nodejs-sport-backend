@@ -65,7 +65,7 @@ export const myPost = async(req,res) => {
         const posts = await PostImage.find({ _id: { $in: postIds } });
 
         // Simplify post details
-        const postDetails = posts.map((post) => ({
+        const response = posts.map((post) => ({
             postId: post._id,
             userId: post?.postedBy?.id,
             userProfile: currentUser.userInfo.Profile_ImgURL,
@@ -79,15 +79,15 @@ export const myPost = async(req,res) => {
             isLiked: post.likes.some((like) => like.likedByUuid === userUuid.toString())  // Check if post UUID is in likedPosts
         }));
 
-        const response = {
-            id: currentUser._id,
-            uuid: currentUser.uuid,
-            userProfile: currentUser?.userInfo?.Profile_ImgURL,
-            userName: currentUser?.userInfo?.Nickname,
-            myPostKeys: postDetails,
-        };
+        // const response = {
+        //     id: currentUser._id,
+        //     uuid: currentUser.uuid,
+        //     userProfile: currentUser?.userInfo?.Profile_ImgURL,
+        //     userName: currentUser?.userInfo?.Nickname,
+        //     myPostKeys: postDetails,
+        // };
 
-        res.status(200).json({status: true, message: 'View MyPost', data:response })
+        res.status(200).json({status: true, message: 'View MyPost', data: response })
     } catch (error) {
         sendErrorResponse(res, 500, "My Post. Failed to process the request.", error.message, "MY_POST_CAUSES_ERROR")
     }

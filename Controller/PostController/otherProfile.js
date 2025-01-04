@@ -80,13 +80,13 @@ export const otherPost = async(req,res) => {
         if (!userFound) return res.status(404).json({ status: false, message: "User not found." });
 
         const otherUser = await UserDetails.findById(otherUserUuid)
-        if (!findUser) return res.status(404).json({ status: false, message: "Other User POST Not found." });
+        if (!otherUser) return res.status(404).json({ status: false, message: "Other User POST Not found." });
         // Fetch all posts
         const postIds = otherUser.myPostKeys.map((postid) => postid.toString());
         const posts = await PostImage.find({ _id: { $in: postIds } });
 
         // Simplify post details
-        const postDetails = posts.map((post) => ({
+        const response = posts.map((post) => ({
             postId: post._id,
             userId: post?.postedBy?.id,
             userProfile: otherUser?.userInfo?.Profile_ImgURL,
@@ -100,13 +100,13 @@ export const otherPost = async(req,res) => {
             isLiked: post.likes.some((like) => like.likedByUuid === userUuid.toString())  // Check if post UUID is in likedPosts
         }));
 
-        const response = {
-            id: otherUser._id,
-            uuid: otherUser.uuid,
-            userProfile: otherUser.userInfo.Profile_ImgURL,
-            userName: otherUser.userInfo.Nickname,
-            myPostKeys: postDetails,
-        };
+        // const response = {
+        //     id: otherUser._id,
+        //     uuid: otherUser.uuid,
+        //     userProfile: otherUser.userInfo.Profile_ImgURL,
+        //     userName: otherUser.userInfo.Nickname,
+        //     myPostKeys: postDetails,
+        // };
 
         res.status(200).json({status: true, message: 'View otherPost', data:response })
     } catch (error) {
