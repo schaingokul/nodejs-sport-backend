@@ -26,10 +26,6 @@ export const MyTeams = async (req, res) => {
             }
         ]);
 
-        if (!usersWithMatchingTeams.length || !usersWithMatchingTeams[0].MyTeamBuild.length) {
-            return res.status(200).json({ status: false, message: `No teams found for type: ${type}` });
-        }
-
         const teamDetails = [];
         for (const team of usersWithMatchingTeams[0].MyTeamBuild) {
             const playersList = await Promise.all(team.playersList.map(async (player) => {
@@ -55,7 +51,7 @@ export const MyTeams = async (req, res) => {
             });
         }
 
-        return res.status(200).json({ status: true, message: `Team details fetched successfully${teamDetails.length}`, teamDetails });
+        return res.status(200).json({ status: true, message: `Team details fetched successfully ${teamDetails.length}`, teamDetails });
     } catch (error) {
         console.error(error.message);
         return res.status(500).json({ status: false, message: `MyTeams route error: ${error.message}` });
