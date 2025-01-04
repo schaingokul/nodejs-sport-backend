@@ -30,28 +30,51 @@ export const searchTeam = async (req, res) => {
 
             // If `reqTeam` is provided, search by team ID
             if (reqTeam) {
-                query = { "MyTeamBuild._id": reqTeam };
+                query["MyTeamBuild._id"] = reqTeam;
             }
 
             usersWithMatchingTeams = await UserDetails.find(query).select({
                 uuid: 1,
                 userInfo: 1,
-                MyTeamBuild: { $elemMatch: { role: "captain" } },
+                MyTeamBuild: 1,
             });
 
-            response = usersWithMatchingTeams
-                .map((user) =>
-                    user.MyTeamBuild?.map((team) => ({
-                        Name: user.userInfo?.Nickname,
-                        T_id: team._id,
-                        T_Name: team.Team_Name,
-                        S_Name: team.Sports_Name,
-                        T_P: team.TotalPlayers,
-                        p_L: team.playersList,
-                        isReady: team.isReady,
-                    }))
-                )
-                .flat();
+            // Process each user and their teams
+            response = await Promise.all(
+                usersWithMatchingTeams.map(async (user) => {
+                    return await Promise.all(
+                        user.MyTeamBuild?.map(async (team) => {
+                            const playerList = await Promise.all(
+                                team.playersList.map(async (player) => {
+                                    const userDetails = await UserDetails.findOne({ uuid: player.Player_id });
+                                    return {
+                                        userId: userDetails._id,
+                                        userProfile: userDetails?.userInfo?.Profile_ImgURL,
+                                        userName: userDetails?.userInfo?.Nickname,
+                                        PlayerUuid: player.Player_id,
+                                        Position: player.Position,
+                                        status: player.status,
+                                    };
+                                })
+                            );
+
+                            return {
+                                Name: user.userInfo?.Nickname,
+                                T_id: team._id,
+                                T_Name: team.Team_Name,
+                                S_Name: team.Sports_Name,
+                                role: team.role,
+                                T_P: team.TotalPlayers,
+                                p_L: playerList,
+                                isReady: team.isReady,
+                            };
+                        })
+                    );
+                })
+            );
+
+            // Flatten the array
+            response = response.flat();
         }
 
         if (type === "players") {
@@ -63,7 +86,8 @@ export const searchTeam = async (req, res) => {
 
             response = usersWithMatchingTeams.map((user) => ({
                 Name: user.userInfo?.Nickname,
-                uniqueId: user.uuid,
+                id: user._id,
+                uuid: user.uuid,
                 URL: user.userInfo?.Profile_ImgURL,
             }));
         }
@@ -214,6 +238,33 @@ export const viewEvent = async (req, res) => {
     } catch (error) {
         console.error("View Event Route Error:", error.message);
         res.status(500).json({ status: false, message: "View Event Route", error: error.message });
+    }
+};
+
+
+export const userViewEvent = async (req, res) => {
+    const { id: userId, uuid: UserUuid } = req.user;
+    let { eventID } = req.query;
+
+    try {
+        // Step 1: Fetch user details
+        const user = await UserDetails.findById(userId);
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User Not Found" });
+        }
+
+        const events = await eventRequest.find({}).sort({ createdAt: -1 });
+        if (!events || events.length === 0) {
+            return res.status(200).json({ status: true, message: "No events found" });
+        }
+
+
+        console.log("userViewEvent Pass");
+        res.status(200).json({ status: true, message: "userViewEvent", events });
+
+    } catch (error) {
+        console.error("userViewEvent Route Error:", error.message);
+        res.status(500).json({ status: false, message: "userViewEvent", error: error.message });
     }
 };
 
