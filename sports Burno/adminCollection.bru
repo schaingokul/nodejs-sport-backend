@@ -5,13 +5,13 @@ meta {
 }
 
 get {
-  url: {{Port}}/api/auth/collection?colName=notify
+  url: {{Port}}/api/auth/collection?colName=post
   body: json
   auth: none
 }
 
 params:query {
-  colName: notify
+  colName: post
+  ~colName: notify
   ~colName: event
-  ~colName: post
 }

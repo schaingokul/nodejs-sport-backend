@@ -1,18 +1,17 @@
 meta {
-  name: eventRequesting
+  name: TeamId
   type: http
   seq: 3
 }
 
-post {
-  url: {{Port}}/api/team/req?eventId=6778ffc65473b4cc087c93f3&teamId=6778fffe5473b4cc087c9418
-  body: json
+get {
+  url: {{Port}}/api/team/event
+  body: none
   auth: bearer
 }
 
 params:query {
-  eventId: 6778ffc65473b4cc087c93f3
-  teamId: 6778fffe5473b4cc087c9418
+  ~teamID: 67779b7c0fd5166fadc6c8d9
 }
 
 auth:bearer {

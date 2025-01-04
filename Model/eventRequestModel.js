@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const TeamRequestSchema = new mongoose.Schema({
   teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'UserDetails', required: true, },
-  status: { type: String, enum: ['waiting', 'accepted', 'rejected'], default: 'waiting' },
+  status: { type: String, enum: ['invite', 'selected', 'declined'], default: 'invite' },
   requestedAt: { type: Date, default: Date.now },
 },{ _id: false });
 
@@ -14,7 +14,7 @@ const eventRequestSchema = new mongoose.Schema(
     teamsRequested: [TeamRequestSchema],
     selectedTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'UserDetails', default: null,},
     acptTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'UserDetails'},
-    status: { type: String, enum: [ "accepted", "cancel", "request"], default: "request" },
+    status: { type: String, enum: [ "approved", "withdrawn", "request"], default: "request" },
     loc: {type: String, require: true},
     link: {type: String, require: true},
     eventTime: { type: String, require: true },

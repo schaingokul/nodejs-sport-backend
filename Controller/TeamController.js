@@ -27,7 +27,7 @@ export const MyTeams = async (req, res) => {
         ]);
 
         if (!usersWithMatchingTeams.length || !usersWithMatchingTeams[0].MyTeamBuild.length) {
-            return res.status(404).json({ status: false, message: `No teams found for type: ${type}` });
+            return res.status(200).json({ status: false, message: `No teams found for type: ${type}` });
         }
 
         const teamDetails = [];
@@ -44,12 +44,14 @@ export const MyTeams = async (req, res) => {
                 };
             }));
             teamDetails.push({
+                createdBy: team.createdBy,
+                T_id:team._id,
                 TName: team.Team_Name,
                 SName: team.Sports_Name,
                 TPlayers: team.TotalPlayers,
+                role:team.role,
                 playersList,
-                isReady: team.isReady,
-                createdBy: team.createdBy,
+                isReady: team.isReady
             });
         }
 
@@ -205,6 +207,7 @@ export const DeleteTeam = async (req, res) => {
         res.status(500).json({ status: false, message: "Delete Team Causes Route Error", error: error.message, });
     }
 };
+
 export const UpdateTeam = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user; // Extract user ID and UUID
     const { teamIdToFind } = req.params; // Extract team ID from params
@@ -386,4 +389,4 @@ export const updatePlayerStatus = async(req, res) => {
         console.error(error.message);
         return res.status(500).json({ status: false, message: `Error updatePlayerStatus : ${error.message}` });
     }
-}
+};

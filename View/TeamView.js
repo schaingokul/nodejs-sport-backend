@@ -1,7 +1,7 @@
 import express from 'express';
 import protectRoute from '../middleware/ProtectRoute.js';
 import { buildTeam, DeleteTeam, UpdateTeam, MyTeams ,updatePlayerStatus } from '../Controller/TeamController.js';
-import {searchTeam, createEvent, viewEvent , eventApproved , eventRequesting} from '../Controller/Event/evenControllers.js';
+import {searchTeam, createEvent, viewEvent , eventApproved , eventRequesting ,specificEvent} from '../Controller/Event/evenControllers.js';
 
 
 const router = express.Router();
@@ -18,6 +18,9 @@ router.post("/event", protectRoute, createEvent);
 router.get("/event" , protectRoute , viewEvent);
 router.post("/req" , protectRoute , eventRequesting);
 router.post("/status" , protectRoute , eventApproved);
+
+//Details
+router.get("/specific" , protectRoute , specificEvent);
 
 
 export default router

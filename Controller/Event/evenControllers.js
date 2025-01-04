@@ -246,7 +246,7 @@ export const eventApproved = async(req, res) => {
         }
 
         // Handle "rejected" or "waiting" status
-        if (status === "rejected" || status === "waiting") {
+        if (status !== "approved") {
             // Remove the selected team
             event.selectedTeam = null;
 
@@ -269,16 +269,17 @@ export const eventApproved = async(req, res) => {
         }
 
         // Handle other statuses (accepted)
-        if (status === "accepted") {
+        if (status === "approved") {
             // Set the selected team
             event.selectedTeam = teamId;
+            event.status = status;
 
             // Set all teams' status to rejected except the accepted one
             event.teamsRequested = event.teamsRequested.map((teamRequest) => {
                 if (teamRequest.teamId.toString() === teamId) {
-                    teamRequest.status = "accepted";
+                    teamRequest.status = "selected";
                 } else {
-                    teamRequest.status = "rejected";
+                    teamRequest.status = "declined";
                 }
                 return teamRequest;
             });
@@ -297,10 +298,69 @@ export const eventApproved = async(req, res) => {
         
     } catch (error) {
         console.error("Event Status Route Error:", error.message);
-        res.status(500).json({
-            status: false,
-            message: "Event Status Route Error",
-            error: error.message,
-        });
+        res.status(500).json({ status: false, message: "Event Status Route Error", error: error.message, });
     }
 };
+
+
+export const specificEvent = async (req, res) => {
+    const { id: userId, uuid: UserUuid } = req.user;
+    let { eventID } = req.query;
+
+    try {
+        // Step 1: Fetch user details
+        const user = await UserDetails.findById(userId);
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User Not Found" });
+        }
+
+        // Step 2: Handle event request based on eventID query parameter
+        if (eventID) {
+            const event = await eventRequest.findById(eventID.toString());
+
+            if (!event) {
+                return res.status(404).json({ status: false, message: "Event is Not Found" });
+            }
+            const response = {
+                EventBy:{
+                    id:event.eventBy.id,
+                    userName:event.eventBy.name,
+                },
+                EID: event._id,
+                EName: event.eventName,
+                ETime:event.eventTime,
+                TReq: (event.teamsRequested.length > 0) ? event.teamsRequested.length : "0",
+                TeamA: event.reqTeam,
+                TeamB: event.selectedTeam,
+                status:event.status
+            }
+            return res.status(200).json({ status: true, message: "Specific Event Found", response });
+        }
+
+        // Step 3: If no eventID is provided, return all events
+        const events = await eventRequest.find({}).sort({ createdAt: -1 });
+        const eventDetails = events.map((event) => {
+            return {
+                EventBy: {
+                    id: event.eventBy.id,
+                    userName: event.eventBy.name,
+                },
+                EID: event._id,
+                EName: event.eventName,
+                ETime: event.eventTime,
+                TReq: (event.teamsRequested.length > 0) ? event.teamsRequested.length : "0",
+                TeamA: event.reqTeam,
+                TeamB: event.selectedTeam,
+                status: event.status,
+            };
+        });
+         
+        console.log("specific Events Pass");
+        res.status(200).json({ status: true, message: "All Events fetched", eventDetails });
+
+    } catch (error) {
+        console.error("specific Event Route Error:", error.message);
+        res.status(500).json({ status: false, message: "specific Event Route", error: error.message });
+    }
+};
+
