@@ -80,8 +80,8 @@ export const myPost = async(req,res) => {
         }));
 
         const response = {
-            id: userFound._id,
-            uuid: userFound.uuid,
+            id: currentUser._id,
+            uuid: currentUser.uuid,
             userProfile: currentUser?.userInfo?.Profile_ImgURL,
             userName: currentUser?.userInfo?.Nickname,
             myPostKeys: postDetails,
