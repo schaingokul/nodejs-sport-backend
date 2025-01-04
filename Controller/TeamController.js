@@ -39,7 +39,7 @@ export const MyTeams = async (req, res) => {
                     status: player.status,
                 };
             }));
-            teamDetails.push({
+            teamDetails.unshift({
                 createdBy: team.createdBy,
                 T_id:team._id,
                 TName: team.Team_Name,
