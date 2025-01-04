@@ -87,7 +87,7 @@ export const myPost = async(req,res) => {
         //     myPostKeys: postDetails,
         // };
 
-        res.status(200).json({status: true, message: 'View MyPost', data: response })
+        res.status(200).json({status: true, message: 'View MyPost', posts: response })
     } catch (error) {
         sendErrorResponse(res, 500, "My Post. Failed to process the request.", error.message, "MY_POST_CAUSES_ERROR")
     }
