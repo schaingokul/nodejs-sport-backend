@@ -35,8 +35,16 @@ router.get("/notification", ProtectRoute, getNotificationsForUser);
 
 export const adminUser = async(req,res) => {
     try {
-        const users = await UserDetails.find().select("id uuid First_Name Email_ID");
-        res.status(200).json({status: true, message: "AdminView userlist Details" ,Info: users} )
+        const users = await UserDetails.find().select("id uuid First_Name Email_ID userInfo");
+        let response = users.map((user) => {
+            return {
+                userId: user._id,
+                userUuid: user.uuid,
+                userName:user?.userInfo?.Nickname,
+                userProfile:user?.userInfo?.Profile_ImgURL
+            }
+        })
+        res.status(200).json({status: true, message: "AdminView userlist Details" ,Info: response} )
     } catch (error) {
         res.status(500).json({status: false, message: "Admin causes error"})
     }
@@ -178,6 +186,37 @@ router.delete("/deletecollection", async (req, res) => {
     } catch (error) {
         console.error(`Error deleting collection ${colName}:`, error.message);
         return res.status(500).json({ status: false, message: "Error deleting collection data", error: error.message });
+    }
+});
+
+router.get("/show", async (req, res) => {
+    try {
+        // Step 1: Aggregate allPostKeys
+        const result = await UserDetails.aggregate([
+            { $project: { myPostKeys: 1 } }, // Select 'myPostKeys' field
+            { $unwind: "$myPostKeys" }, // Flatten the 'myPostKeys' arrays
+            { $group: { _id: null, allPostKeys: { $addToSet: "$myPostKeys" } } } // Combine into a single array
+        ]);
+
+        const allPostKeys = result[0]?.allPostKeys || [];
+
+        // Step 2: Delete documents in ImageModel not in allPostKeys
+        const deleteResult = await ImageModel.deleteMany({ _id: { $nin: allPostKeys } });
+
+        res.status(200).json({
+            status: true,
+            message: "Unused images deleted successfully",
+            data: {
+                deletedCount: deleteResult.deletedCount // Number of documents deleted
+            }
+        });
+    } catch (error) {
+        console.error(`Error processing request:`, error.message);
+        return res.status(500).json({
+            status: false,
+            message: "Error processing request",
+            error: error.message
+        });
     }
 });
 

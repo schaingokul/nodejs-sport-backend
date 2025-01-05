@@ -1,13 +1,18 @@
 meta {
-  name: DeleteTeam
+  name: SearchPlayerID
   type: http
-  seq: 3
+  seq: 1
 }
 
-delete {
-  url: {{Port}}/api/team/677a15f33b448bf5588f8acc
-  body: json
+get {
+  url: {{Port}}/api/team/teams?type=players&search
+  body: none
   auth: bearer
+}
+
+params:query {
+  type: players
+  search: 
 }
 
 auth:bearer {

@@ -1,0 +1,15 @@
+meta {
+  name: AllEvent
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{Port}}/api/team/allevents
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3N2ExMzY3MTg5NmE1MGVjYjgwOGVlYyIsInV1aWQiOiJGYUJQLWw0T0F4NkZxOW1nU21iR1kiLCJFbWFpbF9JRCI6Imd1ZXN0MUBnbWFpbC5jb20iLCJpYXQiOjE3MzYwNTg4MDYsImV4cCI6MTc2NzU5NDgwNn0.mV792yXLcnb1Af-gZXxqmxrJNolqmkC81dCZPWJcf6E
+}

@@ -1,7 +1,6 @@
 import UserDetails from "../Model/UserModelDetails.js";
 import { mergeSort } from "../utilis/TeamAlgorithm.js";
 
-
 export const MyTeams = async (req, res) => {
     const { id: userLogin, uuid: userUuid } = req.user;
     const { type } = req.query;
@@ -11,49 +10,56 @@ export const MyTeams = async (req, res) => {
             return res.status(400).json({ status: false, message: "Invalid type parameter. Use 'player' or 'captain'." });
         }
 
+        // Fetch teams with matching role
         const usersWithMatchingTeams = await UserDetails.aggregate([
             { $match: { uuid: userUuid } },
-            { 
-                $project: { 
-                    MyTeamBuild: { 
-                        $filter: { 
-                            input: "$MyTeamBuild", 
-                            as: "team", 
-                            cond: { $eq: ["$$team.role", type] } 
-                        } 
-                    } 
-                } 
+            {
+                $project: {
+                    MyTeamBuild: {
+                        $filter: {
+                            input: "$MyTeamBuild",
+                            as: "team",
+                            cond: { $eq: ["$$team.role", type] }
+                        }
+                    }
+                }
             }
         ]);
 
+        if (!usersWithMatchingTeams.length || !usersWithMatchingTeams[0].MyTeamBuild?.length) {
+            return res.status(200).json({ status: true, message: "Please create a new team" });
+        }
+
         const teamDetails = [];
         for (const team of usersWithMatchingTeams[0].MyTeamBuild) {
-            const playersList = await Promise.all(team.playersList.map(async (player) => {
-                const user = await UserDetails.findOne({ uuid: player.Player_id });
-                return {
-                    userId:  user._id,
-                    userProfile: user?.userInfo?.Profile_ImgURL,
-                    userName: user?.userInfo?.Nickname,
-                    PlayerUuid: player.Player_id,
-                    Position: player.Position,
-                    status: player.status,
-                };
-            }));
-            teamDetails.unshift({
+            const playersList = await Promise.all(
+                team.playersList.map(async (player) => {
+                    const user = await UserDetails.findOne({ uuid: player.Player_id });
+                    return {
+                        userId: user?._id,
+                        userProfile: user?.userInfo?.Profile_ImgURL,
+                        userName: user?.userInfo?.Nickname,
+                        PlayerUuid: player.Player_id,
+                        Position: player.Position,
+                        status: player.status,
+                    };
+                })
+            );
+            teamDetails.push({
                 createdBy: team.createdBy,
-                T_id:team._id,
+                T_id: team._id,
                 TName: team.Team_Name,
                 SName: team.Sports_Name,
                 TPlayers: team.TotalPlayers,
-                role:team.role,
+                role: team.role,
                 playersList,
-                isReady: team.isReady
+                isReady: team.isReady,
             });
         }
 
-        return res.status(200).json({ status: true, message: `Team details fetched successfully ${teamDetails.length}`, teamDetails });
+        return res.status(200).json({ status: true, message: `Team details fetched successfully (${teamDetails.length})`, teamDetails });
     } catch (error) {
-        console.error(error.message);
+        console.error("MyTeams Route Error:", error.message);
         return res.status(500).json({ status: false, message: `MyTeams route error: ${error.message}` });
     }
 };
@@ -238,24 +244,7 @@ export const UpdateTeam = async (req, res) => {
         if (updateField.TotalPlayers) updateFields["MyTeamBuild.$.TotalPlayers"] = updateField.TotalPlayers;
 
         if (updateField.playersList) {
-            // // Ensure unique positions and validate player positions
-            // const positionsSet = new Set();
-            // const totalPlayers = parseInt(updateField.TotalPlayers || currentTeam.TotalPlayers);
-
-            // for (const player of updateField.playersList) {
-            //     if (positionsSet.has(player.Position)) {
-            //         return res.status(400).json({ status: false, message: "Player positions must be unique." });
-            //     }
-            //     if (player.Position < 1 || player.Position > totalPlayers) {
-            //         return res.status(400).json({
-            //             status: false,
-            //             message: `Player positions must be between 1 and ${totalPlayers}.`,
-            //         });
-            //     }
-            //     positionsSet.add(player.Position);
-            // }
-            // updateField.playersList = mergeSort(updateField.playersList);
-
+            
             updateFields["MyTeamBuild.$.playersList"] = updateField.playersList.map(player => ({
                 Player_id: player.Player_id,
                 Position: player.Position,

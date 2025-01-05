@@ -6,7 +6,7 @@ const getFormattedDateTime = () => moment().tz("Asia/Kolkata").format("YYYY-MM-D
 
 export const searchTeam = async (req, res) => {
     const { uuid: userUuid } = req.user;
-    let { search, type, reqTeam } = req.query;
+    let { search, type, useTeamID } = req.query;
 
     try {
         // Validate `type`
@@ -21,7 +21,7 @@ export const searchTeam = async (req, res) => {
 
         if (type === "myteam" || type === "team") {
             if (search) {
-                query = { "MyTeamBuild.Team_Name": { $regex: search, $options: "i" } };
+                query = { $or: [ { "MyTeamBuild.Team_Name": { $regex: search, $options: "i" } }, { "MyTeamBuild.Sports_Name": { $regex: search, $options: "i" } }]};
             }
 
             if (type === "myteam") {
@@ -29,8 +29,8 @@ export const searchTeam = async (req, res) => {
             }
 
             // If `reqTeam` is provided, search by team ID
-            if (reqTeam) {
-                query["MyTeamBuild._id"] = reqTeam;
+            if (useTeamID) {
+                query["MyTeamBuild._id"] = useTeamID;
             }
 
             usersWithMatchingTeams = await UserDetails.find(query).select({
@@ -85,10 +85,10 @@ export const searchTeam = async (req, res) => {
             usersWithMatchingTeams = await UserDetails.find(query).select("uuid userInfo");
 
             response = usersWithMatchingTeams.map((user) => ({
-                Name: user.userInfo?.Nickname,
-                id: user._id,
-                uuid: user.uuid,
-                URL: user.userInfo?.Profile_ImgURL,
+                userName: user.userInfo?.Nickname,
+                userProfile: user.userInfo?.Profile_ImgURL,
+                userId: user._id,
+                userUuid: user.uuid,
             }));
         }
 
@@ -109,11 +109,11 @@ export const searchTeam = async (req, res) => {
 
 export const createEvent = async(req,res) => {
     const {id: userId, uuid: UserUuid} = req.user
-    const {eventName, reqTeam, loc, link, date, time} = req.body // 2024-12-30 10:00 AM/PM
+    const {myTeamName, myTeam, loc, link, date, time} = req.body // 2024-12-30 10:00 AM/PM
 
     try {
 
-        if (!eventName || !reqTeam || !loc || !link || !date || !time) {
+        if ( !myTeam || !loc || !link || !date || !time) {
             return res.status(400).json({ status: false, message: "All fields are required." });
         }
 
@@ -122,7 +122,7 @@ export const createEvent = async(req,res) => {
             return res.status(200).json({ status: false, message: "User not found." });
         }
         if (user) {
-            const team = user.MyTeamBuild.find((find) => find._id === reqTeam && find.isReady === false);
+            const team = user.MyTeamBuild.find((find) => find._id === myTeam && find.isReady === false);
             if (team) {
                 return res.status(403).json({ status: false, message: "Team not ready: Check pending players and team status.",})}
         }
@@ -133,9 +133,9 @@ export const createEvent = async(req,res) => {
         }
 
         const newEvent = new eventRequest({
-            eventName: eventName,
             eventBy: { id: user._id , name: user?.userInfo?.Nickname},
-            reqTeam: reqTeam,
+            myTeamName: myTeamName,
+            myTeam: myTeam,
             loc: loc,
             link: link,
             eventTime: eventTime.format("YYYY-MM-DD hh:mm A"),
@@ -150,21 +150,33 @@ export const createEvent = async(req,res) => {
     }
 };
 
-
 export const eventRequesting = async (req, res) => {
     const { id: userId, uuid: UserUuid } = req.user;
     const { status } = req.body;
-    const { eventId, teamId } = req.query;
+    const { eventId, teamName, teamId, message } = req.query;
 
     try {
+        // Validate required inputs
+        if (!eventId || !teamId || !teamName) {
+            return res.status(400).json({
+                status: false,
+                message: "Invalid input: eventId, teamId, and teamName are required",
+            });
+        }
+
         // Check if the team exists for the user
         const existingTeam = await UserDetails.findOne({
             _id: userId,
-            MyTeamBuild: { $elemMatch: { _id: teamId } },
-        });
+            MyTeamBuild: { $elemMatch: { _id: teamId} },
+        }).select("userInfo MyTeamBuild");
+
+        console.log(existingTeam)
 
         if (!existingTeam) {
-            return res.status(404).json({ status: false, message: "Team is not found" });
+            return res.status(404).json({
+                status: false,
+                message: "Login user's team not found. Please select your team.",
+            });
         }
 
         // Find the event
@@ -174,66 +186,161 @@ export const eventRequesting = async (req, res) => {
         }
 
         // Check if the requesting team and the event owner team are the same
-        if (event.reqTeam.toString() === teamId) {
-            return res.status(400).json({ status: false, message: "Requesting team cannot be the same as the event owner team", });
+        if (event.myTeam.toString() === teamId) {
+            return res.status(400).json({
+                status: false,
+                message: "Requesting team cannot be the same as the event owner team.",
+            });
         }
 
-        // Check if the team has already requested
-        const existingRequest = event.teamsRequested.find(
+        // Check if the team has already requested the event
+        const existingRequestIndex = event.teamsRequested.findIndex(
             (req) => req.teamId.toString() === teamId
         );
 
-        if (existingRequest) {
+        if (existingRequestIndex !== -1) {
             // Update the status if provided
             if (status) {
-                existingRequest.status = status;
+                event.teamsRequested[existingRequestIndex].status = status;
                 await event.save();
-                return res.status(200).json({ status: true, message: "Team request status updated successfully", });
+
+                return res.status(200).json({
+                    status: true,
+                    message: "Team request status updated successfully.",
+                    updatedRequest: event.teamsRequested[existingRequestIndex],
+                });
             } else {
-                return res.status(400).json({ status: false, message: "Team has already requested this event", });
+                return res.status(400).json({ status: false, message: "Team has already requested this event.", });
             }
         }
 
         // Add a new team request
-        event.teamsRequested.push({ teamId, status: status || "waiting" });
+        const newRequest = { teamName, teamId, message };
+        event.teamsRequested.push(newRequest);
+
         await event.save();
 
-        console.log("Event request sent successfully");
-        res.status(200).json({ status: true,message: "Event request sent successfully", });
+        console.log("Event request sent successfully.");
+        res.status(200).json({ status: true, message: "Event request sent successfully.", newRequest, });
     } catch (error) {
         console.error("Error in eventRequesting:", error.message);
-        res.status(500).json({status: false, message: "An error occurred while processing the event request",error: error.message, });
+        res.status(500).json({ status: false, message: "An error occurred while processing the event request.", error: error.message, });
     }
 };
 
-
 export const viewEvent = async (req, res) => {
-    const { id: userId, uuid: UserUuid } = req.user;
-    let { eventID } = req.query;
+    const { id: userId, uuid: userUuid } = req.user;
 
     try {
         // Step 1: Fetch user details
-        const user = await UserDetails.findById(userId);
+        const user = await UserDetails.findById(userId).select("MyTeamBuild userInfo");
         if (!user) {
             return res.status(404).json({ status: false, message: "User Not Found" });
         }
 
-        // Step 2: Handle event request based on eventID query parameter
-        if (eventID) {
-            const event = await eventRequest.findById(eventID.toString());
+        // Step 2: Fetch events for all teams in MyTeamBuild
+        const events = await Promise.all(
+            user.MyTeamBuild.map(async (team) => {
+                const eventList = await eventRequest.find({
+                    $or: [{ myTeam: team._id }, { selectedTeam: team._id }]
+                }).sort({ createdAt: -1 });
 
-            if (!event) {
-                return res.status(404).json({ status: false, message: "Event is Not Found" });
-            }
+                // Process each event
+                return Promise.all(
+                    eventList.map(async (event) => {
+                        if(event.status === 'request'){
 
-            return res.status(200).json({ status: true, message: "Event Found", event });
-        }
+                        // Fetch myTeam details
+                        const myTeam = await UserDetails.findOne(
+                            { "MyTeamBuild._id": event.myTeam },
+                            { "MyTeamBuild.$": 1 }
+                        );
 
-        // Step 3: If no eventID is provided, return all events
-        const events = await eventRequest.find({}).sort({ createdAt: -1 });
+                        const myTeamDetails = myTeam?.MyTeamBuild[0];
+                        const myTeamPlayers = await Promise.all(
+                            myTeamDetails?.playersList.map(async (player) => {
+                                const playerDetails = await UserDetails.findOne({ uuid: player.Player_id });
+                                return {
+                                    userId: playerDetails?._id,
+                                    userProfile: playerDetails?.userInfo?.Profile_ImgURL,
+                                    userName: playerDetails?.userInfo?.Nickname,
+                                    playerUuid: player.Player_id,
+                                    position: player.Position,
+                                    status: player.status,
+                                    role: player.Player_id === myTeamDetails?.createdBy ? "captain" : "player"
+                                };
+                            }) || []
+                        );
+
+                        // Determine currentPlayerRole for the logged-in user
+                        const currentPlayerRole = myTeamDetails?.createdBy === userUuid
+                            ? "captain"
+                            : myTeamPlayers.some(player => player.playerUuid === userUuid)
+                            ? "player"
+                            : null;
+
+                        // Fetch opponent team details if teamsRequested are the same
+                        let opponentTeamDetails = null;
+                        if (event.myTeam.toString() !== event.selectedTeam) {
+                            const opponentTeam = await UserDetails.findOne(
+                                { "MyTeamBuild._id": event.selectedTeam },
+                                { "MyTeamBuild.$": 1 }
+                            );
+                            const opponentTeamPlayers = await Promise.all(
+                                opponentTeam?.MyTeamBuild[0]?.playersList.map(async (player) => {
+                                    const playerDetails = await UserDetails.findOne({ uuid: player.Player_id });
+                                    return {
+                                        userId: playerDetails?._id,
+                                        userProfile: playerDetails?.userInfo?.Profile_ImgURL,
+                                        userName: playerDetails?.userInfo?.Nickname,
+                                        playerUuid: player.Player_id,
+                                        position: player.Position,
+                                        status: player.status
+                                    };
+                                }) || []
+                            );
+                            opponentTeamDetails = {
+                                teamId: opponentTeam?._id,
+                                createTeam: opponentTeam?.createdBy,
+                                teamName: opponentTeam?.MyTeamBuild[0]?.Team_Name,
+                                sportsName: opponentTeam?.Sports_Name,
+                                totalPlayers: opponentTeam?.TotalPlayers,
+                                isReady: opponentTeam?.isReady,
+                                players: opponentTeamPlayers
+                            };
+                        }
+
+                        // Construct event response
+                        return {
+                            eventId: event._id,
+                            eventByID: event.eventBy.id,
+                            eventByname: event.eventBy.name,
+                            myTeam: {
+                                teamId: myTeamDetails?._id,
+                                createTeam: myTeamDetails?.createdBy,
+                                teamName: myTeamDetails?.Team_Name,
+                                sportsName: myTeamDetails?.Sports_Name,
+                                totalPlayers: myTeamDetails?.TotalPlayers,
+                                isReady: myTeamDetails?.isReady,
+                                players: myTeamPlayers
+                            },
+                            teamsRequested: event.teamsRequested,
+                            opponentTeam: opponentTeamDetails,
+                            status: event.status,
+                            eventTime: event.eventTime,
+                            currentPlayerRole
+                        };
+                        }
+                    })
+                );
+            })
+        );
+
+        // Flatten the array of events
+        const flatEvents = events.flat();
 
         console.log("View Event Pass");
-        res.status(200).json({ status: true, message: "View Events", events });
+        res.status(200).json({ status: true, message: "View Events", events: flatEvents });
 
     } catch (error) {
         console.error("View Event Route Error:", error.message);
@@ -242,176 +349,394 @@ export const viewEvent = async (req, res) => {
 };
 
 
-export const userViewEvent = async (req, res) => {
+export const eventApproved = async (req, res) => {
     const { id: userId, uuid: UserUuid } = req.user;
-    let { eventID } = req.query;
+    let { eventId, teamName, teamId, status } = req.query;
 
     try {
-        // Step 1: Fetch user details
-        const user = await UserDetails.findById(userId);
+        // Find the user
+        const user = await UserDetails.findById(userId).select("MyTeamBuild");
         if (!user) {
-            return res.status(404).json({ status: false, message: "User Not Found" });
+            return res.status(404).json({ status: false, message: "No user found with the provided credentials." });
         }
 
-        const events = await eventRequest.find({}).sort({ createdAt: -1 });
-        if (!events || events.length === 0) {
-            return res.status(200).json({ status: true, message: "No events found" });
+        if (user) {
+            user.MyTeamBuild.forEach((team) => {
+                if (team && team._id.toString() === teamId) {
+                    return res.status(403).json({
+                        status: false,
+                        message: "The selected team ID matches one of your own teams. Please choose a different team for the request.",
+                    });
+                }
+            });
         }
 
+        // Find the event by ID
+        const event = await eventRequest.findById(eventId);
+        if (!event) {
+            return res.status(404).json({ status: false, message: "The specified event could not be located. Please check the event ID and try again." });
+        }
 
-        console.log("userViewEvent Pass");
-        res.status(200).json({ status: true, message: "userViewEvent", events });
+        if (event.status === 'request') {
+            // Get the current date and event date
+            const current = moment().tz("Asia/Kolkata");
+            const eventDate = moment(event.eventTime, "YYYY-MM-DD hh:mm A").tz("Asia/Kolkata");
+
+            // Check if the event has expired
+            if (eventDate.isBefore(current)) {
+                return res.status(200).json({
+                    status: false,
+                    message: "This event has already expired and is no longer valid for requests.",
+                    event,
+                });
+            }
+
+            // Handle "withdrawn" or "waiting" status
+            if (status === "withdrawn") {
+                event.status = status;
+                return res.status(200).json({
+                    status: true,
+                    message: "The event has been successfully withdrawn.",
+                });
+            }
+
+            // Handle "approved" status
+            if (status === "approved") {
+                // Set the selected team
+                event.selectedTeam = teamId;
+                event.selectedTeamName = teamName;
+                event.status = status;
+
+                // Set all teams' status to rejected except the accepted one
+                event.teamsRequested = event.teamsRequested.map((teamRequest) => {
+                    teamRequest.status = teamRequest.teamId.toString() === teamId ? "true" : "false";
+                    return teamRequest;
+                });
+
+                // Save the event
+                await event.save();
+
+                return res.status(200).json({
+                    status: true,
+                    message: "The event was successfully updated, and the team has been selected.",
+                    event,
+                });
+            }
+        }
+
+        if (event.status === 'approved') {
+            return res.status(403).json({
+                status: true,
+                message: "This event has already found its opponent, and both teams are ready to proceed with the match.",
+            });
+        }
+
+        if (event.status === 'withdrawn') {
+            return res.status(403).json({
+                status: true,
+                message: "The event has been successfully withdrawn.",
+            });
+        }
+
+        return res.status(400).json({
+            status: false,
+            message: "The provided status is invalid. Please use an accepted status value and try again.",
+        });
 
     } catch (error) {
-        console.error("userViewEvent Route Error:", error.message);
-        res.status(500).json({ status: false, message: "userViewEvent", error: error.message });
+        console.error("Event Status Route Error:", error.message);
+        res.status(500).json({
+            status: false,
+            message: "An error occurred while processing the event status update.",
+            error: error.message,
+        });
     }
 };
 
 
-export const eventApproved = async(req, res) => {
-    const { id: userId, uuid: UserUuid } = req.user;
-    const { teamId, status } = req.body;
-    let { eventID } = req.query;
+export const allEvents = async (req, res) => {
+    const { id: userId, uuid: userUuid } = req.user;
 
     try {
-        // Find the user
-        const user = await UserDetails.findById(userId);
+        // Step 1: Fetch user details
+        const user = await UserDetails.findById(userId).select("MyTeamBuild userInfo");
         if (!user) {
             return res.status(404).json({ status: false, message: "User Not Found" });
         }
 
-        // Find the event by ID
-        const event = await eventRequest.findById(eventID);
+        // Step 2: Fetch events for all teams in MyTeamBuild
+        const events = await Promise.all(
+            user.MyTeamBuild.map(async (team) => {
+                const eventList = await eventRequest.find({
+                    $nor: [{ myTeam: team._id }, { selectedTeam: team._id }]
+                }).sort({ createdAt: -1 });
+
+                // Process each event
+                return Promise.all(
+                    eventList.map(async (event) => {
+                        if(event.status === 'request'){
+
+                        // Fetch myTeam details
+                        const myTeam = await UserDetails.findOne(
+                            { "MyTeamBuild._id": event.myTeam },
+                            { "MyTeamBuild.$": 1 }
+                        );
+
+                        const myTeamDetails = myTeam?.MyTeamBuild[0];
+                        const myTeamPlayers = await Promise.all(
+                            myTeamDetails?.playersList.map(async (player) => {
+                                const playerDetails = await UserDetails.findOne({ uuid: player.Player_id });
+                                return {
+                                    userId: playerDetails?._id,
+                                    userProfile: playerDetails?.userInfo?.Profile_ImgURL,
+                                    userName: playerDetails?.userInfo?.Nickname,
+                                    playerUuid: player.Player_id,
+                                    position: player.Position,
+                                    status: player.status,
+                                    role: player.Player_id === myTeamDetails?.createdBy ? "captain" : "player"
+                                };
+                            }) || []
+                        );
+
+                        // Determine currentPlayerRole for the logged-in user
+                        const currentPlayerRole = myTeamDetails?.createdBy === userUuid
+                            ? "captain"
+                            : myTeamPlayers.some(player => player.playerUuid === userUuid)
+                            ? "player"
+                            : null;
+
+                        // Fetch opponent team details if teamsRequested are the same
+                        let opponentTeamDetails = null;
+                        if (event.myTeam.toString() !== event.selectedTeam) {
+                            const opponentTeam = await UserDetails.findOne(
+                                { "MyTeamBuild._id": event.selectedTeam },
+                                { "MyTeamBuild.$": 1 }
+                            );
+                            const opponentTeamPlayers = await Promise.all(
+                                opponentTeam?.MyTeamBuild[0]?.playersList.map(async (player) => {
+                                    const playerDetails = await UserDetails.findOne({ uuid: player.Player_id });
+                                    return {
+                                        userId: playerDetails?._id,
+                                        userProfile: playerDetails?.userInfo?.Profile_ImgURL,
+                                        userName: playerDetails?.userInfo?.Nickname,
+                                        playerUuid: player.Player_id,
+                                        position: player.Position,
+                                        status: player.status
+                                    };
+                                }) || []
+                            );
+                            opponentTeamDetails = {
+                                teamId: opponentTeam?._id,
+                                createTeam: opponentTeam?.createdBy,
+                                teamName: opponentTeam?.MyTeamBuild[0]?.Team_Name,
+                                sportsName: opponentTeam?.Sports_Name,
+                                totalPlayers: opponentTeam?.TotalPlayers,
+                                isReady: opponentTeam?.isReady,
+                                players: opponentTeamPlayers
+                            };
+                        }
+
+                        // Construct event response
+                        return {
+                            eventId: event._id,
+                            eventByID: event.eventBy.id,
+                            eventByname: event.eventBy.name,
+                            eventTeam: {
+                                teamId: myTeamDetails?._id,
+                                createTeam: myTeamDetails?.createdBy,
+                                teamName: myTeamDetails?.Team_Name,
+                                sportsName: myTeamDetails?.Sports_Name,
+                                totalPlayers: myTeamDetails?.TotalPlayers,
+                                isReady: myTeamDetails?.isReady,
+                                players: myTeamPlayers
+                            },
+                            teamsRequested:event.teamsRequested,
+                            opponentTeam: opponentTeamDetails,
+                            status: event.status,
+                            eventTime: event.eventTime,
+                            currentPlayerRole
+                        };
+                        }
+                    })
+                );
+            })
+        );
+
+        // Flatten the array of events
+        const flatEvents = events.flat();
+
+        console.log("View Event Pass");
+        res.status(200).json({ status: true, message: "List of Others Events", events: flatEvents });
+
+    } catch (error) {
+        console.error("View Event Route Error:", error.message);
+        res.status(500).json({ status: false, message: "View Event Route", error: error.message });
+    }
+};
+
+
+export const currentEvent = async (req, res) => {
+    const { id: userId, uuid: userUuid } = req.user;
+
+    try {
+        // Step 1: Fetch user details
+        const user = await UserDetails.findById(userId).select("MyTeamBuild userInfo");
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User Not Found" });
+        }
+
+        // Step 2: Store events for all teams
+        let store = [];
+        await Promise.all(
+            user.MyTeamBuild.map(async (team) => {
+                const eventList = await eventRequest.find({
+                    $or: [{ myTeam: team._id }, { selectedTeam: team._id }]
+                }).sort({ createdAt: -1 });
+
+                // Filter only approved events
+                const approvedEvents = eventList.filter(event => event.status === "approved");
+                if (approvedEvents.length > 0) {
+                    store.push(...approvedEvents);
+                }
+            })
+        );
+
+        // Step 3: Process each event
+        const result = [];
+        await Promise.all(store.map(async (event) => {
+            const teamA = await UserDetails.findOne({ "MyTeamBuild._id": event.myTeam }, { "MyTeamBuild.$": 1 });
+            const teamB = await UserDetails.findOne({ "MyTeamBuild._id": event.selectedTeam }, { "MyTeamBuild.$": 1 });
+
+            // Fetch details of `teamA` (myTeam)
+            const myTeamDetails = teamA?.MyTeamBuild[0];
+            const myTeamPlayers = await Promise.all(
+                (myTeamDetails?.playersList || []).map(async (player) => {
+                    const playerDetails = await UserDetails.findOne({ uuid: player.Player_id });
+                    return {
+                        userId: playerDetails?._id,
+                        userProfile: playerDetails?.userInfo?.Profile_ImgURL,
+                        userName: playerDetails?.userInfo?.Nickname,
+                        playerUuid: player.Player_id,
+                        position: player.Position,
+                        status: player.status,
+                        role: player.Player_id === myTeamDetails?.createdBy ? "captain" : "player"
+                    };
+                })
+            );
+
+            // Fetch details of `teamB` (opponentTeam)
+            const opponentTeamDetails = teamB?.MyTeamBuild[0];
+            const opponentTeamPlayers = await Promise.all(
+                (opponentTeamDetails?.playersList || []).map(async (player) => {
+                    const playerDetails = await UserDetails.findOne({ uuid: player.Player_id });
+                    return {
+                        userId: playerDetails?._id,
+                        userProfile: playerDetails?.userInfo?.Profile_ImgURL,
+                        userName: playerDetails?.userInfo?.Nickname,
+                        playerUuid: player.Player_id,
+                        position: player.Position,
+                        status: player.status
+                    };
+                })
+            );
+
+            // Determine currentPlayerRole
+            const currentPlayerRole =
+                myTeamDetails?.createdBy === userUuid || opponentTeamDetails?.createdBy === userUuid
+                    ? "captain"
+                    : myTeamPlayers.some(player => player.playerUuid === userUuid) ||
+                      opponentTeamPlayers.some(player => player.playerUuid === userUuid)
+                    ? "player"
+                    : null;
+
+            // Construct event response
+            result.push({
+                eventId: event._id,
+                eventByID: event.eventBy.id,
+                eventByName: event.eventBy.name,
+                eventTeam: {
+                    teamId: myTeamDetails?._id,
+                    createTeam: myTeamDetails?.createdBy,
+                    teamName: myTeamDetails?.Team_Name,
+                    sportsName: myTeamDetails?.Sports_Name,
+                    totalPlayers: myTeamDetails?.TotalPlayers,
+                    isReady: myTeamDetails?.isReady,
+                    players: myTeamPlayers
+                },
+                teamsRequested: event.teamsRequested,
+                opponentTeam: opponentTeamDetails
+                    ? {
+                          teamId: opponentTeamDetails?._id,
+                          createTeam: opponentTeamDetails?.createdBy,
+                          teamName: opponentTeamDetails?.Team_Name,
+                          sportsName: opponentTeamDetails?.Sports_Name,
+                          totalPlayers: opponentTeamDetails?.TotalPlayers,
+                          isReady: opponentTeamDetails?.isReady,
+                          players: opponentTeamPlayers
+                      }
+                    : null,
+                status: event.status,
+                eventTime: event.eventTime,
+                currentPlayerRole
+            });
+        }));
+
+        console.log("Current Event Pass");
+        res.status(200).json({ status: true, message: "Current Events", events: result });
+
+    } catch (error) {
+        console.error("Current Event Route Error:", error.message);
+        res.status(500).json({ status: false, message: "Current Event Route", error: error.message });
+    }
+};
+
+
+export const cancelEvent = async (req, res) => {
+    const { id: userId, uuid: userUuid } = req.user;
+    const { eventId, status } = req.query;
+
+    try {
+        // Step 1: Fetch user details
+        const user = await UserDetails.findById(userId).select("MyTeamBuild userInfo");
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User Not Found" });
+        }
+
+        // Step 2: Fetch the event to be canceled
+        const event = await eventRequest.findById(eventId);
         if (!event) {
             return res.status(404).json({ status: false, message: "Event Not Found" });
         }
 
-        // Get the current date and event date
-        const current = moment().tz("Asia/Kolkata");
-        const eventDate = moment(event.eventTime, "YYYY-MM-DD hh:mm A").tz("Asia/Kolkata");
+        // Step 3: Check if the user is authorized to withdraw the event
+        const myTeam = await UserDetails.findOne({ "MyTeamBuild._id": event.myTeam }, { "MyTeamBuild.$": 1 });
+        const opponentTeam = await UserDetails.findOne({ "MyTeamBuild._id": event.selectedTeam }, { "MyTeamBuild.$": 1 });
 
-        // Check if the event has expired
-        if (eventDate.isBefore(current)) {
-            return res.status(200).json({ status: false, message: "Event has expired", event });
-        }
+        const myTeamDetails = myTeam?.MyTeamBuild[0];
+        const opponentTeamDetails = opponentTeam?.MyTeamBuild[0];
 
-        // Handle "rejected" or "waiting" status
-        if (status !== "approved") {
-            // Remove the selected team
-            event.selectedTeam = null;
+        // Determine the user's role
+        const currentPlayerRole =
+            myTeamDetails?.createdBy === userUuid || opponentTeamDetails?.createdBy === userUuid
+                ? "captain"
+                : null;
 
-            // Set all teams' status in `teamsRequested` to "rejected" except the selected one
-            event.teamsRequested = event.teamsRequested.map((teamRequest) => {
-                if (teamRequest.teamId.toString() === teamId) {
-                    teamRequest.status = status; // Set the specific team as rejected
-                }
-                return teamRequest;
-            });
-
-            // Save the event
+        if (status === "withdrawn" && currentPlayerRole === "captain") {
+            // Update event status to "withdrawn"
+            event.status = "withdrawn";
             await event.save();
 
-            return res.status(200).json({
-                status: true,
-                message: "Event status updated and teams rejected.",
-                event,
-            });
+            return res.status(200).json({ status: true, message: "Event has been successfully withdrawn" });
         }
 
-        // Handle other statuses (accepted)
-        if (status === "approved") {
-            // Set the selected team
-            event.selectedTeam = teamId;
-            event.status = status;
-
-            // Set all teams' status to rejected except the accepted one
-            event.teamsRequested = event.teamsRequested.map((teamRequest) => {
-                if (teamRequest.teamId.toString() === teamId) {
-                    teamRequest.status = "selected";
-                } else {
-                    teamRequest.status = "declined";
-                }
-                return teamRequest;
-            });
-
-            // Save the event
-            await event.save();
-
-            return res.status(200).json({
-                status: true,
-                message: "Event updated successfully. Team selected.",
-                event,
-            });
-        }
-
-        return res.status(400).json({ status: false, message: "Invalid status." });
-        
-    } catch (error) {
-        console.error("Event Status Route Error:", error.message);
-        res.status(500).json({ status: false, message: "Event Status Route Error", error: error.message, });
-    }
-};
-
-
-export const specificEvent = async (req, res) => {
-    const { id: userId, uuid: UserUuid } = req.user;
-    let { eventID } = req.query;
-
-    try {
-        // Step 1: Fetch user details
-        const user = await UserDetails.findById(userId);
-        if (!user) {
-            return res.status(404).json({ status: false, message: "User Not Found" });
-        }
-
-        // Step 2: Handle event request based on eventID query parameter
-        if (eventID) {
-            const event = await eventRequest.findById(eventID.toString());
-
-            if (!event) {
-                return res.status(404).json({ status: false, message: "Event is Not Found" });
-            }
-            const response = {
-                EventBy:{
-                    id:event.eventBy.id,
-                    userName:event.eventBy.name,
-                },
-                EID: event._id,
-                EName: event.eventName,
-                ETime:event.eventTime,
-                TReq: (event.teamsRequested.length > 0) ? event.teamsRequested.length : "0",
-                TeamA: event.reqTeam,
-                TeamB: event.selectedTeam,
-                status:event.status
-            }
-            return res.status(200).json({ status: true, message: "Specific Event Found", response });
-        }
-
-        // Step 3: If no eventID is provided, return all events
-        const events = await eventRequest.find({}).sort({ createdAt: -1 });
-        const eventDetails = events.map((event) => {
-            return {
-                EventBy: {
-                    id: event.eventBy.id,
-                    userName: event.eventBy.name,
-                },
-                EID: event._id,
-                EName: event.eventName,
-                ETime: event.eventTime,
-                TReq: (event.teamsRequested.length > 0) ? event.teamsRequested.length : "0",
-                TeamA: event.reqTeam,
-                TeamB: event.selectedTeam,
-                status: event.status,
-            };
+        res.status(403).json({
+            status: false,
+            message: "Unauthorized to withdraw the event or invalid status provided"
         });
-         
-        console.log("specific Events Pass");
-        res.status(200).json({ status: true, message: "All Events fetched", eventDetails });
 
     } catch (error) {
-        console.error("specific Event Route Error:", error.message);
-        res.status(500).json({ status: false, message: "specific Event Route", error: error.message });
+        console.error("Cancel Event Route Error:", error.message);
+        res.status(500).json({ status: false, message: "Cancel Event Route Error", error: error.message });
     }
 };
 

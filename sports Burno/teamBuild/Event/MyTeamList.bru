@@ -1,20 +1,19 @@
 meta {
-  name: eventRequesting
+  name: MyTeamList
   type: http
-  seq: 5
+  seq: 1
 }
 
-post {
-  url: {{Port}}/api/team/req?eventId=677a1a5e275875f78421dbe6&teamName=Boys&teamId=677a16b254b0c59c748fdd27
-  body: json
+get {
+  url: {{Port}}/api/team/teams?type=myteam
+  body: none
   auth: bearer
 }
 
 params:query {
-  eventId: 677a1a5e275875f78421dbe6
-  teamName: Boys
-  teamId: 677a16b254b0c59c748fdd27
-  ~message: Hi Team
+  type: myteam
+  ~useTeamID: 677a184b54b0c59c748fde1b
+  ~search: 
 }
 
 auth:bearer {

@@ -1,17 +1,20 @@
 meta {
-  name: viewEvent
+  name: EventApproved
   type: http
-  seq: 2
+  seq: 6
 }
 
-get {
-  url: {{Port}}/api/team/event
+post {
+  url: {{Port}}/api/team/status?eventId=677a1a5e275875f78421dbe6&teamName=Boys&teamId=677a16b254b0c59c748fdd27&status=approved
   body: json
   auth: bearer
 }
 
 params:query {
-  ~eventID: 67779b7c0fd5166fadc6c8d9
+  eventId: 677a1a5e275875f78421dbe6
+  teamName: Boys
+  teamId: 677a16b254b0c59c748fdd27
+  status: approved
 }
 
 auth:bearer {

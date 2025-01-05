@@ -1,0 +1,19 @@
+meta {
+  name: CurrentEvent
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{Port}}/api/team/currentevent
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~eventID: 67779b7c0fd5166fadc6c8d9
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3N2ExMzhlMTg5NmE1MGVjYjgwOGYwNyIsInV1aWQiOiJ6OUdRRGx5TzRSMUVxYmk4T281bVQiLCJFbWFpbF9JRCI6Imd1ZXN0MkBnbWFpbC5jb20iLCJpYXQiOjE3MzYwNjk2MzcsImV4cCI6MTc2NzYwNTYzN30.ZUQkZYJ7b8cBNQ5VdvaRdSysgcz3cKNt2JjKl4wIcEI
+}

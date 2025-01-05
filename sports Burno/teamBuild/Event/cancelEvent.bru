@@ -1,0 +1,20 @@
+meta {
+  name: cancelEvent
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{Port}}/api/team/cancelevent?status=withdrawn&eventId=677a1a5e275875f78421dbe6
+  body: json
+  auth: bearer
+}
+
+params:query {
+  status: withdrawn
+  eventId: 677a1a5e275875f78421dbe6
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3N2ExM2FmMTg5NmE1MGVjYjgwOGYyMiIsInV1aWQiOiJkSmxleE53MXNZd0hnMEtxU0VqNHUiLCJFbWFpbF9JRCI6Imd1ZXN0M0BnbWFpbC5jb20iLCJpYXQiOjE3MzYwNzA5NDQsImV4cCI6MTc2NzYwNjk0NH0.JGFCtGx96h6MFp0QIxFRPBySPSF1UMo-IRuI6vxE9bs
+}

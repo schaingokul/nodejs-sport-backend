@@ -155,7 +155,7 @@ export const getHomeFeed = async (req, res) => {
 
         // Step 1: HashSet for liked posts (UUID of liked posts)
         const likedPosts = new Set(
-            (await PostImage.find({ "likes.likedById": userUuid.toString() }).select("uuid"))
+            (await PostImage.find({ "likes.likedById": userUuid.toString()}).select("uuid"))
         );
         console.log(likedPosts)
         // Step 2: Fetch posts from followed users
