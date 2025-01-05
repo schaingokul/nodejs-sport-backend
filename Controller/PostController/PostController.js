@@ -160,7 +160,7 @@ export const getHomeFeed = async (req, res) => {
         console.log(likedPosts)
         // Step 2: Fetch posts from followed users
         if (following.length > 0) {
-            const followedPosts = await PostImage.find({ "postedBy.id": { $in: following } });
+            const followedPosts = await PostImage.find({ "following.followingBy_id": { $in: following } });
             feed.push(...followedPosts);
         }
 
