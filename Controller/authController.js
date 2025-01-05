@@ -288,7 +288,7 @@ export const follow = async (req, res, next) => {
         // Fixing the query by passing an object with the uuid field
         const user = await UserDetails.findOne({uuid: userUuid }).select('followers');
 
-        if (uuid === id) {
+        if (userUuid === id) {
             res.status(404).json({status: false, message: "Cannot follow/unfollow yourself"})
         }
 
@@ -319,7 +319,7 @@ export const following = async (req, res) => {
     const { uuid } = req.user; // logged-in user uuid
     try {
         // Fixing the query by passing an object with the uuid field
-        const user = await UserDetails.findOne({ uuid }).select('following');
+        const user = await UserDetails.findOne({ uuid: uuid }).select('following');
 
         if (!user) {
             // return next(new ErrorHandler(404, "User not found"));
