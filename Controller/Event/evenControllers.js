@@ -464,6 +464,8 @@ export const viewEvent = async (req, res) => {
                             },
                             teamsRequested: event.teamsRequested,
                             opponentTeam: opponentTeamDetails,
+                            loc: event.loc,
+                            link: event.link,
                             status: event.status,
                             eventTime: event.eventTime,
                             currentPlayerRole
@@ -556,7 +558,12 @@ export const myteamEvent = async (req, res) => {
                 isReady: myTeamDetails.isReady,
                 players: myTeamPlayers,
             },
-            teamsRequested: event.teamsRequested
+            teamsRequested: event.teamsRequested,
+            loc: event.loc,
+            link: event.link,
+            status: event.status,
+            eventTime: event.eventTime,
+            currentPlayerRole
         };
 
         console.log("View myTeam Event Pass");
