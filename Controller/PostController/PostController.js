@@ -237,7 +237,7 @@ export const getHomeFeed = async (req, res) => {
                         .filter(team => team !== undefined);
 
                     return {
-                        eventId: item._id,
+                        postId: item._id,
                         userId: item.eventBy?.id,
                         userName: item.eventBy?.name,
                         myTeam: teamDetails.length > 0 ? teamDetails.map(team => ({
@@ -248,7 +248,7 @@ export const getHomeFeed = async (req, res) => {
                         type:"event",
                         status: item.status,
                         eventTime: item.eventTime,
-                        loc: item.loc,
+                        location: item.loc,
                         link: item.link
                     };
                 }
