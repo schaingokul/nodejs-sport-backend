@@ -1,18 +1,17 @@
 meta {
   name: eventRequesting
   type: http
-  seq: 5
+  seq: 8
 }
 
 post {
-  url: {{Port}}/api/team/req?eventId=677a1a5e275875f78421dbe6&teamName=Boys&teamId=677a16b254b0c59c748fdd27
+  url: {{Port}}/api/team/req?eventId=677a1a5e275875f78421dbe6&teamId=677a16b254b0c59c748fdd27
   body: json
   auth: bearer
 }
 
 params:query {
   eventId: 677a1a5e275875f78421dbe6
-  teamName: Boys
   teamId: 677a16b254b0c59c748fdd27
   ~message: Hi Team
 }

@@ -41,7 +41,8 @@ export const adminUser = async(req,res) => {
                 userId: user._id,
                 userUuid: user.uuid,
                 userName:user?.userInfo?.Nickname,
-                userProfile:user?.userInfo?.Profile_ImgURL
+                userProfile:user?.userInfo?.Profile_ImgURL,
+                userEmail:user?.Email_ID
             }
         })
         res.status(200).json({status: true, message: "AdminView userlist Details" ,Info: response} )

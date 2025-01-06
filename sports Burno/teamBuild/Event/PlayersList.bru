@@ -1,18 +1,16 @@
 meta {
-  name: MyTeamList
+  name: PlayersList
   type: http
-  seq: 1
+  seq: 3
 }
 
 get {
-  url: {{Port}}/api/team/teams?type=myteam&useTeamID=677a184b54b0c59c748fde1b
+  url: {{Port}}/api/team/players
   body: none
   auth: bearer
 }
 
 params:query {
-  type: myteam
-  useTeamID: 677a184b54b0c59c748fde1b
   ~search: 
 }
 

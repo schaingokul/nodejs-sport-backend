@@ -1,0 +1,20 @@
+meta {
+  name: DropDownMyTeam
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{Port}}/api/team/drop?type=myteam
+  body: none
+  auth: bearer
+}
+
+params:query {
+  type: myteam
+  ~search: 
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3N2ExMzhlMTg5NmE1MGVjYjgwOGYwNyIsInV1aWQiOiJ6OUdRRGx5TzRSMUVxYmk4T281bVQiLCJFbWFpbF9JRCI6Imd1ZXN0MkBnbWFpbC5jb20iLCJpYXQiOjE3MzYxNDQxNjYsImV4cCI6MTc2NzY4MDE2Nn0.AxNbf7cL9gfLvQWRDV7FrwFZPavcnEblucxU1M29044
+}
