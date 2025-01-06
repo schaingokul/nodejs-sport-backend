@@ -453,8 +453,6 @@ export const viewEvent = async (req, res) => {
                             eventId: event._id,
                             eventByID: event.eventBy.id,
                             eventByname: event.eventBy.name,
-                            eventloc:event.loc,
-                            eventLink:event.link,
                             myTeam: {
                                 teamId: myTeamDetails?._id,
                                 createTeam: myTeamDetails?.createdBy,
@@ -465,6 +463,7 @@ export const viewEvent = async (req, res) => {
                                 players: myTeamPlayers
                             },
                             teamsRequested: event.teamsRequested,
+                            opponentTeam: opponentTeamDetails,
                             status: event.status,
                             eventTime: event.eventTime,
                             currentPlayerRole

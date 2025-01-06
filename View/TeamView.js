@@ -33,7 +33,6 @@ export default router
 
 /*
 
-
 export const viewEvent = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
 

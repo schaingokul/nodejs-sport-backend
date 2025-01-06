@@ -1,5 +1,5 @@
 import express from 'express';
-import {googlesignUp, signUp, login, forgetPassword, verifycationCode, resetPassword,follow_following, follow, following} from '../Controller/authController.js';
+import {googlesignUp, signUp, login, forgetPassword, verifycationCode, resetPassword,follow_following, follow} from '../Controller/authController.js';
 import ProtectRoute from '../middleware/ProtectRoute.js';
 import { ErrorHandler } from '../utilis/ErrorHandlingMiddleware.js';
 import UserDetails from '../Model/UserModelDetails.js';
@@ -27,7 +27,6 @@ router.post("/forget_password",forgetPassword);
 router.post("/verify", ProtectRoute, verifycationCode);
 router.post("/reset_password", ProtectRoute, resetPassword);
 router.post("/follower/:id", ProtectRoute, follow);
-router.post("/following/:id", ProtectRoute, following);
 router.get("/account", ProtectRoute, follow_following);
 
 // notification

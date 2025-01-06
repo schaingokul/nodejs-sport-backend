@@ -281,109 +281,105 @@ export const resetPassword = async (req, res) => {
     }
 };
 
-export const follow = async (req, res, next) => {
-    const { id } = req.params; // follower uuid
-    const { uuid: userUuid } = req.user; // logged-in user uuid
+export const follow = async (req, res) => {
+    const { id: targetUuid } = req.params; // The UUID of the user to follow/unfollow
+    const { id: userId, uuid: userUuid } = req.user; // The logged-in user's details
+
     try {
-        // Fixing the query by passing an object with the uuid field
-        const user = await UserDetails.findOne({uuid: userUuid }).select('followers');
-
-        if (userUuid === id) {
-            res.status(404).json({status: false, message: "Cannot follow/unfollow yourself"})
+        // Check for self-following
+        if (userId === targetUuid) {
+            return res.status(400).json({status: false, message: "You cannot follow or unfollow yourself.",});
         }
 
+        // Fetch the logged-in user's details
+        const user = await UserDetails.findOne({ uuid: userUuid }).select("followers");
         if (!user) {
-            res.status(404).json({status: false, message: "User not found"})
+            return res.status(404).json({ status: false, message: "Logged-in user not found.", });
         }
 
-        const followerIndex = user.followers.findIndex((follow) => follow.follwersBy_id === id);
+        // Fetch the target user's details
+        const targetUser = await UserDetails.findOne({ _id: targetUuid }).select("following");
+        if (!targetUser) {
+            return res.status(404).json({ status: false, message: "Given User id is not found.",});
+        }
+
+        // Check if already following
+        const followerIndex = user.followers.findIndex(
+            (follow) => follow.follwersBy_id === targetUuid
+        );
 
         if (followerIndex !== -1) {
+            // Unfollow logic
             user.followers.splice(followerIndex, 1);
             await user.save();
-            return res.status(200).json({ status: true, message: "Unfollow removed", data: user });
+
+            const followingIndex = targetUser.following.findIndex(
+                (follow) => follow.followingBy_id === userId
+            );
+            if (followingIndex !== -1) {
+                targetUser.following.splice(followingIndex, 1);
+                await targetUser.save();
+            }
+
+            return res.status(200).json({ status: true, message: "Successfully unfollowed the user.", });
         }
 
-        user.followers.push({ follwersBy_id: id });
+        // Follow logic
+        user.followers.push({ follwersBy_id: targetUuid });
         await user.save();
 
-        res.status(201).json({ status: true, message: "Follower added", data: user });
+        targetUser.following.push({ followingBy_id: userId });
+        await targetUser.save();
+
+        res.status(201).json({status: true,message: "Successfully followed the user." });
     } catch (error) {
-        sendErrorResponse(res, 500, "Follower Route Failed to request.", error.message, "FOLLWER_CAUSES_ERROR")
+        console.error("Error in follow route:", error.message);
+        res.status(500).json({status: false, message: "An error occurred while processing the follow request.", error: error.message,});
     }
 };
 
+export const follow_following = async (req, res) => {
+    const { id: userId, uuid: userUuid } = req.user;
+    const { type, id: targetUser } = req.query;
 
-export const following = async (req, res) => {
-    const { id } = req.params; // following uuid
-    const { uuid } = req.user; // logged-in user uuid
     try {
-        // Fixing the query by passing an object with the uuid field
-        const user = await UserDetails.findOne({ uuid: uuid }).select('following');
+        // Determine the user for whom to fetch followers/following
+        const user = targetUser
+            ? await UserDetails.findById(targetUser).select("following followers")
+            : await UserDetails.findById(userId).select("following followers");
 
         if (!user) {
-            // return next(new ErrorHandler(404, "User not found"));
-            res.status(404).json({status: false, message: "User not found"})
+            return res.status(404).json({ status: false, message: "User not found.", });
         }
 
-        const followingIndex = user.following.findIndex((follow) => follow.followingBy_id === id);
+        // Determine the list to fetch based on type
+        const list = type === "following" ? user.following : user.followers;
 
-        if (followingIndex !== -1) {
-            user.following.splice(followingIndex, 1);
-            await user.save();
-            return res.status(200).json({ status: true, message: "Unfollow", data: user });
+        if (!list || !Array.isArray(list)) {
+            return res.status(400).json({ status: false, message: `Invalid request type '${type}'.`, });
         }
 
-        user.following.push({ followingBy_id: id });
-        await user.save();
+        // Fetch details of all users in the list
+        const userIds = list.map((entry) =>
+            type === "following" ? entry.followingBy_id : entry.follwersBy_id
+        );
+        const users = await UserDetails.find({ _id: { $in: userIds } }).select(
+            "_id userInfo.Nickname userInfo.Profile_ImgURL"
+        );
 
-        res.status(201).json({ status: true, message: "Follow added", data: user.following });
+        // Build the response
+        const response = users.map((userDetail) => ({
+            Name: userDetail.userInfo?.Nickname,
+            Pic: userDetail.userInfo?.Profile_ImgURL,
+            _id: userDetail._id,
+            isFollowing: type === "following" ? "true" : "false",
+            isFollow: type === "followers" ? "true" : "false",
+        }));
+
+        console.log(`${type} list fetched successfully.`);
+        return res.status(200).json({ status: true, message: `${type} list fetched successfully.`, response, });
     } catch (error) {
-        console.log(error);
-        // next(error.message);
-        res.status(500).json({status: false, message: "Follow Route error"})
-    }
-};
-
-
-export const follow_following = async(req, res) => {
-    const { id: userId, uuid: userUuid } = req.user; 
-    const { type } = req.query; 
-    try {
-        const user = await UserDetails.findById(userId).select("uuid following followers");
-        let response = [];
-
-        if (type === "following") {
-            response = await Promise.all(
-                user.following.map(async (list) => {
-                    const userList = await UserDetails.findOne({ uuid: list.followingBy_id });
-                    return {
-                        Name: userList.userInfo?.Nickname,
-                        Pic: userList.userInfo?.Profile_ImgURL,
-                        uuid: userList.uuid
-                    };
-                })
-            );
-        }
-
-        if (type === "followers") {
-            response = await Promise.all(
-                user.followers.map(async (list) => {
-                    const userList = await UserDetails.findOne({ uuid: list.follwersBy_id });
-                    return {
-                        Name: userList.userInfo?.Nickname,
-                        Pic: userList.userInfo?.Profile_ImgURL,
-                        uuid: userList.uuid
-                    };
-                })
-            );
-        }
-
-        console.log(`${type} List fetched`);
-        res.status(200).json({ status: true, message: `${type} List fetched successfully`, response }); 
-        
-    } catch (error) {
-        console.log(`${type} List error:`, error);
-        res.status(500).json({ status: false, message: `${type} List error`, error: error.message });
+        console.error(`${type} list error:`, error.message);
+        return res.status(500).json({ status: false, message: `${type} list error.`, error: error.message, });
     }
 };
