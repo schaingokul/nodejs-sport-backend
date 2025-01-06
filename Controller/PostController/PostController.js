@@ -1,7 +1,9 @@
 import PostImage from '../../Model/ImageModel.js';
 import UserDetails from '../../Model/UserModelDetails.js';
 import { deleteFile } from '../../utilis/userUtils.js';
+import eventRequest from '../../Model/eventRequestModel.js';
 import {HOST, PORT, IP} from '../../env.js'
+import mongoose from "mongoose";
 
 export const createPost = async (req, res) => {
     let URL = [];
@@ -134,100 +136,137 @@ export const deletePost = async (req, res) => {
     }
 };
 
-
 export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
     let { page, limit } = req.query;
 
     try {
-        // Default limit if not provided
-        const limitNum = parseInt(limit, 10) || 100;
+        const limitNum = parseInt(limit, 10) || 10;
+        const eventLimitNum = 1;
         const pageNum = parseInt(page, 10) || 1;
+        const isPaginationRequested = page || limit;
 
         // Fetch user details
-        const user = await UserDetails.findById(userId).select("uuid _id following");
+        const user = await UserDetails.findById(userId).select("uuid _id following MyTeamBuild");
         if (!user) {
             return res.status(404).json({ status: false, message: "User not found" });
         }
 
         const following = user.following || [];
-        let feed = []; // Array to hold the final feed
+        const validFollowingIds = following.filter(id => mongoose.Types.ObjectId.isValid(id));
+        const teamIds = user.MyTeamBuild.map(team => team._id).filter(id => mongoose.Types.ObjectId.isValid(id));
 
-        // Step 1: HashSet for liked posts (UUID of liked posts)
-        const likedPosts = new Set(
-            (await PostImage.find({ "likes.likedById": userUuid.toString()}).select("uuid"))
-        );
-        console.log(likedPosts)
-        // Step 2: Fetch posts from followed users
-        if (following.length > 0) {
-            const followedPosts = await PostImage.find({ "following.followingBy_id": { $in: following } });
-            feed.push(...followedPosts);
-        }
+        // Fetch events and posts
+        const [followedEvents, followedPosts] = await Promise.all([
+            eventRequest.find({
+                $or: [
+                    { myTeam: { $in: teamIds } },
+                    { selectedTeam: { $in: teamIds } }
+                ]
+            }).sort({ createdAt: -1 })
+              .skip(isPaginationRequested ? (pageNum - 1) * eventLimitNum : 0)
+              .limit(eventLimitNum),
 
-        // Step 3: Fetch trending posts (popular posts)
-        const trendingPosts = await PostImage.find({
-            type: { $in: ["video", "reel", "image", "event"] },
-        })
-            .sort({ likesCount: -1 }) // Sort by likes count
+            validFollowingIds.length > 0
+                ? PostImage.find({ "postedBy.id": { $in: validFollowingIds } }).sort({ createdAt: -1 })
+                  .skip(isPaginationRequested ? (pageNum - 1) * limitNum : 0)
+                  .limit(isPaginationRequested ? limitNum : 10)
+                : []
+        ]);
+
+        // Combine events and posts and remove duplicates
+        const combinedFeed = [];
+        const eventIds = new Set();
+        const postIds = new Set();
+
+        // Add event if available
+        followedEvents.forEach(event => {
+            if (!eventIds.has(event._id.toString())) {
+                combinedFeed.push({ ...event.toObject(), type: "event" });
+                eventIds.add(event._id.toString());
+            }
+        });
+
+        // Add posts and ensure uniqueness
+        followedPosts.forEach(post => {
+            if (!postIds.has(post._id.toString())) {
+                combinedFeed.push({ ...post.toObject(), type: "post" });
+                postIds.add(post._id.toString());
+            }
+        });
+
+        // Add trending posts if necessary
+        const trendingPosts = await PostImage.find({ type: { $in: ["video", "reel", "image", "event"] } })
+            .sort({ likesCount: -1 })
             .limit(limitNum);
 
-        feed.push(...trendingPosts);
+        trendingPosts.forEach(post => {
+            if (!postIds.has(post._id.toString())) {
+                combinedFeed.push({ ...post.toObject(), type: "post" });
+                postIds.add(post._id.toString());
+            }
+        });
 
-        // Step 4: Fetch random posts for new users
-        if (following.length === 0) {
-            const randomPosts = await PostImage.aggregate([{ $sample: { size: limitNum } }]);
-            feed = feed.concat(randomPosts);
-        }
+        // Check if more data exists for infinite scroll (pagination based)
+        const hasMore = isPaginationRequested ? (combinedFeed.length === limitNum) : true;
 
-        // Shuffle the feed array (Fisher-Yates shuffle)
-        for (let i = feed.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [feed[i], feed[j]] = [feed[j], feed[i]];
-        }
-
-        // Calculate total number of posts
-        const totalPosts = feed.length;
-
-        // If there are not enough posts, loop from the beginning
-        const startIndex = ((pageNum - 1) * limitNum) % totalPosts; // Get the start index in a cyclic manner
-        const paginatedFeed = [];
-
-        // Push posts until the limit is met, starting from the startIndex
-        for (let i = 0; i < limitNum; i++) {
-            const index = (startIndex + i) % totalPosts; // Cycle through posts
-            paginatedFeed.push(feed[index]);
-        }
-
-        // Step 5: Format the response (Resolve all promises)
+        // Format the response
         const response = await Promise.all(
-            paginatedFeed.map(async (post, index) => {
-                const prf = await UserDetails.findById(post.postedBy.id).select("uuid userInfo");
-                return {
-                    localId: index + 1,
-                    postId: post._id,
-                    userId: post.postedBy.id,
-                    userProfile: prf?.userInfo?.Profile_ImgURL,
-                    userName: prf?.userInfo?.Nickname,
-                    description: post.description,
-                    type: post.type,
-                    URL: post.URL[0],
-                    lc: post.likes.length,
-                    location: post.location,
-                    isLiked: post.likes.some((like) => like.likedByUuid === userUuid.toString())  // Check if post UUID is in likedPosts
-                };
+            combinedFeed.map(async (item, index) => {
+                if (item.type === "post") {
+                    const prf = await UserDetails.findById(item.postedBy.id).select("uuid userInfo");
+                    return {
+                        localId: index + 1,
+                        postId: item._id,
+                        userId: item.postedBy.id,
+                        userUuid: prf?.uuid,
+                        userProfile: prf?.userInfo?.Profile_ImgURL,
+                        userName: prf?.userInfo?.Nickname,
+                        description: item.description,
+                        type: item.type,
+                        URL: item.URL[0],
+                        lc: item.likes.length,
+                        location: item.location,
+                        isLiked: item.likes.some(like => like.likedByUuid === userUuid.toString())
+                    };
+                } else if (item.type === "event") {
+                    const users = await UserDetails.find({ "MyTeamBuild.role": "captain" }).select("MyTeamBuild");
+
+                    const teamDetails = users
+                        .map(user => user.MyTeamBuild.find(team => team._id.equals(item.myTeam)))
+                        .filter(team => team !== undefined);
+
+                    return {
+                        eventId: item._id,
+                        eventByID: item.eventBy?.id,
+                        eventByName: item.eventBy?.name,
+                        myTeam: teamDetails.length > 0 ? teamDetails.map(team => ({
+                            myTeamId: team._id,
+                            myTeamName: team.teamName,
+                            playerList: team.playersList,
+                        })) : null,
+                        type:"event",
+                        status: item.status,
+                        eventTime: item.eventTime,
+                        loc: item.loc,
+                        link: item.link
+                    };
+                }
             })
         );
 
         return res.status(200).json({
             status: true,
             message: "Home feed fetched successfully",
-            posts: response,
+            feed: response,
+            hasMore: hasMore
         });
     } catch (error) {
         console.error(error.message);
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
 };
+
 
 export const viewCurrentPost = async(req,res) => {
     const {id: userId} = req.user;
