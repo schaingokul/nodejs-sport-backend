@@ -238,8 +238,8 @@ export const getHomeFeed = async (req, res) => {
 
                     return {
                         eventId: item._id,
-                        eventByID: item.eventBy?.id,
-                        eventByName: item.eventBy?.name,
+                        userId: item.eventBy?.id,
+                        userName: item.eventBy?.name,
                         myTeam: teamDetails.length > 0 ? teamDetails.map(team => ({
                             myTeamId: team._id,
                             myTeamName: team.teamName,
