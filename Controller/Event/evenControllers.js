@@ -453,6 +453,8 @@ export const viewEvent = async (req, res) => {
                             eventId: event._id,
                             eventByID: event.eventBy.id,
                             eventByname: event.eventBy.name,
+                            eventloc:event.loc,
+                            eventLink:event.link,
                             myTeam: {
                                 teamId: myTeamDetails?._id,
                                 createTeam: myTeamDetails?.createdBy,
