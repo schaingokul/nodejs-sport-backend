@@ -368,6 +368,7 @@ export const eventRequesting = async (req, res) => {
 
 export const viewEvent = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
+
     try {
         // Step 1: Fetch user details
         const user = await UserDetails.findById(userId).select("MyTeamBuild userInfo");
@@ -416,13 +417,52 @@ export const viewEvent = async (req, res) => {
                             ? "player"
                             : null;
 
+                        // Fetch opponent team details if teamsRequested are the same
+                        let opponentTeamDetails = null;
+                        if (event.myTeam.toString() !== event.selectedTeam) {
+                            const opponentTeam = await UserDetails.findOne(
+                                { "MyTeamBuild._id": event.selectedTeam },
+                                { "MyTeamBuild.$": 1 }
+                            );
+                            const opponentTeamPlayers = await Promise.all(
+                                opponentTeam?.MyTeamBuild[0]?.playersList.map(async (player) => {
+                                    const playerDetails = await UserDetails.findOne({ uuid: player.Player_id });
+                                    return {
+                                        userId: playerDetails?._id,
+                                        userProfile: playerDetails?.userInfo?.Profile_ImgURL,
+                                        userName: playerDetails?.userInfo?.Nickname,
+                                        playerUuid: player.Player_id,
+                                        position: player.Position,
+                                        status: player.status
+                                    };
+                                }) || []
+                            );
+                            opponentTeamDetails = {
+                                teamId: opponentTeam?._id,
+                                createTeam: opponentTeam?.createdBy,
+                                teamName: opponentTeam?.MyTeamBuild[0]?.Team_Name,
+                                sportsName: opponentTeam?.Sports_Name,
+                                totalPlayers: opponentTeam?.TotalPlayers,
+                                isReady: opponentTeam?.isReady,
+                                players: opponentTeamPlayers
+                            };
+                        }
+
                         // Construct event response
                         return {
                             eventId: event._id,
                             eventByID: event.eventBy.id,
                             eventByname: event.eventBy.name,
-                            eventloc: event.loc,
-                            eventlink:event.link,
+                            myTeam: {
+                                teamId: myTeamDetails?._id,
+                                createTeam: myTeamDetails?.createdBy,
+                                teamName: myTeamDetails?.Team_Name,
+                                sportsName: myTeamDetails?.Sports_Name,
+                                totalPlayers: myTeamDetails?.TotalPlayers,
+                                isReady: myTeamDetails?.isReady,
+                                players: myTeamPlayers
+                            },
+                            teamsRequested: event.teamsRequested,
                             status: event.status,
                             eventTime: event.eventTime,
                             currentPlayerRole
