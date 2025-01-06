@@ -292,32 +292,32 @@ export const follow = async (req, res) => {
         }
 
         // Fetch the logged-in user's details
-        const user = await UserDetails.findOne({ uuid: userUuid }).select("followers");
+        const user = await UserDetails.findOne({ uuid: userUuid }).select("following");
         if (!user) {
             return res.status(404).json({ status: false, message: "Logged-in user not found.", });
         }
 
         // Fetch the target user's details
-        const targetUser = await UserDetails.findOne({ _id: targetUuid }).select("following");
+        const targetUser = await UserDetails.findOne({ _id: targetUuid }).select("followers");
         if (!targetUser) {
             return res.status(404).json({ status: false, message: "Given User id is not found.",});
         }
 
         // Check if already following
-        const followerIndex = user.followers.findIndex(
-            (follow) => follow.follwersBy_id === targetUuid
+        const followingIndex = user.following.findIndex(
+            (follow) => follow.followingBy_id === targetUuid
         );
 
-        if (followerIndex !== -1) {
+        if (followingIndex !== -1) {
             // Unfollow logic
-            user.followers.splice(followerIndex, 1);
+            user.following.splice(followingIndex, 1);
             await user.save();
 
-            const followingIndex = targetUser.following.findIndex(
-                (follow) => follow.followingBy_id === userId
+            const followerIndex = targetUser.followers.findIndex(
+                (follow) => follow.follwersBy_id === userId
             );
-            if (followingIndex !== -1) {
-                targetUser.following.splice(followingIndex, 1);
+            if (followerIndex !== -1) {
+                targetUser.followers.splice(followerIndex, 1);
                 await targetUser.save();
             }
 
@@ -325,10 +325,10 @@ export const follow = async (req, res) => {
         }
 
         // Follow logic
-        user.followers.push({ follwersBy_id: targetUuid });
+        user.following.push({ followingBy_id: targetUuid });
         await user.save();
 
-        targetUser.following.push({ followingBy_id: userId });
+        targetUser.followers.push({ follwersBy_id: userId });
         await targetUser.save();
 
         res.status(201).json({status: true,message: "Successfully followed the user." });
@@ -349,7 +349,10 @@ export const follow_following = async (req, res) => {
             : await UserDetails.findById(userId).select("following followers");
 
         if (!user) {
-            return res.status(404).json({ status: false, message: "User not found.", });
+            return res.status(404).json({
+                status: false,
+                message: "User not found.",
+            });
         }
 
         // Determine the list to fetch based on type
@@ -363,23 +366,36 @@ export const follow_following = async (req, res) => {
         const userIds = list.map((entry) =>
             type === "following" ? entry.followingBy_id : entry.follwersBy_id
         );
+
+        // Fetch the logged-in user's details to check follow status
+        const currentUser = await UserDetails.findById(userId).select("following followers");
+
         const users = await UserDetails.find({ _id: { $in: userIds } }).select(
             "_id userInfo.Nickname userInfo.Profile_ImgURL"
         );
 
         // Build the response
-        const response = users.map((userDetail) => ({
-            Name: userDetail.userInfo?.Nickname,
-            Pic: userDetail.userInfo?.Profile_ImgURL,
-            _id: userDetail._id,
-            isFollowing: type === "following" ? "true" : "false",
-            isFollow: type === "followers" ? "true" : "false",
-        }));
+        const response = users.map((userDetail) => {
+            const isFollowing = currentUser.following.some(
+                (entry) => entry.followingBy_id.toString() === userDetail._id.toString()
+            );
+            const isFollowedBy = currentUser.followers.some(
+                (entry) => entry.follwersBy_id.toString() === userDetail._id.toString()
+            );
+
+            return {
+                Name: userDetail.userInfo?.Nickname,
+                Pic: userDetail.userInfo?.Profile_ImgURL,
+                _id: userDetail._id,
+                isFollowing, // true if current user is following this user
+                isFollowedBy, // true if this user is following the current user
+            };
+        });
 
         console.log(`${type} list fetched successfully.`);
-        return res.status(200).json({ status: true, message: `${type} list fetched successfully.`, response, });
+        return res.status(200).json({ status: true, message: `${type} list fetched successfully.`,response, });
     } catch (error) {
         console.error(`${type} list error:`, error.message);
-        return res.status(500).json({ status: false, message: `${type} list error.`, error: error.message, });
+        return res.status(500).json({ status: false, message: `An error occurred while fetching ${type} list.`, error: error.message,});
     }
 };

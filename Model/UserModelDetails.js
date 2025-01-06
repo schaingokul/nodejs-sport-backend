@@ -61,7 +61,6 @@ const followerSchema = new mongoose.Schema(
   { _id: false } 
 );
 
-
 //Players List
 const playersListSchema = mongoose.Schema({
   Player_id:{type : String, required :true},
