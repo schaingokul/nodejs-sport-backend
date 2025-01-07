@@ -1,17 +1,17 @@
 meta {
-  name: viewEvent
+  name: req
   type: http
-  seq: 4
+  seq: 6
 }
 
 get {
-  url: {{Port}}/api/team/event
+  url: {{Port}}/api/team/event/myteam/req?eventID=677b7ac1037b0a7d009e062b
   body: json
   auth: bearer
 }
 
 params:query {
-  ~eventID: 67779b7c0fd5166fadc6c8d9
+  eventID: 677b7ac1037b0a7d009e062b
 }
 
 auth:bearer {
