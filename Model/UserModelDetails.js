@@ -130,7 +130,7 @@ const UserDetailsModel = mongoose.model("userDetails", userDetailsSchema);
 
 export default UserDetailsModel;
 
-export const addBGImgURLField = async () => {
+const addBGImgURLField = async () => {
   try {
     // Update all user documents
     let baseURL =  `${IP}/Uploads/Default/Default_Profile_BG.jpg`;
@@ -147,5 +147,7 @@ export const addBGImgURLField = async () => {
     await mongoose.disconnect();
   }
 };
+
+export{addBGImgURLField};
 
 

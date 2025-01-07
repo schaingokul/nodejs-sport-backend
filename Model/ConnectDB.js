@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { MONGO_URI } from "../env.js";
-import addBGImgURLField from "./UserModelDetails.js";
+import {addBGImgURLField} from "./UserModelDetails.js";
 
 // Function to ensure collections exist
 const ensureCollectionsExist = async (db) => {
