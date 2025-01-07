@@ -40,6 +40,7 @@ const connectDB = async () => {
     const db = mongoose.connection.db;
     mongoose.connection.setMaxListeners(20);
     
+    
     // Ensure collections exist
     await ensureCollectionsExist(db);
 
@@ -57,7 +58,7 @@ const connectDB = async () => {
 
     // Create a new unique index on userdetails.uuid
     await userDetailsCollection.createIndex({ uuid: 1 }, { unique: true });
-
+    
     // Ensure postimages collection allows multiple posts by the same user
     const postIndexes = await postImagesCollection.indexes();
     
@@ -83,7 +84,7 @@ const connectDB = async () => {
       { postedById: 1 },
       { name: "postedByIdIndex", unique: false }
     );
-    
+
   } catch (error) {
     console.error("Error connecting to MongoDB or managing indexes:", error.message);
     process.exit(1); // Exit

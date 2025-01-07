@@ -5,6 +5,7 @@ import ImageModel from "./ImageModel.js";
 export const userInfoSchema = new mongoose.Schema(
   {
     Profile_ImgURL: { type: String },// Profile Image URL
+    BG_ImgURL: { type: String },
     Nickname: { type: String },// Nickname
     Phone_Number: { type: String, sparse: true, default: "N/A"},// Contact Number
     Date_of_Birth: { type: Date},// Date of Birth
@@ -127,3 +128,23 @@ const userDetailsSchema = new mongoose.Schema(
 const UserDetailsModel = mongoose.model("userDetails", userDetailsSchema);
 
 export default UserDetailsModel;
+
+export const addBGImgURLField = async () => {
+  try {
+    // Update all user documents
+    let baseURL =  `http://localhost:4500/Uploads/default/Default_Profile_BG.jpg`;
+    const result = await UserDetailsModel.updateMany(
+      { "userInfo.BG_ImgURL": { $exists: false } }, // Check if BG_ImgURL does not exist
+      { $set: { "userInfo.BG_ImgURL": baseURL } } // Set default value
+    );
+
+    console.log(`Modified ${result.modifiedCount} ${baseURL} documents`);
+  } catch (error) {
+    console.error("Error updating documents:", error);
+  } finally {
+    // Disconnect from the database
+    await mongoose.disconnect();
+  }
+};
+
+
