@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { MONGO_URI } from "../env.js";
-import {addBGImgURLField} from "./UserModelDetails.js";
+
 
 // Function to ensure collections exist
 const ensureCollectionsExist = async (db) => {
@@ -35,8 +35,7 @@ const connectDB = async () => {
     // Ensure indexes and other operations here
     await createIndexes(db);
 
-    // Call the addBGImgURLField after DB is connected
-    await addBGImgURLField();
+    
 
   } catch (error) {
     console.error("Error connecting to MongoDB or managing indexes:", error.message);
