@@ -16,7 +16,6 @@ import {getCoversation, sendMessage}  from "./Controller/Chat/userAppController.
 import PostImage from './Model/ImageModel.js';
 import Message from "./Model/ChatModel/MessageModel.js";
 import Axios from 'axios';
-import {addBGImgURLField} from "./Model/UserModelDetails.js";
 
 // import MessageRoute from './View/ChatView/messageRoute.js'
 import userAppRoute from './View/ChatView/userAppRoute.js';
@@ -130,7 +129,7 @@ app.get("/", (req,res) => {
 // server.listen(PORT, async () => {
 //     try {
 //         await connectDB();
-//         await addBGImgURLField();
+        
 //         console.log(`Server is running on ${PORT}`);
 //     } catch (error) {
 //         console.log(`Server failed to connect to database: ${error.message}`);

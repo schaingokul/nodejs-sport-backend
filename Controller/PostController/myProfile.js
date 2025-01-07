@@ -42,6 +42,7 @@ export const myProfile = async (req, res) => {
             uuid: user.uuid,
             userName: user.userInfo?.Nickname,
             profile: user.userInfo?.Profile_ImgURL,
+            bg:user.userInfo.BG_ImgURL,
             sportsInfo: simplifiedSportsInfo,
             followingCount: user.following?.length ,
             followersCount: user.followers?.length ,
