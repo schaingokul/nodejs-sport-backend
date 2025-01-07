@@ -133,7 +133,7 @@ export default UserDetailsModel;
 export const addBGImgURLField = async () => {
   try {
     // Update all user documents
-    let baseURL =  `${IP}/Uploads/default/Default_Profile_BG.jpg`;
+    let baseURL =  `${IP}/Uploads/Default/Default_Profile_BG.jpg`;
     const result = await UserDetailsModel.updateMany(
       { "userInfo.BG_ImgURL": { $exists: false } }, // Check if BG_ImgURL does not exist
       { $set: { "userInfo.BG_ImgURL": baseURL } } // Set default value
