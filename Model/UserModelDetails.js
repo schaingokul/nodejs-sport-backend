@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import ImageModel from "./ImageModel.js";
+import {IP} from '../env.js'
 
 // User Information Subdocument Schema
 export const userInfoSchema = new mongoose.Schema(
@@ -132,7 +133,7 @@ export default UserDetailsModel;
 export const addBGImgURLField = async () => {
   try {
     // Update all user documents
-    let baseURL =  `http://localhost:4500/Uploads/default/Default_Profile_BG.jpg`;
+    let baseURL =  `${IP}/Uploads/default/Default_Profile_BG.jpg`;
     const result = await UserDetailsModel.updateMany(
       { "userInfo.BG_ImgURL": { $exists: false } }, // Check if BG_ImgURL does not exist
       { $set: { "userInfo.BG_ImgURL": baseURL } } // Set default value
