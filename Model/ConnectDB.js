@@ -35,8 +35,6 @@ const connectDB = async () => {
     // Ensure indexes and other operations here
     await createIndexes(db);
 
-    
-
   } catch (error) {
     console.error("Error connecting to MongoDB or managing indexes:", error.message);
     process.exit(1); // Exit if connection fails

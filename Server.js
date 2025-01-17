@@ -59,18 +59,33 @@ try {
 io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
 
+    socket.on("my-chat", async (data) => {
+        const {userId, page, limit} = data;
+        try {
+            const response = await Axios.get(`${socketIP}/chat/my-chat`, { params :{ userId, page, limit }});
+            const list = response.data.data;
+            // Emit the fetched chat data to the client
+            socket.emit("mychat_data", list);
+            
+        } catch (error) {
+            console.error("Error in my-chat:", error.message);
+            socket.emit("error", { message: error.message || "Failed to my-chat" });
+        }
+    })
+
     socket.on("join_chat", async (data) => {
-        const { type, participants, groupName, cid } = data;
+        const { type, createdBy, participants, groupName, cid, url } = data;
 
         try {
             // Fetch the conversation
-            const { conversation } = await getCoversation(type, participants, groupName, cid);
+            const conversations = await Axios.post(`${socketIP}/chat`, {type, createdBy, participants, groupName, cid, url});
+            const conversation = conversations.data.conversation;
 
             if (conversation?._id) {
                 // Fetch chat data
                 const response = await Axios.get(`${socketIP}/chat/chat-data/${conversation._id.toString()}`);
-                const chatData = response.data.viewMessages;
-
+                const chatData = response.data.chat_data;
+                
                 // Emit the fetched chat data to the client
                 socket.emit("chat_data", { conversation, chatData});
 
@@ -85,6 +100,8 @@ io.on("connection", (socket) => {
             socket.emit("error", { message: error.message || "Failed to join or create chat" });
         }
     });
+
+    
 
     socket.on("send_message", async (data) => {
         const { cid, sender, message } = data;

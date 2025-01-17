@@ -5,7 +5,29 @@ const MessageSchema = mongoose.Schema(
         cid: {type:  String, require: true},
         sender: {type:String, require:true},
         message: { type: String, required: true },
-        timestamp: { type: Date, default: Date.now },
+        attachments: [
+            {
+              url: { type: String, required: true }, // URL of the file (image, video, etc.)
+              type: { type: String, enum: ["image", "video", "audio", "file"], required: true }, // Type of the attachment
+              ext:{type: String},
+              size: { type: Number }, // Size of the file in bytes (optional)
+              uploadedAt: { type: Date, default: Date.now }, // Timestamp of upload
+            },
+          ],
+        readBy: [
+                  {
+                    userId: { type: String, required: true }, // User who read the message
+                    readAt: { type: Date, default: Date.now }, // Timestamp when the user read the message
+                  }
+                ],
+        deletedBy: 
+                [ 
+                    {
+                        userId: { type: String, required: true }, // User who deleted the message
+                        deletedAt: { type: Date, default: Date.now }, // Timestamp of deletion
+                    }
+                ],
+        deleted: { type: Boolean, default: false }
     },
     {timestamps: true});
 
@@ -26,3 +48,24 @@ send_message
     "message": "Hello EveryOne"
 }
 */
+// //Schema 
+// {
+//     cid: { type: String, required: true }, // Link to Conversation schema
+//     sender: { type: String, required: true }, // ID of the sender
+//     message: { type: String, required: true }, // Message content
+//     readBy: [
+//       {
+//         userId: { type: String, required: true }, // User who read the message
+//         readAt: { type: Date, default: Date.now }, // Timestamp when the user read the message
+//       }
+//     ],
+//     deletedBy: [ // Track users who have deleted the message
+//       {
+//         userId: { type: String, required: true }, // User who deleted the message
+//         deletedAt: { type: Date, default: Date.now }, // Timestamp of deletion
+//       }
+//     ],
+//     deleted: { type: Boolean, default: false }, // Flag to indicate if message is deleted
+//   },
+//   { timestamps: true }
+// 

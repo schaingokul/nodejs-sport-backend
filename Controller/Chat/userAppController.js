@@ -48,15 +48,36 @@ export const chatSearch = async (req, res) => {
     }
 };
 
-export const getCoversation = async (type = null, participants = null, groupName = null, cid = null) => {
+export const getCoversation = async (type = null, createdBy=null, participants = null, groupName = null, url = null, cid = null) => {
     try {
+
         let conversation;
+        if (!type || !["private", "group"].includes(type)) {
+            throw new Error("Invalid or missing conversation type.");
+          }
+
+          if (!Array.isArray(participants) || participants.length === 0) {
+            throw new Error("Participants must be a non-empty array.");
+          }
+
+        if (type === "private" && participants.length !== 2) {
+            throw new Error("Private conversations must have exactly two participants.");
+        }
+
+        if (type === "group" && (!groupName || typeof groupName !== "string" || !groupName.trim())) {
+            throw new Error("Group name is required for group conversations.");
+          }
+          
+        if (typeof groupName !== "string" || !groupName.trim()) {
+            throw new Error("Group name is required.");
+        }
+
         if (cid) {
             conversation = await Conversation.findById(cid);
-        } else if (type === "one-on-one") {
-            conversation = await Conversation.findOne({ type: 'one-on-one', participants: { $all: participants } });
+        } else if (type === "private") {
+            conversation = await Conversation.findOne({ type: 'private', "participants.userId": { $all: participants } });
         } else if (type === "group") {
-            conversation = await Conversation.findOne({ type: 'group', groupName: groupName });
+            conversation = await Conversation.findOne({ type: 'group', "participants.userId": { $all: participants }, groupName: groupName });
         } else {
             throw new Error('Invalid conversation type');
         }
@@ -65,14 +86,19 @@ export const getCoversation = async (type = null, participants = null, groupName
 
         // If no conversation exists, create a new one
         if (!conversation) {
-            conversation = new Conversation({ type, participants, groupName });
+           if(!createdBy){
+            throw new Error('Please send the created UserId');
+           }
+
+            conversation = new Conversation({ type, createdBy, 
+            participants: participants.map((user) => ({userId: user.userId, role: user.role})), groupName, url });
             await conversation.save();
         }
 
         // Fetch participant details
         const participantDetails = await Promise.all(
             conversation.participants.map(async (participant) => {
-                const user = await UserDetails.findOne({ uuid: participant.uuid })
+                const user = await UserDetails.findById(participant.userId)
                 console.log(user)
                 return {
                     cid: participant._id, // Ensure participant structure supports this

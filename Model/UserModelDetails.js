@@ -98,6 +98,7 @@ TeamBuildSchema.pre('save', function (next) {
 const chatSchema = new mongoose.Schema(
   {
     cid: { type: String },
+    lastSeen: { type: Date, default: null },
   },
   { timestamps: true }
 );
