@@ -44,8 +44,8 @@ app.use('/api/team', TeamRouter);
 app.use('/machine', machineRoute);
 app.use('/chat', userAppRoute);
 
-// const socketIP = "http://localhost:4500";
-const socketIP = "https://sportspersonz.com";
+const socketIP = "http://localhost:4500";
+// const socketIP = "https://sportspersonz.com";
 
 const io = new Server(server, {
     cors: {
@@ -106,7 +106,7 @@ io.on("connection", (socket) => {
     socket.on("send_message", async (data) => {
         const { cid, sender, message } = data;
         try {
-            const newMessage = await sendMessage(cid, sender, message);
+            const {newMessage} = await sendMessage(cid, sender, message);
 
             io.to(cid).emit("receive_message", {
                 message: {
@@ -114,7 +114,6 @@ io.on("connection", (socket) => {
                     cid: newMessage.cid,
                     sender: newMessage.sender,
                     message: newMessage.message,
-                    timestamp: newMessage.timestamp,
                 },
             });
         } catch (error) {

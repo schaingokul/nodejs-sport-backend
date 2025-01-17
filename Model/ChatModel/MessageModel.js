@@ -4,10 +4,10 @@ const MessageSchema = mongoose.Schema(
     {
         cid: {type:  String, require: true},
         sender: {type:String, require:true},
-        message: { type: String, required: true },
+        message: { type: String},
         attachments: [
             {
-              url: { type: String, required: true }, // URL of the file (image, video, etc.)
+              url: { type: String, }, // URL of the file (image, video, etc.)
               type: { type: String, enum: ["image", "video", "audio", "file"], required: true }, // Type of the attachment
               ext:{type: String},
               size: { type: Number }, // Size of the file in bytes (optional)
@@ -16,14 +16,14 @@ const MessageSchema = mongoose.Schema(
           ],
         readBy: [
                   {
-                    userId: { type: String, required: true }, // User who read the message
+                    userId: { type: String}, // User who read the message
                     readAt: { type: Date, default: Date.now }, // Timestamp when the user read the message
                   }
                 ],
         deletedBy: 
                 [ 
                     {
-                        userId: { type: String, required: true }, // User who deleted the message
+                        userId: { type: String }, // User who deleted the message
                         deletedAt: { type: Date, default: Date.now }, // Timestamp of deletion
                     }
                 ],

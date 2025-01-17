@@ -143,7 +143,6 @@ router.get("/my-chat", async (req, res) => {
       const conversationIds = user.chatList.map((chat) => chat.cid);
   
       const conversations = await Conversation.find({ _id: { $in: conversationIds } })
-        .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit);
   
@@ -161,33 +160,20 @@ router.get("/my-chat", async (req, res) => {
               const user = await UserDetails.findById(participant.userId);
               participantsWithDetails.push({
                 userId: user._id,
-                username: user?.userInfo?.Nickname || null,
-                userProfile: user?.userInfo?.Profile_ImgURL || null,
-                lastMessage: latestMessage ? latestMessage.message : null,
-                latestMessageTimestamp: latestMessage ? latestMessage.createdAt : null,
+                username: user?.userInfo?.Nickname ,
+                userProfile: user?.userInfo?.Profile_ImgURL ,
+                lastMessage: latestMessage ? latestMessage.message : null
               });
             }
-          } else if (conversation.type === "group") {
-            // Group: Use group name and profile for all participants, last message is null
-            participantsWithDetails = conversation.participants.map(() => ({
-              userId: null,
-              username: conversation.groupName,  // Use group name for username
-              userProfile: conversation.url,     // Use group URL as profile image
-              lastMessage: null,                 // Group messages don't show the last message here
-              latestMessageTimestamp: null,      // Group message timestamp is null
-            }));
           }
   
           return {
-            _id: conversation._id,
+            cid: conversation._id,
             type: conversation.type,
-            groupname: conversation.type === "group" ? conversation.groupName : null,
-            groupprofile: conversation.type === "group" ? conversation.url : null,
-            username: conversation.type === "private" ? participantsWithDetails[0]?.username : null,
-            userprofile: conversation.type === "private" ? participantsWithDetails[0]?.userProfile : null,
-            lastMessage: conversation.type === "private" ? participantsWithDetails[0]?.lastMessage : null,
-            latestMessageTimestamp: conversation.type === "private" ? participantsWithDetails[0]?.latestMessageTimestamp : null,
-            participants: participantsWithDetails,
+            name: conversation.type === "group" ? conversation.groupName : participantsWithDetails[0].username,
+            userId: conversation.type === "group" ? "" : participantsWithDetails[0].userId,
+            profile: conversation.type === "group" ? conversation.url : participantsWithDetails[0].userProfile,
+            lastMessage: latestMessage || null
           };
         })
       );

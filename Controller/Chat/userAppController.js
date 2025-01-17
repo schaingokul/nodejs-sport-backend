@@ -67,7 +67,7 @@ export const getCoversation = async (type = null, createdBy=null, participants =
         if (type === "group" && (!groupName || typeof groupName !== "string" || !groupName.trim())) {
             throw new Error("Group name is required for group conversations.");
           }
-          
+
         if (typeof groupName !== "string" || !groupName.trim()) {
             throw new Error("Group name is required.");
         }
@@ -120,8 +120,9 @@ export const getCoversation = async (type = null, createdBy=null, participants =
 export const sendMessage = async(cid, sender, message) => {
     try {
         const newMessage = new Message({ cid, sender, message });
-        await newMessage.save();
-        return newMessage
+        console.log("SendMessagePass")
+        const sendMessage = await newMessage.save();
+        return sendMessage
     } catch (error) {
         console.error('Error fetching or creating conversation:', error);
         throw error
