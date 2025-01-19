@@ -12,6 +12,7 @@ router.get("/search", protectRoute, chatSearch);
 router.post("/", async(req,res) => {
     let { type, createdBy, participants, groupName, url, cid } = req.body;
     try {
+       if(!cid){
         if (!type || !["private", "group"].includes(type)) {
             return res.status(400).json({ message: "Invalid or missing conversation type." });
           }
@@ -23,6 +24,7 @@ router.post("/", async(req,res) => {
         if (type === "private" && participants.length !== 2) {
             return res.status(400).json({ message: "Private conversations must have exactly two participants." });
         }
+       }
 
         let conversation;
 
@@ -107,7 +109,9 @@ router.get("/chat-data/:id", async(req,res) => {
     try {
         const skip = (page - 1) * limit;
 
-        const chat_data = await Message.find({ cid }).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+        const chat_data = await Message.find({ cid: cid }).sort({ updatedAt: -1 }).skip(skip).limit(parseInt(limit));
+
+        console.log("Chat_data", chat_data.map((message) => console.log(message.message)));
         const totalMessages = await Message.countDocuments({ cid });
 
         res.status(200).json({status: true, message: "Successfully Fetched", chat_data: {chat_data, 
@@ -162,7 +166,7 @@ router.get("/my-chat", async (req, res) => {
                 userId: user._id,
                 username: user?.userInfo?.Nickname ,
                 userProfile: user?.userInfo?.Profile_ImgURL ,
-                lastMessage: latestMessage ? latestMessage.message : null
+                lastMessage: latestMessage ? latestMessage.message : "Start Conversation"
               });
             }
           }
@@ -171,9 +175,9 @@ router.get("/my-chat", async (req, res) => {
             cid: conversation._id,
             type: conversation.type,
             name: conversation.type === "group" ? conversation.groupName : participantsWithDetails[0].username,
-            userId: conversation.type === "group" ? "" : participantsWithDetails[0].userId,
+            userId: conversation.type === "group" ? conversation.createdBy : participantsWithDetails[0].userId,
             profile: conversation.type === "group" ? conversation.url : participantsWithDetails[0].userProfile,
-            lastMessage: latestMessage || null
+            lastMessage: latestMessage  ? latestMessage.message : "Start Conversation"
           };
         })
       );
