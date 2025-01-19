@@ -74,39 +74,54 @@ io.on("connection", (socket) => {
     });
 
     //onWork
-    
     socket.on("join_chat", async (data) => {
-        let { type, createdBy, participants, groupName, cid, url, loginid } = data;
-
+        const { type, createdBy, participants, groupName, cid, url, loginid, message } = data;
+      
         try {
-            // Fetch the conversation
-            const conversations = await Axios.post(`${socketIP}/chat`, {type, createdBy, participants, groupName, cid, url});
-            const conversation = conversations.data.conversation;
-
-            if (conversation?._id) {
-                // Fetch chat data
-                const response = await Axios.get(`${socketIP}/chat/chat-data/${conversation?._id.toString()}`, {
-                    params: { loginid },
-                  });
-                
-                const chatData = response.data.chat_data.formattedChatData.length > 0 ? response.data.chat_data.formattedChatData : "Start New Conversation";
-
-                console.log("response", chatData);
-
-                // Emit the fetched chat data to the client
-                socket.emit("chat_data", { conversation, chatData});
-
-                // Join the socket room with the conversation ID
-                socket.join(conversation._id.toString());
-                console.log(`User joined room: ${conversation._id}`);
-            } else {
-                throw new Error("Conversation not found or invalid.");
+          // Fetch or create the conversation
+          const conversations = await Axios.post(`${socketIP}/chat`, {
+            type,
+            createdBy,
+            participants,
+            groupName,
+            cid,
+            url,
+          });
+          const conversation = conversations.data.conversation;
+      
+          if (conversation?._id) {
+            // Fetch existing chat data
+            const response = await Axios.get(`${socketIP}/chat/chat-data/${conversation._id.toString()}`, {
+              params: { loginid },
+            });
+      
+            const chatData = response.data.chat_data.formattedChatData.length > 0
+              ? response.data.chat_data.formattedChatData
+              : "Start New Conversation";
+      
+            console.log("Chat Data Response:", chatData);
+      
+            // Emit the existing chat data to the client
+            socket.emit("chat_data", { conversation, chatData });
+      
+            // Join the socket room using the conversation ID
+            socket.join(conversation._id.toString());
+      
+            // Handle sending a new message
+            if (message) {
+              const newMessage = await sendMessage(conversation._id, loginid, message);
+              io.to(conversation._id.toString()).emit("receive_message", { newMessage });
             }
+      
+            console.log(`User joined room: ${conversation._id}`);
+          } else {
+            throw new Error("Conversation not found or invalid.");
+          }
         } catch (error) {
-            console.error("Error in join_chat:", error.message);
-            socket.emit("error", { message: error.message || "Failed to join or create chat" });
+          console.error("Error in join_chat:", error.message);
+          socket.emit("error", { message: error.message || "Failed to join or create chat" });
         }
-    });
+      });
 
     socket.on("send_message", async (data) => {
         const { cid, sender, message, loginid } = data;
