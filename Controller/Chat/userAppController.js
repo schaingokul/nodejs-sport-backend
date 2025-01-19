@@ -117,9 +117,17 @@ export const getCoversation = async (type = null, createdBy=null, participants =
 export const sendMessage = async(cid, sender, message) => {
     try {
         const newMessage = new Message({ cid, sender, message });
-        console.log("SendMessagePass")
         const sendMessage = await newMessage.save();
-        return sendMessage
+        const user = await UserDetails.findById(sender)
+        let send = {
+            cid: cid,
+            id: sendMessage._id,
+            message: sendMessage.message, 
+            profile: user?.userInfo?.Profile_ImgURL,
+            username: user?.userInfo?.Nickname,
+        };
+        
+        return send
     } catch (error) {
         console.error('Error fetching or creating conversation:', error);
         throw error
