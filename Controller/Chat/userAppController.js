@@ -120,11 +120,13 @@ export const sendMessage = async(cid, sender, message) => {
         const sendMessage = await newMessage.save();
         const user = await UserDetails.findById(sender)
         let send = {
-            cid: cid,
             id: sendMessage._id,
-            message: sendMessage.message, 
-            profile: user?.userInfo?.Profile_ImgURL,
-            username: user?.userInfo?.Nickname,
+            message: sendMessage.message,
+            is: "",
+            sender: sender,
+            name: user?.userInfo?.Nickname,
+            url: user?.userInfo?.Profile_ImgURL,
+            timestamp: sendMessage.createdAt,
         };
         
         return send

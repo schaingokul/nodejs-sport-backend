@@ -89,7 +89,8 @@ router.post("/", async(req,res) => {
             conversation.participants.map(async (participant) => {
                 const user = await UserDetails.findById(participant.userId)
                 return {
-                    type: participant.role, 
+                    type: participant.role,
+                     
                     profile: user?.userInfo?.Profile_ImgURL || null,
                     username: user?.userInfo?.Nickname || null,
                 };
@@ -137,7 +138,7 @@ router.get("/chat-data/:cid", async (req, res) => {
           sender: message.sender,
           name: user?.userInfo?.Nickname, // Default to "Unknown" if Nickname is missing
           url: user?.userInfo?.Profile_ImgURL, // Default image URL
-          timestamp: message.timestamp,
+          timestamp: message.createdAt,
         };
       })
     );

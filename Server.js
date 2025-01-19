@@ -87,6 +87,7 @@ io.on("connection", (socket) => {
             cid,
             url,
           });
+          
           const conversation = conversations.data.conversation;
       
           if (conversation?._id) {
@@ -94,7 +95,11 @@ io.on("connection", (socket) => {
             const response = await Axios.get(`${socketIP}/chat/chat-data/${conversation._id.toString()}`, {
               params: { loginid },
             });
-      
+
+            if (!response || !response.data || !response.data.chat_data) {
+                throw new Error("Invalid response from /chat/chat-data");
+              }
+
             const chatData = response.data.chat_data.formattedChatData.length > 0
               ? response.data.chat_data.formattedChatData
               : "Start New Conversation";
@@ -123,25 +128,7 @@ io.on("connection", (socket) => {
         }
       });
 
-    socket.on("send_message", async (data) => {
-        const { cid, sender, message, loginid } = data;
-        try {
-            const sendMessag = await sendMessage(cid, sender, message);
-
-            // Fetch chat data
-            const response = await Axios.get(`${socketIP}/chat/chat-data/${cid.toString()}`, {
-                params: { loginid },
-              });
-            
-            const chatData = response.data.chat_data.formattedChatData.length > 0 ? response.data.chat_data.formattedChatData : "Start New Conversation";
-
-            io.to(cid).emit("receive_message", {chatData ,newMessage: sendMessag.message});
-        } catch (error) {
-            console.error("Error sending message:", error);
-            socket.emit("error", { message: error.message || "Failed to send message" });
-        }
-    });
-
+    
     socket.on("disconnect", () => {
         console.log(`User disconnected: ${socket.id}`);
     });
