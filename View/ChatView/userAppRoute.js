@@ -103,34 +103,75 @@ router.post("/", async(req,res) => {
     }
 });
 
-router.get("/chat-data/:id", async(req,res) => {
-    const { page = 1, limit = 20 } = req.body; 
-    const { cid } = req.params;
-    try {
-        const skip = (page - 1) * limit;
+router.get("/chat-data/:cid", async (req, res) => {
+  const { loginid, page = 1, limit = 20 } = req.query; // Use query parameters for pagination
+  const { cid } = req.params;
 
-        const chat_data = await Message.find({ cid: cid }).sort({ updatedAt: -1 }).skip(skip).limit(parseInt(limit));
-
-        console.log("Chat_data", chat_data.map((message) => console.log(message.message)));
-        const totalMessages = await Message.countDocuments({ cid });
-
-        res.status(200).json({status: true, message: "Successfully Fetched", chat_data: {chat_data, 
-            currentPage: parseInt(page), totalPages: Math.ceil(totalMessages / limit), totalMessages,}})     
-    } catch (error) {
-        res.status(500).json({status: false, message: "Failed to Fetched"})     
+  try {
+    // Validate CID
+    if (!cid) {
+      return res.status(400).json({ status: false, message: "Conversation ID (cid) is required." });
     }
+
+    if(!loginid){
+      return res.status(400).json({ status: false, message: "loginud is required i can show the chat using diffre based on loginid." });
+    }
+
+    // Parse pagination values
+    const pageNumber = parseInt(page);
+    const pageLimit = parseInt(limit);
+    const skip = (pageNumber - 1) * pageLimit;
+
+    // Fetch chat data
+    const chat_data = await Message.find({ cid: cid.toString() }).sort({ updatedAt: -1 }).skip(skip).limit(pageLimit);
+
+    const formattedChatData = await Promise.all(
+      chat_data.map(async (message) => {
+        // Fetch user details
+        const user = await UserDetails.findById(message.sender).select("_id userInfo");
+    
+        return {
+          id: message._id,
+          message: message.message,
+          is: message.sender === loginid ? "me" : "other",
+          sender: message.sender,
+          name: user?.userInfo?.Nickname, // Default to "Unknown" if Nickname is missing
+          url: user?.userInfo?.Profile_ImgURL, // Default image URL
+          timestamp: message.timestamp,
+        };
+      })
+    );
+
+    console.log("Chat Data:", formattedChatData);
+
+    // Total messages count
+    const totalMessages = await Message.countDocuments({ cid });
+
+    // Send response
+    res.status(200).json({ status: true, message: "Successfully Fetched",
+      chat_data: {
+        formattedChatData,
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalMessages / pageLimit),
+        totalMessages,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching chat data:", error.message);
+    res.status(500).json({ status: false, message: "Failed to fetch chat data", error: error.message, });
+  }
 });
 
 router.get("/my-chat", async (req, res) => {
-    let { userId, page = 1, limit = 20 } = req.query;
+    let { loginid, page = 1, limit = 20 } = req.query;
   
     try {
       // Validate userId
-      if (!userId) {
+      if (!loginid) {
         return res.status(400).json({ status: false, message: "User ID is required" });
       }
   
-      const user = await UserDetails.findById(userId).select("chatList");
+      const user = await UserDetails.findById(loginid).select("chatList");
       if (!user) {
         return res.status(404).json({ status: false, message: "User not found" });
       }
@@ -158,7 +199,7 @@ router.get("/my-chat", async (req, res) => {
           
           if (conversation.type === "private") {
             // Private: Find the participant that is not the current user
-            const participant = conversation.participants.find(p => p.userId !== userId);
+            const participant = conversation.participants.find(p => p.userId !== loginid);
   
             if (participant) {
               const user = await UserDetails.findById(participant.userId);
@@ -200,5 +241,16 @@ router.get("/my-chat", async (req, res) => {
     }
   });
 // user 
+
+
+router.post('/send', async(req,res) => {
+  try {
+    
+  } catch (error) {
+    console.error("Error in /SendMessage:", error.message);
+      res.status(500).json({ status: false, message: "Failed to SendMessage", error: error.message });
+    
+  }
+})
 
 export default router;

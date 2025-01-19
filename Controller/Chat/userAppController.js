@@ -82,8 +82,6 @@ export const getCoversation = async (type = null, createdBy=null, participants =
             throw new Error('Invalid conversation type');
         }
 
-        console.log("Participants:", participants);
-
         // If no conversation exists, create a new one
         if (!conversation) {
            if(!createdBy){
@@ -99,7 +97,6 @@ export const getCoversation = async (type = null, createdBy=null, participants =
         const participantDetails = await Promise.all(
             conversation.participants.map(async (participant) => {
                 const user = await UserDetails.findById(participant.userId)
-                console.log(user)
                 return {
                     cid: participant._id, // Ensure participant structure supports this
                     type: participant.type, 
@@ -127,7 +124,7 @@ export const sendMessage = async(cid, sender, message) => {
         console.error('Error fetching or creating conversation:', error);
         throw error
     }
-}
+};
 
 /* 
 export const getUsersForSidebar = async(req,res) => {

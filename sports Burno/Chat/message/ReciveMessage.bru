@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{Port}}/chat/chat-data/678a2a9129881708a47fab36
+  url: {{Port}}/chat/chat-data/678a2a9129881708a47fab36?loginid=678a2a9129881708a47fab36
   body: json
   auth: bearer
+}
+
+params:query {
+  loginid: 678a2a9129881708a47fab36
 }
 
 auth:bearer {
