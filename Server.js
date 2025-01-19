@@ -12,7 +12,7 @@ import TeamRouter from './View/TeamView.js'
 import { PORT, HOST } from "./env.js";
 import { Server } from "socket.io";
 import http from 'http';
-import {getCoversation, sendMessage}  from "./Controller/Chat/userAppController.js";
+import { sendMessage}  from "./Controller/Chat/userAppController.js";
 import PostImage from './Model/ImageModel.js';
 import Message from "./Model/ChatModel/MessageModel.js";
 import Axios from 'axios';
@@ -58,11 +58,11 @@ const io = new Server(server, {
 try {
 io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
-
+    //working Correct
     socket.on("my-chat", async (data) => {
-        const {userId, page, limit} = data;
+        const {loginid, page, limit} = data;
         try {
-            const response = await Axios.get(`${socketIP}/chat/my-chat`, { params :{ userId, page, limit }});
+            const response = await Axios.get(`${socketIP}/chat/my-chat`, { params :{ loginid, page, limit }});
             const list = response.data.data;
             // Emit the fetched chat data to the client
             socket.emit("mychat_data", list);
@@ -71,10 +71,12 @@ io.on("connection", (socket) => {
             console.error("Error in my-chat:", error.message);
             socket.emit("error", { message: error.message || "Failed to my-chat" });
         }
-    })
+    });
 
+    //onWork
+    
     socket.on("join_chat", async (data) => {
-        const { type, createdBy, participants, groupName, cid, url } = data;
+        let { type, createdBy, participants, groupName, cid, url, loginid } = data;
 
         try {
             // Fetch the conversation
@@ -83,9 +85,14 @@ io.on("connection", (socket) => {
 
             if (conversation?._id) {
                 // Fetch chat data
-                const response = await Axios.get(`${socketIP}/chat/chat-data/${conversation._id.toString()}`);
-                const chatData = response.data.chat_data;
+                const response = await Axios.get(`${socketIP}/chat/chat-data/${conversation?._id.toString()}`, {
+                    params: { loginid },
+                  });
                 
+                const chatData = response.data.chat_data.formattedChatData.length > 0 ? response.data.chat_data.formattedChatData : "Start New Conversation";
+
+                console.log("response", chatData);
+
                 // Emit the fetched chat data to the client
                 socket.emit("chat_data", { conversation, chatData});
 
@@ -101,21 +108,19 @@ io.on("connection", (socket) => {
         }
     });
 
-    
-
     socket.on("send_message", async (data) => {
-        const { cid, sender, message } = data;
+        const { cid, sender, message, loginid } = data;
         try {
-            const {newMessage} = await sendMessage(cid, sender, message);
+            const sendMessag = await sendMessage(cid, sender, message);
 
-            io.to(cid).emit("receive_message", {
-                message: {
-                    _id: newMessage._id,
-                    cid: newMessage.cid,
-                    sender: newMessage.sender,
-                    message: newMessage.message,
-                },
-            });
+            // Fetch chat data
+            const response = await Axios.get(`${socketIP}/chat/chat-data/${cid.toString()}`, {
+                params: { loginid },
+              });
+            
+            const chatData = response.data.chat_data.formattedChatData.length > 0 ? response.data.chat_data.formattedChatData : "Start New Conversation";
+
+            io.to(cid).emit("receive_message", {chatData ,newMessage: sendMessag.message});
         } catch (error) {
             console.error("Error sending message:", error);
             socket.emit("error", { message: error.message || "Failed to send message" });
