@@ -166,26 +166,11 @@ io.on("connection", (socket) => {
             );
           }
 
-          if (cid) {
-            // Fetch existing chat data
-            const response = await Axios.get(`${socketIP}/chat/chat-data/${cid.toString()}`, {
-              params: { loginid },
-            });
+          const response = await Axios.get(`${socketIP}/chat/my-chat`, { params :{ loginid, page, limit }});
+          const list = response.data.data;
 
-            if (!response || !response.data || !response.data.chat_data) {
-                throw new Error("Invalid response from /chat/chat-data");
-            }
-
-            const chatData = response.data.chat_data.formattedChatData.length > 0
-              ? response.data.chat_data.formattedChatData
-              : "Start New Conversation";
-      
-            // Emit the existing chat data to the client
-            socket.emit("chat_data", { conversation, chatData });
-      
-          } else {
-            throw new Error("Conversation not found or invalid.");
-          }
+          // Emit the fetched chat data to the client
+          socket.emit("mychat_data", list);
 
         } catch (error) {
           console.error("Error in send_message:", error);
