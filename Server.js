@@ -75,7 +75,7 @@ io.on("connection", (socket) => {
 
     //onWork
     socket.on("join_chat", async (data) => {
-        const { type, createdBy, participants, groupName, cid, url, loginid, message } = data;
+        const { type, createdBy, participants, groupName, cid, url, loginid } = data;
       
         try {
           // Fetch or create the conversation
@@ -108,20 +108,10 @@ io.on("connection", (socket) => {
       
             // Emit the existing chat data to the client
             socket.emit("chat_data", { conversation, chatData });
+
       
             // Join the socket room using the conversation ID
             socket.join(conversation._id.toString());
-      
-            // Handle sending a new message
-            if (message) {
-
-              const newMessage = await sendMessage({cid: conversation._id, sender:loginid, message, loginid});
-              io.to(conversation._id.toString()).emit("receive_message", {
-                newMessage,
-                is: loginid.toString() === newMessage.sender ? "me" : "other",
-              });
-
-            }
       
             console.log(`User joined room: ${conversation._id}`);
           } else {
@@ -133,6 +123,19 @@ io.on("connection", (socket) => {
         }
       });
 
+      socket.on("send_message", async (data) => {
+        try {
+          const { cid, loginid, message } = data;
+          const newMessage = await sendMessage({ cid, sender: loginid, message, loginid });
+          io.to(cid).emit("receive_message", {
+            newMessage:newMessage.message,
+            is: loginid.toString() === newMessage.sender ? "me" : "other",
+          });
+        } catch (error) {
+          console.error("Error in send_message:", error);
+          socket.emit("error", { message: error.message || "Failed to send message" });
+        }
+      });
     
     socket.on("disconnect", () => {
         console.log(`User disconnected: ${socket.id}`);
