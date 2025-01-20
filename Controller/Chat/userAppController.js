@@ -117,23 +117,34 @@ export const getCoversation = async (type = null, createdBy=null, participants =
 export const sendMessage = async({cid, sender, message}) => {
     try {
         const newMessage = new Message({ cid, sender, message });
-        const sendMessage = await newMessage.save();
-        const user = await UserDetails.findById(sender)
-        let send = {
-            id: sendMessage._id,
-            message: sendMessage.message,
-            sender: sender,
-            name: user?.userInfo?.Nickname,
-            url: user?.userInfo?.Profile_ImgURL,
-            timestamp: sendMessage.createdAt,
-        };
+        await newMessage.save();
         
-        return send
+        return newMessage
     } catch (error) {
         console.error('Error fetching or creating conversation:', error);
         throw error
     }
 };
+
+export const reciveMessage = async(id, loginid) => {
+    try {
+        const recive = await Message.findById(id)
+        const user = await UserDetails.findById(recive.sender)
+        let send = {
+            id: recive._id,
+            message: recive.message,
+            sender: recive.sender,
+            name: user?.userInfo?.Nickname,
+            url: user?.userInfo?.Profile_ImgURL,
+            timestamp: recive.createdAt,
+        };
+
+        return send
+    } catch (error) {
+        console.error('Error fetching or creating conversation:', error);
+        throw error
+    }
+}
 
 /* 
 export const getUsersForSidebar = async(req,res) => {

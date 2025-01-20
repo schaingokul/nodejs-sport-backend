@@ -12,7 +12,7 @@ import TeamRouter from './View/TeamView.js'
 import { PORT, HOST } from "./env.js";
 import { Server } from "socket.io";
 import http from 'http';
-import { sendMessage}  from "./Controller/Chat/userAppController.js";
+import { sendMessage, reciveMessage}  from "./Controller/Chat/userAppController.js";
 import PostImage from './Model/ImageModel.js';
 import Message from "./Model/ChatModel/MessageModel.js";
 import Axios from 'axios';
@@ -127,10 +127,31 @@ io.on("connection", (socket) => {
         try {
           const { cid, loginid, message } = data;
           const newMessage = await sendMessage({ cid, sender: loginid, message, loginid });
-          io.to(cid).emit("receive_message", {
-            newMessage:newMessage.message,
-            is: loginid.toString() === newMessage.sender ? "me" : "other",
-          });
+          
+          const recive = await reciveMessage(newMessage._id, loginid);
+
+          // Emit the message to the sender as "me"
+          socket.emit("receive_message", { recive: {
+            id: recive._id,
+            message: recive.message,
+            is: "me",
+            sender: recive.sender,
+            name: recive.name,
+            url: recive.url,
+            timestamp: recive.timestamp,
+          } });
+
+          // Emit the message to others in the room as "other"
+          socket.to(cid).emit("receive_message", { recive: {
+            id: recive._id,
+            message: recive.message,
+            is: "other",
+            sender: recive.sender,
+            name: recive.name,
+            url: recive.url,
+            timestamp: recive.timestamp,
+          } });
+
         } catch (error) {
           console.error("Error in send_message:", error);
           socket.emit("error", { message: error.message || "Failed to send message" });
