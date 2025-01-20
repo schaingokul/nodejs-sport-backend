@@ -64,6 +64,7 @@ io.on("connection", (socket) => {
         try {
             const response = await Axios.get(`${socketIP}/chat/my-chat`, { params :{ loginid, page, limit }});
             const list = response.data.data;
+
             // Emit the fetched chat data to the client
             socket.emit("mychat_data", list);
             
@@ -151,6 +152,18 @@ io.on("connection", (socket) => {
             url: recive.url,
             timestamp: recive.timestamp,
           } });
+
+          // Check if users are in the same room
+          const room = io.sockets.adapter.rooms.get(cid);
+          if (room && room.size > 1) {
+            // Update the message as read for all participants except the sender
+            await Message.updateOne(
+              { _id: newMessage._id, "readBy.userId": { $ne: loginid } },
+              {
+                $addToSet: { readBy: { userId: loginid, readAt: new Date() } },
+              }
+            );
+          }
 
         } catch (error) {
           console.error("Error in send_message:", error);

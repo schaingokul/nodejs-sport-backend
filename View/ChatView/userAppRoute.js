@@ -90,7 +90,6 @@ router.post("/", async(req,res) => {
                 const user = await UserDetails.findById(participant.userId)
                 return {
                     type: participant.role,
-                     
                     profile: user?.userInfo?.Profile_ImgURL || null,
                     username: user?.userInfo?.Nickname || null,
                 };
@@ -104,6 +103,7 @@ router.post("/", async(req,res) => {
     }
 });
 
+// Join-Chat
 router.get("/chat-data/:cid", async (req, res) => {
   const { loginid, page = 1, limit = 20 } = req.query; // Use query parameters for pagination
   const { cid } = req.params;
@@ -125,6 +125,17 @@ router.get("/chat-data/:cid", async (req, res) => {
 
     // Fetch chat data
     const chat_data = await Message.find({ cid: cid.toString() }).sort({ updatedAt: -1 }).skip(skip).limit(pageLimit);
+
+    await Message.updateMany(
+      {
+        cid: cid, 
+        "sender": { $ne: loginid }, 
+        "readBy.userId": { $ne: loginid },
+      },
+      {
+        $addToSet: { readBy: { userId: loginid, readAt: new Date() } }, 
+      }
+    );
 
     const formattedChatData = await Promise.all(
       chat_data.map(async (message) => {
@@ -188,14 +199,14 @@ router.get("/my-chat", async (req, res) => {
   
       const conversationIds = user.chatList.map((chat) => chat.cid);
   
-      const conversations = await Conversation.find({ _id: { $in: conversationIds } })
-        .skip(skip)
-        .limit(limit);
+      const conversations = await Conversation.find({ _id: { $in: conversationIds } }).sort({ updatedAt: -1 }).skip(skip).limit(limit);
   
       const conversationsWithMessages = await Promise.all(
         conversations.map(async (conversation) => {
           const latestMessage = await Message.findOne({ cid: conversation._id }).sort({ createdAt: -1 });
-  
+
+          const unreadCount = await Message.find({ cid: conversation._id, "sender": { $ne: loginid },  readBy: { $not: { $elemMatch: { userId: loginid } } } }).countDocuments();
+
           let participantsWithDetails = [];
           
           if (conversation.type === "private") {
@@ -208,18 +219,20 @@ router.get("/my-chat", async (req, res) => {
                 userId: user._id,
                 username: user?.userInfo?.Nickname ,
                 userProfile: user?.userInfo?.Profile_ImgURL ,
-                lastMessage: latestMessage ? latestMessage.message : "Start Conversation"
+                // lastMessage: latestMessage ? latestMessage.message : "Start Conversation",
+                // unreadCount: unreadCount
               });
             }
           }
-  
+
           return {
             cid: conversation._id,
             type: conversation.type,
             name: conversation.type === "group" ? conversation.groupName : participantsWithDetails[0].username,
             userId: conversation.type === "group" ? conversation.createdBy : participantsWithDetails[0].userId,
             profile: conversation.type === "group" ? conversation.url : participantsWithDetails[0].userProfile,
-            lastMessage: latestMessage  ? latestMessage.message : "Start Conversation"
+            lastMessage: latestMessage  ? latestMessage.message : "Start Conversation",
+            unreadCount: unreadCount
           };
         })
       );
@@ -242,16 +255,5 @@ router.get("/my-chat", async (req, res) => {
     }
   });
 // user 
-
-
-router.post('/send', async(req,res) => {
-  try {
-    
-  } catch (error) {
-    console.error("Error in /SendMessage:", error.message);
-      res.status(500).json({ status: false, message: "Failed to SendMessage", error: error.message });
-    
-  }
-})
 
 export default router;

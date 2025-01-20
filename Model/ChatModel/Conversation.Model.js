@@ -24,7 +24,7 @@ conversationSchema.index({ type: 1, createdBy: 1 });
 conversationSchema.index({ 'participants.userId': 1 });
 conversationSchema.index({ groupName: 1 });
 
-    const Conversation = mongoose.model("Conversation", conversationSchema);
+const Conversation = mongoose.model("Conversation", conversationSchema);
 
     export default Conversation;
 // //Schema 

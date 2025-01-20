@@ -116,6 +116,25 @@ export const getCoversation = async (type = null, createdBy=null, participants =
 
 export const sendMessage = async({cid, sender, message}) => {
     try {
+        const con = await Conversation.findByIdAndUpdate( cid, { updatedAt: Date.now() }, { new: true } );
+      
+          if (!con) {
+            throw new Error("Conversation not found");
+          }
+
+          // Extract participant user IDs
+          const conIds = con.participants.map((id) => id.userId);
+      
+          // Update `lastseen` in the chat list for all participants
+          await UserDetails.updateMany(
+            { _id: { $in: conIds }, "chatList.cid": cid },
+            {
+              $set: {
+                "chatList.$.lastseen": Date.now(), // Update lastseen to current time
+              },
+            }
+          );
+
         const newMessage = new Message({ cid, sender, message });
         await newMessage.save();
         
