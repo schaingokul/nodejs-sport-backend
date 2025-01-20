@@ -132,7 +132,7 @@ io.on("connection", (socket) => {
 
           // Emit the message to the sender as "me"
           socket.emit("receive_message", { recive: {
-            id: recive._id,
+            id: recive.id,
             message: recive.message,
             is: "me",
             sender: recive.sender,
@@ -143,7 +143,7 @@ io.on("connection", (socket) => {
 
           // Emit the message to others in the room as "other"
           socket.to(cid).emit("receive_message", { recive: {
-            id: recive._id,
+            id: recive.id,
             message: recive.message,
             is: "other",
             sender: recive.sender,
