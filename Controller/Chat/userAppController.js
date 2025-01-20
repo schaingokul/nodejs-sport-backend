@@ -114,7 +114,7 @@ export const getCoversation = async (type = null, createdBy=null, participants =
     }
 };
 
-export const sendMessage = async(cid, sender, message) => {
+export const sendMessage = async({cid, sender, message}) => {
     try {
         const newMessage = new Message({ cid, sender, message });
         const sendMessage = await newMessage.save();
@@ -122,7 +122,6 @@ export const sendMessage = async(cid, sender, message) => {
         let send = {
             id: sendMessage._id,
             message: sendMessage.message,
-            is: "",
             sender: sender,
             name: user?.userInfo?.Nickname,
             url: user?.userInfo?.Profile_ImgURL,

@@ -49,7 +49,7 @@ const socketIP = "https://sportspersonz.com";
 
 const io = new Server(server, {
     cors: {
-        origin: "https://sportspersonz.com", // "*", // Replace with your React Native app's URL
+        origin: socketIP, // "*", // Replace with your React Native app's URL
         methods: ["GET", "POST"],
         credentials: true
     },
@@ -114,8 +114,13 @@ io.on("connection", (socket) => {
       
             // Handle sending a new message
             if (message) {
-              const newMessage = await sendMessage(conversation._id, loginid, message);
-              io.to(conversation._id.toString()).emit("receive_message", { newMessage });
+
+              const newMessage = await sendMessage({cid: conversation._id, sender:loginid, message, loginid});
+              io.to(conversation._id.toString()).emit("receive_message", {
+                newMessage,
+                is: loginid.toString() === newMessage.sender ? "me" : "other",
+              });
+
             }
       
             console.log(`User joined room: ${conversation._id}`);
