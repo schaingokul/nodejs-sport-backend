@@ -165,7 +165,7 @@ io.on("connection", (socket) => {
               }
             );
           }
-
+          let page = 1, limit = 20;
           const response = await Axios.get(`${socketIP}/chat/my-chat`, { params :{ loginid, page, limit }});
           const list = response.data.data;
 
