@@ -153,6 +153,7 @@ io.on("connection", (socket) => {
             timestamp: recive.timestamp,
           } });
 
+
           // Check if users are in the same room
           const room = io.sockets.adapter.rooms.get(cid);
           if (room && room.size > 1) {
@@ -163,6 +164,27 @@ io.on("connection", (socket) => {
                 $addToSet: { readBy: { userId: loginid, readAt: new Date() } },
               }
             );
+          }
+
+          if (cid) {
+            // Fetch existing chat data
+            const response = await Axios.get(`${socketIP}/chat/chat-data/${cid.toString()}`, {
+              params: { loginid },
+            });
+
+            if (!response || !response.data || !response.data.chat_data) {
+                throw new Error("Invalid response from /chat/chat-data");
+            }
+
+            const chatData = response.data.chat_data.formattedChatData.length > 0
+              ? response.data.chat_data.formattedChatData
+              : "Start New Conversation";
+      
+            // Emit the existing chat data to the client
+            socket.emit("chat_data", { conversation, chatData });
+      
+          } else {
+            throw new Error("Conversation not found or invalid.");
           }
 
         } catch (error) {
