@@ -81,8 +81,7 @@ const special = '@';
 
 export const generateUniqueNickname = async (NickName) => {
     const MAX_ATTEMPTS = 1000; // Maximum number of retries to generate a unique username
-    let baseUsername = `${special}${NickName.toString().toLowerCase()}`;
-
+    let baseUsername = NickName.includes(special) ? `${NickName.toString().toLowerCase()}` : `${special}${NickName.toString().toLowerCase()}`;
     // Fetch all nicknames that start with the base username
     const existingNicknames = await UserDetails.find(
         { "userInfo.Nickname": { $regex: `^${NickName.toLowerCase()}` } },
