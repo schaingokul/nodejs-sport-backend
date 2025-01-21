@@ -319,16 +319,16 @@ export const getHomeFeed = async (req, res) => {
     }
 };*/
 
-    
+
 export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
     let { page, limit } = req.query;
 
     try {
         const limitNum = parseInt(limit, 10) || 10;
-        const eventLimitNum = 1;
-        const pageNum = parseInt(page, 10) || 1;
-        const isPaginationRequested = page || limit;
+        const eventLimitNum =  parseInt(limit, 10) || 10;
+        const pageNum = parseInt(page, 10) || 10;
+        const isPaginationRequested = parseInt(page, 10) || parseInt(limit, 10);
 
         // Fetch user details
         const user = await UserDetails.findById(userId).select("uuid _id following MyTeamBuild");
@@ -340,14 +340,9 @@ export const getHomeFeed = async (req, res) => {
         const validFollowingIds = following.filter(id => mongoose.Types.ObjectId.isValid(id));
         const teamIds = user.MyTeamBuild.map(team => team._id).filter(id => mongoose.Types.ObjectId.isValid(id));
 
-        // Fetch events and posts
+        // Fetch followedEvents and followedPosts
         const [followedEvents, followedPosts] = await Promise.all([
-            eventRequest.find({
-                $or: [
-                    { myTeam: { $in: teamIds } },
-                    { selectedTeam: { $in: teamIds } }
-                ]
-            }).sort({ createdAt: -1 })
+            eventRequest.find().sort({ createdAt: -1 })
               .skip(isPaginationRequested ? (pageNum - 1) * eventLimitNum : 0)
               .limit(eventLimitNum),
 
@@ -358,25 +353,44 @@ export const getHomeFeed = async (req, res) => {
                 : []
         ]);
 
-        // Combine events and posts and remove duplicates
-        const combinedFeed = [];
-        const eventIds = new Set();
-        const postIds = new Set();
+        // Fetch unfollowedEvents and unfollowedPosts
+        const [unfollowedEvents, unfollowedPosts] = await Promise.all([
+            eventRequest
+            .find()
+            .sort({ createdAt: -1 })
+            .skip(isPaginationRequested ? (pageNum - 1) * eventLimitNum : 0)
+            .limit(eventLimitNum),
 
-        // Add event if available
+             PostImage.find({
+                "postedBy.id": { $nin: validFollowingIds },
+                })
+                .sort({ createdAt: -1 })
+                .skip(isPaginationRequested ? (pageNum - 1) * limitNum : 0)
+                .limit(isPaginationRequested ? limitNum : 10)
+            ,
+        ]);
+
+        // Combine events and posts and remove duplicates
+        let combinedFeed = [];
+
+        // Add followedEvents if available
         followedEvents.forEach(event => {
-            if (!eventIds.has(event._id.toString())) {
-                combinedFeed.push({ ...event.toObject(), type: "event" });
-                eventIds.add(event._id.toString());
-            }
+            combinedFeed.push({ ...event.toObject(), type: "event" }); 
         });
 
-        // Add posts and ensure uniqueness
+        // Add followedPosts and ensure uniqueness
         followedPosts.forEach(post => {
-            if (!postIds.has(post._id.toString())) {
-                combinedFeed.push({ ...post.toObject(), type: "post" });
-                postIds.add(post._id.toString());
-            }
+            combinedFeed.push({ ...post.toObject(), type: "post" });
+        });
+
+        // Add unfollowedEvents if available
+        unfollowedEvents.forEach(event => {
+            combinedFeed.push({ ...event.toObject(), type: "event" });
+        });
+
+        // Add unfollowedPosts and ensure uniqueness
+        unfollowedPosts.forEach(post => {
+            combinedFeed.push({ ...post.toObject(), type: "post" });
         });
 
         // Add trending posts if necessary
@@ -385,18 +399,39 @@ export const getHomeFeed = async (req, res) => {
             .limit(limitNum);
 
         trendingPosts.forEach(post => {
-            if (!postIds.has(post._id.toString())) {
-                combinedFeed.push({ ...post.toObject(), type: "post" });
-                postIds.add(post._id.toString());
-            }
+            combinedFeed.push({ ...post.toObject(), type: "post" });
         });
 
         // Check if more data exists for infinite scroll (pagination based)
         const hasMore = isPaginationRequested ? (combinedFeed.length === limitNum) : true;
 
+        // Separate the posts and events into two arrays
+        const posts = combinedFeed.filter(item => item.type === "post");
+        const events = combinedFeed.filter(item => item.type === "event");
+
+        // Sort each array by createdAt in descending order
+        posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        events.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Merge the arrays alternately
+        let result = [];
+        let i = 0, j = 0;
+        while (i < posts.length || j < events.length) {
+        if (j < events.length) {
+            result.push(events[j]);
+            j++;
+        }
+        if (i < posts.length) {
+            result.push(posts[i]);
+            i++;
+        }
+        }
+
+        combinedFeed = result;
         // Format the response
         const response = await Promise.all(
             combinedFeed.map(async (item, index) => {
+
                 if (item.type === "post") {
                     const prf = await UserDetails.findById(item.postedBy.id).select("uuid userInfo");
                     return {
@@ -411,7 +446,8 @@ export const getHomeFeed = async (req, res) => {
                         URL: item.URL[0],
                         lc: item.likes.length,
                         location: item.location,
-                        isLiked: item.likes.some(like => like.likedByUuid === userUuid.toString())
+                        isLiked: item.likes.some(like => like.likedByUuid === userUuid.toString()),
+                        createdAt: item.createdAt
                     };
                 } else if (item.type === "event") {
                     const users = await UserDetails.find({ "MyTeamBuild.role": "captain" }).select("MyTeamBuild");
@@ -434,7 +470,8 @@ export const getHomeFeed = async (req, res) => {
                         status: item.status,
                         eventTime: item.eventTime,
                         location: item.loc,
-                        link: item.link
+                        link: item.link,
+                        createdAt: item.createdAt
                     };
                 }
             })
