@@ -45,8 +45,8 @@ app.use('/api/team', TeamRouter);
 app.use('/machine', machineRoute);
 app.use('/chat', userAppRoute);
 
-const socketIP = "http://localhost:4500";
-// const socketIP = "https://sportspersonz.com";
+// const socketIP = "http://localhost:4500";
+const socketIP = "https://sportspersonz.com";
 
 const io = new Server(server, {
     cors: {
@@ -173,14 +173,10 @@ io.on("connection", (socket) => {
                     if (loginid === participant.userId) {
                       socket.emit("mychat_data", list);  // Emit to the sender
                       console.log("Sent to sender", list);
-                    } else {
-                      // Emit the updated chat list to the room for others in the conversation
-                      io.to(cid).emit("mychat_data", list);  // Emit to all in the room
-                      console.log("Sent to room", list);
                     }
 
                     // Emit `mychat_data` directly to the participant even if they are not in the room
-                    io.to(participant.userId).emit("mychat_data", list);  // Emit directly to the participant
+                    io.to(cid).emit("mychat_data", list);  // Emit directly to the participant
                     console.log("Sent directly to participant", list);
                   }
                 })
@@ -233,25 +229,25 @@ app.get("/", (req,res) => {
 });
 
 /* ------------------------------------------ http://:localhost:4500 ------------------------------------------ */ 
-server.listen(PORT, async () => {
-    try {
-        await connectDB();
-        
-        console.log(`Server is running on ${PORT}`);
-    } catch (error) {
-        console.log(`Server failed to connect to database: ${error.message}`);
-    }
-});
-
-/* --------------------------------------------- Hositing Server --------------------------------------------- */ 
-// server.listen(PORT, HOST.replace("http://", ""), async () => {
+// server.listen(PORT, async () => {
 //     try {
 //         await connectDB();
+        
 //         console.log(`Server is running on ${PORT}`);
 //     } catch (error) {
 //         console.log(`Server failed to connect to database: ${error.message}`);
 //     }
 // });
+
+/* --------------------------------------------- Hositing Server --------------------------------------------- */ 
+server.listen(PORT, HOST.replace("http://", ""), async () => {
+    try {
+        await connectDB();
+        console.log(`Server is running on ${PORT}`);
+    } catch (error) {
+        console.log(`Server failed to connect to database: ${error.message}`);
+    }
+});
 
 /*app.use('/api/message', MessageRoute);
 app.use('/api/user', userAppRoute);*/

@@ -4,6 +4,7 @@ import { deleteFile } from '../../utilis/userUtils.js';
 import eventRequest from '../../Model/eventRequestModel.js';
 import {HOST, PORT, IP} from '../../env.js'
 import mongoose from "mongoose";
+import UserDetailsModel from '../../Model/UserModelDetails.js';
 
 export const createPost = async (req, res) => {
     let URL = [];
@@ -142,6 +143,177 @@ export const getHomeFeed = async (req, res) => {
 
     try {
         const limitNum = parseInt(limit, 10) || 10;
+        const eventLimitNum =  parseInt(limit, 10) || 10;
+        const pageNum = parseInt(page, 10) || 10;
+        const isPaginationRequested = page || limit;
+
+        // Fetch user details
+        const user = await UserDetails.findById(userId).select("uuid _id following MyTeamBuild");
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User not found" });
+        }
+
+        const following = user.following || [];
+        const validFollowingIds = following.filter(id => mongoose.Types.ObjectId.isValid(id));
+        const teamIds = user.MyTeamBuild.map(team => team._id).filter(id => mongoose.Types.ObjectId.isValid(id));
+
+        // Fetch followedEvents and followedPosts
+        const [followedEvents, followedPosts] = await Promise.all([
+            eventRequest.find().sort({ createdAt: -1 })
+              .skip(isPaginationRequested ? (pageNum - 1) * eventLimitNum : 0)
+              .limit(eventLimitNum),
+
+            validFollowingIds.length > 0
+                ? PostImage.find({ "postedBy.id": { $in: validFollowingIds } }).sort({ createdAt: -1 })
+                  .skip(isPaginationRequested ? (pageNum - 1) * limitNum : 0)
+                  .limit(isPaginationRequested ? limitNum : 10)
+                : []
+        ]);
+
+        // Fetch unfollowedEvents and unfollowedPosts
+        const [unfollowedEvents, unfollowedPosts] = await Promise.all([
+            eventRequest
+            .find()
+            .sort({ createdAt: -1 })
+            .skip(isPaginationRequested ? (pageNum - 1) * eventLimitNum : 0)
+            .limit(eventLimitNum),
+
+             PostImage.find({
+                "postedBy.id": { $nin: validFollowingIds },
+                })
+                .sort({ createdAt: -1 })
+                .skip(isPaginationRequested ? (pageNum - 1) * limitNum : 0)
+                .limit(isPaginationRequested ? limitNum : 10)
+            ,
+        ]);
+
+        // Combine events and posts and remove duplicates
+        let combinedFeed = [];
+
+        // Add followedEvents if available
+        followedEvents.forEach(event => {
+            combinedFeed.push({ ...event.toObject(), type: "event" }); 
+        });
+
+        // Add followedPosts and ensure uniqueness
+        followedPosts.forEach(post => {
+            combinedFeed.push({ ...post.toObject(), type: "post" });
+        });
+
+        // Add unfollowedEvents if available
+        unfollowedEvents.forEach(event => {
+            combinedFeed.push({ ...event.toObject(), type: "event" });
+        });
+
+        // Add unfollowedPosts and ensure uniqueness
+        unfollowedPosts.forEach(post => {
+            combinedFeed.push({ ...post.toObject(), type: "post" });
+        });
+
+        // Add trending posts if necessary
+        const trendingPosts = await PostImage.find({ type: { $in: ["video", "reel", "image", "event"] } })
+            .sort({ likesCount: -1 })
+            .limit(limitNum);
+
+        trendingPosts.forEach(post => {
+            combinedFeed.push({ ...post.toObject(), type: "post" });
+        });
+
+        // Check if more data exists for infinite scroll (pagination based)
+        const hasMore = isPaginationRequested ? (combinedFeed.length === limitNum) : true;
+
+        // Separate the posts and events into two arrays
+        const posts = combinedFeed.filter(item => item.type === "post");
+        const events = combinedFeed.filter(item => item.type === "event");
+
+        // Sort each array by createdAt in descending order
+        posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        events.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Merge the arrays alternately
+        let result = [];
+        let i = 0, j = 0;
+        while (i < posts.length || j < events.length) {
+        if (j < events.length) {
+            result.push(events[j]);
+            j++;
+        }
+        if (i < posts.length) {
+            result.push(posts[i]);
+            i++;
+        }
+        }
+
+        combinedFeed = result;
+        // Format the response
+        const response = await Promise.all(
+            combinedFeed.map(async (item, index) => {
+
+                if (item.type === "post") {
+                    const prf = await UserDetails.findById(item.postedBy.id).select("uuid userInfo");
+                    return {
+                        localId: index + 1,
+                        postId: item._id,
+                        userId: item.postedBy.id,
+                        userUuid: prf?.uuid,
+                        userProfile: prf?.userInfo?.Profile_ImgURL,
+                        userName: prf?.userInfo?.Nickname,
+                        description: item.description,
+                        type: item.type,
+                        URL: item.URL[0],
+                        lc: item.likes.length,
+                        location: item.location,
+                        isLiked: item.likes.some(like => like.likedByUuid === userUuid.toString()),
+                        createdAt: item.createdAt
+                    };
+                } else if (item.type === "event") {
+                    const users = await UserDetails.find({ "MyTeamBuild.role": "captain" }).select("MyTeamBuild");
+
+                    const teamDetails = users
+                        .map(user => user.MyTeamBuild.find(team => team._id.equals(item.myTeam)))
+                        .filter(team => team !== undefined);
+
+                    return {
+                        postId: item._id,
+                        userId: item.eventBy?.id,
+                        userName: item.eventBy?.name,
+                        myTeam: teamDetails.length > 0 ? teamDetails.map(team => ({
+                            myTeamId: team._id,
+                            myTeamName: team.teamName,
+                            sportsName:team.sportsName,
+                            playerList: team.playersList,
+                        })) : null,
+                        type:"event",
+                        status: item.status,
+                        eventTime: item.eventTime,
+                        location: item.loc,
+                        link: item.link,
+                        createdAt: item.createdAt
+                    };
+                }
+            })
+        );
+
+        return res.status(200).json({
+            status: true,
+            message: "Home feed fetched successfully",
+            feed: response,
+            hasMore: hasMore
+        });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
+    }
+};
+
+    /* 
+    
+export const getHomeFeed = async (req, res) => {
+    const { id: userId, uuid: userUuid } = req.user;
+    let { page, limit } = req.query;
+
+    try {
+        const limitNum = parseInt(limit, 10) || 10;
         const eventLimitNum = 1;
         const pageNum = parseInt(page, 10) || 1;
         const isPaginationRequested = page || limit;
@@ -243,6 +415,7 @@ export const getHomeFeed = async (req, res) => {
                         myTeam: teamDetails.length > 0 ? teamDetails.map(team => ({
                             myTeamId: team._id,
                             myTeamName: team.teamName,
+                            sportsName:team.sportsName,
                             playerList: team.playersList,
                         })) : null,
                         type:"event",
@@ -266,8 +439,7 @@ export const getHomeFeed = async (req, res) => {
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
 };
-
-
+    */
 export const viewCurrentPost = async(req,res) => {
     const {id: userId} = req.user;
     const {id: postId} = req.params;
