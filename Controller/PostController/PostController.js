@@ -137,7 +137,7 @@ export const deletePost = async (req, res) => {
         res.status(500).json({ status: false, message: "An error occurred while posting", error: error.message });
     }
 };
-/*
+
 export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
     let { page, limit } = req.query;
@@ -294,7 +294,7 @@ export const getHomeFeed = async (req, res) => {
                             myTeamId: teamDetails?._id,
                             myTeamName: teamDetails?.Team_Name,
                             sportsName: teamDetails?.Sports_Name,
-                            playersList: myTeamPlayers,
+                            playerList: myTeamPlayers,
                         },
                         type:"event",
                         status: item.status,
@@ -317,8 +317,8 @@ export const getHomeFeed = async (req, res) => {
         console.error(error.message);
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
-};*/
-
+};
+/*
 
 export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
@@ -487,7 +487,7 @@ export const getHomeFeed = async (req, res) => {
         console.error(error.message);
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
-};
+};*/
 
 export const viewCurrentPost = async(req,res) => {
     const {id: userId} = req.user;
