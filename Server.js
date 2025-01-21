@@ -172,7 +172,7 @@ io.on("connection", (socket) => {
                     console.log("participant.userId", participant.userId, "cid", cid)
                     //(participant.userId).emit("mychat_data", list);
                     
-                    io.to(cid).emit("mychat_data", list);
+                   socket.emit("mychat_data", list);
                   }
                 })
               );
