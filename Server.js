@@ -153,7 +153,7 @@ io.on("connection", (socket) => {
 
           // Fetch participants from the conversation
             const conversation = await Conversation.findById(cid).select("participants");
-
+            let activeLogin = loginid
             if (conversation && conversation.participants) {
               // Fetch and emit `mychat_data` for all participants in the conversation
               await Promise.all(
@@ -171,8 +171,13 @@ io.on("connection", (socket) => {
                     // Emit the updated chat list to the specific participant in the room
                     console.log("participant.userId", participant.userId, "cid", cid)
                     //(participant.userId).emit("mychat_data", list);
-                    
-                   socket.emit("mychat_data", list);
+                    if(activeLogin === participant.userId){
+                      socket.emit("mychat_data", list)
+                      console.log("socket list", list)
+                    }else{
+                      io.to(cid).emit("mychat_data", list);
+                      console.log("cid list", list)
+                    }
                   }
                 })
               );
