@@ -1,10 +1,11 @@
 import PostImage from '../../Model/ImageModel.js';
 import UserDetails from '../../Model/UserModelDetails.js';
-import { deleteFile } from '../../utilis/userUtils.js';
+import { deleteFile, getPlayerDetails } from '../../utilis/userUtils.js';
 import eventRequest from '../../Model/eventRequestModel.js';
 import {HOST, PORT, IP} from '../../env.js'
 import mongoose from "mongoose";
 import UserDetailsModel from '../../Model/UserModelDetails.js';
+
 
 export const createPost = async (req, res) => {
     let URL = [];
@@ -267,22 +268,34 @@ export const getHomeFeed = async (req, res) => {
                         createdAt: item.createdAt
                     };
                 } else if (item.type === "event") {
-                    const users = await UserDetails.find({ "MyTeamBuild.role": "captain" }).select("MyTeamBuild");
+                    console.log("item =>",item.myTeam.toString())
+                     // Fetch users with the specific team and role "captain"
+                    const users = await UserDetails.find({ "MyTeamBuild.role": "captain"}).select("MyTeamBuild");
 
-                    const teamDetails = users
-                        .map(user => user.MyTeamBuild.find(team => team._id.equals(item.myTeam)))
-                        .filter(team => team !== undefined);
+                    // Extract the matching team details
+                    const teamDetails = users?.flatMap(user => user.MyTeamBuild).find(team => team._id.equals(item.myTeam.toString()));
+                    console.log("teamDetails.createdBy", teamDetails.createdBy)
+                    if (!teamDetails) {
+                        console.log("No matching team found.");
+                        return null; // Or handle appropriately
+                    }
 
+                    // Fetch all player details
+                    const myTeamPlayers = await Promise.all(
+                        teamDetails?.playersList.map(player => getPlayerDetails(player, teamDetails?.createdBy))
+                    );
+                    console.log("teamDetails",teamDetails)
+                    console.log("myTeamPlayers",myTeamPlayers)
                     return {
                         postId: item._id,
                         userId: item.eventBy?.id,
                         userName: item.eventBy?.name,
-                        myTeam: teamDetails.length > 0 ? teamDetails.map(team => ({
-                            myTeamId: team._id,
-                            myTeamName: team.teamName,
-                            sportsName:team.sportsName,
-                            playerList: team.playersList,
-                        })) : null,
+                        myTeam: {
+                            myTeamId: teamDetails?._id,
+                            myTeamName: teamDetails?.Team_Name,
+                            sportsName: teamDetails?.Sports_Name,
+                            playersList: myTeamPlayers,
+                        },
                         type:"event",
                         status: item.status,
                         eventTime: item.eventTime,

@@ -113,3 +113,16 @@ export const generateUniqueNickname = async (NickName) => {
 
     return uniqueUsername;
 };
+
+export const getPlayerDetails = async (player, createdBy) => {
+    const playerDetails = await UserDetails.findOne({ uuid: player.Player_id });
+    return {
+        userId: playerDetails?._id.toString(),
+        userProfile: playerDetails?.userInfo?.Profile_ImgURL,
+        userName: playerDetails?.userInfo?.Nickname,
+        playerUuid: player.Player_id,
+        position: player.Position,
+        status: player.status,
+        role: player.Player_id === createdBy ? "captain" : "player"
+    };
+};

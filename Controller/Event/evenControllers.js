@@ -368,10 +368,20 @@ export const eventRequesting = async (req, res) => {
 
 export const viewEvent = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
+    const {eventID} = req.params
 
     try {
-        // Step 1: Fetch user details
-        const user = await UserDetails.findById(userId).select("MyTeamBuild userInfo");
+        let user ;
+        if(eventID) {
+            let event = eventRequest.findById(eventID).select("eventBy.id")
+            user = await UserDetails.findById(event.eventBy.id).select("MyTeamBuild userInfo");
+            
+        }else{
+            // Step 1: Fetch user details
+            user = await UserDetails.findById(userId).select("MyTeamBuild userInfo");
+
+        }
+
         if (!user) {
             return res.status(404).json({ status: false, message: "User Not Found" });
         }
@@ -410,6 +420,7 @@ export const viewEvent = async (req, res) => {
                             }) || []
                         );
 
+
                         // Determine currentPlayerRole for the logged-in user
                         const currentPlayerRole = myTeamDetails?.createdBy === userUuid
                             ? "captain"
@@ -433,7 +444,8 @@ export const viewEvent = async (req, res) => {
                                         userName: playerDetails?.userInfo?.Nickname,
                                         playerUuid: player.Player_id,
                                         position: player.Position,
-                                        status: player.status
+                                        status: player.status,
+                                        role: player.Player_id === opponentTeam?.MyTeamBuild[0]?.createdBy ? "captain" : "player"    
                                     };
                                 }) || []
                             );
@@ -477,7 +489,7 @@ export const viewEvent = async (req, res) => {
         );
 
         // Flatten the array of events
-        const flatEvents = events.flat();
+        let flatEvents = events.flat().filter(Boolean);
 
         console.log("View Event Pass");
         res.status(200).json({ status: true, message: "View Events", events: flatEvents });
@@ -487,6 +499,7 @@ export const viewEvent = async (req, res) => {
         res.status(500).json({ status: false, message: "View Event Route", error: error.message });
     }
 };
+
 
 export const myteamEvent = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
