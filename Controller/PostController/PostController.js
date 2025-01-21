@@ -145,7 +145,7 @@ export const getHomeFeed = async (req, res) => {
         const limitNum = parseInt(limit, 10) || 10;
         const eventLimitNum =  parseInt(limit, 10) || 10;
         const pageNum = parseInt(page, 10) || 10;
-        const isPaginationRequested = page || limit;
+        const isPaginationRequested = parseInt(page, 10) || parseInt(limit, 10);
 
         // Fetch user details
         const user = await UserDetails.findById(userId).select("uuid _id following MyTeamBuild");
