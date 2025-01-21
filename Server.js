@@ -20,6 +20,7 @@ import Axios from 'axios';
 // import MessageRoute from './View/ChatView/messageRoute.js'
 import userAppRoute from './View/ChatView/userAppRoute.js';
 import UserDetails from "./Model/UserModelDetails.js";
+import Conversation from "./Model/ChatModel/Conversation.Model.js";
 // import {app, server} from './socket/Socket.js'
 
 const __filename = fileURLToPath(import.meta.url);
@@ -105,12 +106,9 @@ io.on("connection", (socket) => {
               ? response.data.chat_data.formattedChatData
               : "Start New Conversation";
       
-            console.log("Chat Data Response:", chatData);
-      
             // Emit the existing chat data to the client
             socket.emit("chat_data", { conversation, chatData });
 
-      
             // Join the socket room using the conversation ID
             socket.join(conversation._id.toString());
       
@@ -153,25 +151,53 @@ io.on("connection", (socket) => {
             timestamp: recive.timestamp,
           } });
 
+          // Fetch participants from the conversation
+            const conversation = await Conversation.findById(cid).select("participants");
 
-          // Check if users are in the same room
+            if (conversation && conversation.participants) {
+              // Fetch and emit `mychat_data` for all participants in the conversation
+              await Promise.all(
+                conversation.participants.map(async (participant) => {
+                  let page = 1;
+                  let limit = 20;
+
+                  const response = await Axios.get(`${socketIP}/chat/my-chat`, {
+                    params: { loginid: participant.userId, page, limit },
+                  });
+
+                  if (response?.data?.data) {
+                    const list = response.data.data;
+
+                    // Emit the updated chat list to the specific participant in the room
+                    console.log("participant.userId", participant.userId, "cid", cid)
+                    //(participant.userId).emit("mychat_data", list);
+                    
+                    io.to(cid).emit("mychat_data", list);
+                  }
+                })
+              );
+            }
+          // Get all users in the room
           const room = io.sockets.adapter.rooms.get(cid);
-          if (room && room.size > 1) {
+          console.log("room", room)
+          if (room) {
+            
             // Update the message as read for all participants except the sender
-            await Message.updateOne(
-              { _id: newMessage._id, "readBy.userId": { $ne: loginid } },
-              {
-                $addToSet: { readBy: { userId: loginid, readAt: new Date() } },
-              }
-            );
+            if (room.size > 1) {
+              await Message.updateOne(
+                { _id: newMessage._id },
+                {
+                  $addToSet: {
+                    readBy: {
+                      userId: loginid,
+                      readAt: new Date(),
+                    },
+                  },
+                }
+              );
+            }
           }
-          let page = 1, limit = 20;
-          const response = await Axios.get(`${socketIP}/chat/my-chat`, { params :{ loginid, page, limit }});
-          const list = response.data.data;
-
-          // Emit the fetched chat data to the client
-          socket.emit("mychat_data", list);
-
+          
         } catch (error) {
           console.error("Error in send_message:", error);
           socket.emit("error", { message: error.message || "Failed to send message" });
