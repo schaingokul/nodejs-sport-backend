@@ -45,8 +45,8 @@ app.use('/api/team', TeamRouter);
 app.use('/machine', machineRoute);
 app.use('/chat', userAppRoute);
 
-// const socketIP = "http://localhost:4500";
-const socketIP = "https://sportspersonz.com";
+const socketIP = "http://localhost:4500";
+// const socketIP = "https://sportspersonz.com";
 
 const io = new Server(server, {
     cors: {
@@ -153,7 +153,7 @@ io.on("connection", (socket) => {
 
           // Fetch participants from the conversation
             const conversation = await Conversation.findById(cid).select("participants");
-            let activeLogin = loginid
+
             if (conversation && conversation.participants) {
               // Fetch and emit `mychat_data` for all participants in the conversation
               await Promise.all(
@@ -161,6 +161,7 @@ io.on("connection", (socket) => {
                   let page = 1;
                   let limit = 20;
 
+                  // Fetch chat data for the participant
                   const response = await Axios.get(`${socketIP}/chat/my-chat`, {
                     params: { loginid: participant.userId, page, limit },
                   });
@@ -168,16 +169,19 @@ io.on("connection", (socket) => {
                   if (response?.data?.data) {
                     const list = response.data.data;
 
-                    // Emit the updated chat list to the specific participant in the room
-                    console.log("participant.userId", participant.userId, "cid", cid)
-                    //(participant.userId).emit("mychat_data", list);
-                    if(activeLogin === participant.userId){
-                      socket.emit("mychat_data", list)
-                      console.log("socket list", list)
-                    }else{
-                      io.to(cid).emit("mychat_data", list);
-                      console.log("cid list", list)
+                    // Emit the updated chat list to the sender (activeLogin)
+                    if (loginid === participant.userId) {
+                      socket.emit("mychat_data", list);  // Emit to the sender
+                      console.log("Sent to sender", list);
+                    } else {
+                      // Emit the updated chat list to the room for others in the conversation
+                      io.to(cid).emit("mychat_data", list);  // Emit to all in the room
+                      console.log("Sent to room", list);
                     }
+
+                    // Emit `mychat_data` directly to the participant even if they are not in the room
+                    io.to(participant.userId).emit("mychat_data", list);  // Emit directly to the participant
+                    console.log("Sent directly to participant", list);
                   }
                 })
               );
@@ -229,25 +233,25 @@ app.get("/", (req,res) => {
 });
 
 /* ------------------------------------------ http://:localhost:4500 ------------------------------------------ */ 
-// server.listen(PORT, async () => {
-//     try {
-//         await connectDB();
-        
-//         console.log(`Server is running on ${PORT}`);
-//     } catch (error) {
-//         console.log(`Server failed to connect to database: ${error.message}`);
-//     }
-// });
-
-/* --------------------------------------------- Hositing Server --------------------------------------------- */ 
-server.listen(PORT, HOST.replace("http://", ""), async () => {
+server.listen(PORT, async () => {
     try {
         await connectDB();
+        
         console.log(`Server is running on ${PORT}`);
     } catch (error) {
         console.log(`Server failed to connect to database: ${error.message}`);
     }
 });
+
+/* --------------------------------------------- Hositing Server --------------------------------------------- */ 
+// server.listen(PORT, HOST.replace("http://", ""), async () => {
+//     try {
+//         await connectDB();
+//         console.log(`Server is running on ${PORT}`);
+//     } catch (error) {
+//         console.log(`Server failed to connect to database: ${error.message}`);
+//     }
+// });
 
 /*app.use('/api/message', MessageRoute);
 app.use('/api/user', userAppRoute);*/

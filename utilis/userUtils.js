@@ -47,7 +47,7 @@ export const checkAndCreateDir = (dir) => {
 // let server = process.env.NODE_ENV  || 'production';
 let server = process.env.NODE_ENV  || 'production';
 
-const basePath = server === 'production' ? '/var/www/nodejs-sport-backend/Uploads' : 'Uploads' ;  // Local path for local development
+const basePath = server === 'productio' ? '/var/www/nodejs-sport-backend/Uploads' : 'Uploads' ;  // Local path for local development
 
 // Function to delete a file
 export const deleteFile = (filePath, fileType, uuid) => {
