@@ -240,14 +240,14 @@ app.get("/", (req,res) => {
 // });
 
 /* --------------------------------------------- Hositing Server --------------------------------------------- */ 
-server.listen(PORT, HOST.replace("http://", ""), async () => {
-    try {
-        await connectDB();
-        console.log(`Server is running on ${PORT}`);
-    } catch (error) {
-        console.log(`Server failed to connect to database: ${error.message}`);
-    }
-});
+// server.listen(PORT, HOST.replace("http://", ""), async () => {
+//     try {
+//         await connectDB();
+//         console.log(`Server is running on ${PORT}`);
+//     } catch (error) {
+//         console.log(`Server failed to connect to database: ${error.message}`);
+//     }
+// });
 
 /*app.use('/api/message', MessageRoute);
 app.use('/api/user', userAppRoute);*/
