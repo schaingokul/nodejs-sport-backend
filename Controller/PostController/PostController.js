@@ -269,44 +269,43 @@ export const getHomeFeed = async (req, res) => {
                     };
                 } else if (item.type === "event") {
                  
-                    console.log("item =>",item.myTeam.toString())
-                     // Fetch users with the specific team and role "captain"
-                    const users = await UserDetails.find({ "MyTeamBuild.role": "captain"}).select("MyTeamBuild");
-                    console.log("item =>",item)
+                    if (!item.myTeam) {
+                        console.log("item.myTeam is missing", item);
+                        return null; // Skip processing if myTeam is undefined
+                      }
                     
-                    // Extract the matching team details
-                    const teamDetails = users?.flatMap(user => user?.MyTeamBuild).find(team => team._id.equals(item.myTeam?.toString()));
-                    // console.log("teamDetails.createdBy", teamDetails.createdBy)
+                      const users = await UserDetails.find({ "MyTeamBuild.role": "captain" }).select("MyTeamBuild");
                     
-                    if (!teamDetails) {
-                        console.log("No matching team found.");
-                        return null; // Or handle appropriately
-                    }
-
-                    // Fetch all player details
-                    const myTeamPlayers = await Promise.all(
-                        teamDetails?.playersList.map(player => getPlayerDetails(player, teamDetails?.createdBy))
-                    );
+                      const teamDetails = users
+                        ?.flatMap(user => user.MyTeamBuild)
+                        .find(team => team._id.equals(item.myTeam ? item.myTeam.toString() : ""));
                     
-                    // console.log("teamDetails",teamDetails)
-                    // console.log("myTeamPlayers",myTeamPlayers)
-                    return {
+                      if (!teamDetails) {
+                        console.log("No matching team found for item.myTeam:", item.myTeam);
+                        return null;
+                      }
+                    
+                      const myTeamPlayers = await Promise.all(
+                        teamDetails.playersList.map(player => getPlayerDetails(player, teamDetails.createdBy))
+                      );
+                    
+                      return {
                         postId: item._id,
                         userId: item.eventBy?.id,
                         userName: item.eventBy?.name,
                         myTeam: {
-                            myTeamId: teamDetails?._id,
-                            myTeamName: teamDetails?.Team_Name,
-                            sportsName: teamDetails?.Sports_Name,
-                            playerList: myTeamPlayers,
+                          myTeamId: teamDetails?._id,
+                          myTeamName: teamDetails?.Team_Name,
+                          sportsName: teamDetails?.Sports_Name,
+                          playerList: myTeamPlayers,
                         },
-                        type:"event",
+                        type: "event",
                         status: item.status,
                         eventTime: item.eventTime,
                         location: item.loc,
                         link: item.link,
-                        createdAt: item.createdAt
-                    };
+                        createdAt: item.createdAt,
+                      };
                 }
             })
         );
