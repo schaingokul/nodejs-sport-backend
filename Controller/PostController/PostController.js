@@ -137,7 +137,7 @@ export const deletePost = async (req, res) => {
         res.status(500).json({ status: false, message: "An error occurred while posting", error: error.message });
     }
 };
-/*
+
 export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
     let { page, limit } = req.query;
@@ -268,13 +268,16 @@ export const getHomeFeed = async (req, res) => {
                         createdAt: item.createdAt
                     };
                 } else if (item.type === "event") {
+                 let count= 0;
                     console.log("item =>",item.myTeam.toString())
                      // Fetch users with the specific team and role "captain"
                     const users = await UserDetails.find({ "MyTeamBuild.role": "captain"}).select("MyTeamBuild");
 
+                    count++;
                     // Extract the matching team details
                     const teamDetails = users?.flatMap(user => user.MyTeamBuild).find(team => team._id.equals(item.myTeam));
                     console.log("teamDetails.createdBy", teamDetails.createdBy)
+                    count++;
                     if (!teamDetails) {
                         console.log("No matching team found.");
                         return null; // Or handle appropriately
@@ -284,6 +287,8 @@ export const getHomeFeed = async (req, res) => {
                     const myTeamPlayers = await Promise.all(
                         teamDetails?.playersList.map(player => getPlayerDetails(player, teamDetails?.createdBy))
                     );
+                    count++;
+
                     console.log("teamDetails",teamDetails)
                     console.log("myTeamPlayers",myTeamPlayers)
                     return {
@@ -318,7 +323,7 @@ export const getHomeFeed = async (req, res) => {
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
 };
-*/
+/*
 // working good latest
 export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
@@ -462,8 +467,8 @@ export const getHomeFeed = async (req, res) => {
                         userName: item.eventBy?.name,
                         myTeam: teamDetails.length > 0 ? teamDetails.map(team => ({
                             myTeamId: team._id,
-                            myTeamName: team.teamName,
-                            sportsName:team.sportsName,
+                            myTeamName: team.teamName || "TeamName",
+                            sportsName:team.sportsName|| "SportName",
                             playerList: team.playersList,
                         })) : null,
                         type:"event",
@@ -487,7 +492,7 @@ export const getHomeFeed = async (req, res) => {
         console.error(error.message);
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
-};
+};*/
 
 export const viewCurrentPost = async(req,res) => {
     const {id: userId} = req.user;
