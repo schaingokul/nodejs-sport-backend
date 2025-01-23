@@ -63,12 +63,12 @@ io.on("connection", (socket) => {
     socket.on("my-chat", async (data) => {
         const {loginid, page, limit} = data;
         try {
-            const response = await Axios.get(`${socketIP}/chat/my-chat`, { params :{ loginid, page, limit }});
-            const list = response.data.data;
+          const response = await Axios.get(`${socketIP}/chat/my-chat`, { params :{ loginid, page, limit }});
+          const list = response.data.data;
 
-            // Emit the fetched chat data to the client
-            socket.emit("mychat_data", list);
-            
+          // Emit the fetched chat data to the client
+          socket.emit("mychat_data", list);
+          
         } catch (error) {
             console.error("Error in my-chat:", error.message);
             socket.emit("error", { message: error.message || "Failed to my-chat" });
