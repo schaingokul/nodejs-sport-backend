@@ -273,11 +273,11 @@ export const getHomeFeed = async (req, res) => {
                      // Fetch users with the specific team and role "captain"
                     const users = await UserDetails.find({ "MyTeamBuild.role": "captain"}).select("MyTeamBuild");
 
-                    count++;
+                    console.log(count++);
                     // Extract the matching team details
                     const teamDetails = users?.flatMap(user => user.MyTeamBuild).find(team => team._id.equals(item.myTeam));
-                    console.log("teamDetails.createdBy", teamDetails.createdBy)
-                    count++;
+                    // console.log("teamDetails.createdBy", teamDetails.createdBy)
+                    console.log(count++);
                     if (!teamDetails) {
                         console.log("No matching team found.");
                         return null; // Or handle appropriately
@@ -287,10 +287,10 @@ export const getHomeFeed = async (req, res) => {
                     const myTeamPlayers = await Promise.all(
                         teamDetails?.playersList.map(player => getPlayerDetails(player, teamDetails?.createdBy))
                     );
-                    count++;
+                    console.log(count++);
 
-                    console.log("teamDetails",teamDetails)
-                    console.log("myTeamPlayers",myTeamPlayers)
+                    // console.log("teamDetails",teamDetails)
+                    // console.log("myTeamPlayers",myTeamPlayers)
                     return {
                         postId: item._id,
                         userId: item.eventBy?.id,
