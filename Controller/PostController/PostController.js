@@ -320,6 +320,7 @@ export const getHomeFeed = async (req, res) => {
         });
     } catch (error) {
         console.error(error.message);
+        console.log(count)
         res.status(500).json({ status: false, message: "Error fetching home feed", error: error.message });
     }
 };
