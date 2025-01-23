@@ -273,7 +273,7 @@ export const getHomeFeed = async (req, res) => {
                     const users = await UserDetails.find({ "MyTeamBuild.role": "captain"}).select("MyTeamBuild");
 
                     // Extract the matching team details
-                    const teamDetails = users?.flatMap(user => user.MyTeamBuild).find(team => team._id.equals(item.myTeam.toString()));
+                    const teamDetails = users?.flatMap(user => user.MyTeamBuild).find(team => team._id.equals(item.myTeam));
                     console.log("teamDetails.createdBy", teamDetails.createdBy)
                     if (!teamDetails) {
                         console.log("No matching team found.");
