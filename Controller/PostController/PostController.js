@@ -141,7 +141,7 @@ export const deletePost = async (req, res) => {
 export const getHomeFeed = async (req, res) => {
     const { id: userId, uuid: userUuid } = req.user;
     let { page, limit } = req.query;
-
+    let count= 0;
     try {
         const limitNum = parseInt(limit, 10) || 10;
         const eventLimitNum =  parseInt(limit, 10) || 10;
@@ -268,7 +268,7 @@ export const getHomeFeed = async (req, res) => {
                         createdAt: item.createdAt
                     };
                 } else if (item.type === "event") {
-                 let count= 0;
+                 
                     console.log("item =>",item.myTeam.toString())
                      // Fetch users with the specific team and role "captain"
                     const users = await UserDetails.find({ "MyTeamBuild.role": "captain"}).select("MyTeamBuild");
