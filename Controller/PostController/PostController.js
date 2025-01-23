@@ -275,7 +275,7 @@ export const getHomeFeed = async (req, res) => {
 
                     console.log("event", count++);
                     // Extract the matching team details
-                    const teamDetails = users?.flatMap(user => user.MyTeamBuild).find(team => team._id.equals(item.myTeam));
+                    const teamDetails = users?.flatMap(user => user.MyTeamBuild).find(team => console.log(team._id.equals(item.myTeam.toString())));
                     // console.log("teamDetails.createdBy", teamDetails.createdBy)
                     console.log("event", count++);
                     if (!teamDetails) {
