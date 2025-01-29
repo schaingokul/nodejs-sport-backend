@@ -699,10 +699,6 @@ export const searchAlgorithm = async (req, res) => {
                     const followers = currentUser.followers.map(f => f.follwersBy_id);  
                     const following = currentUser.following.map(f => f.followingBy_id);  
 
-                    if (followers.length === 0 && following.length === 0) {
-                        return res.status(404).json({ message: "No followers or following found" });
-                    }
-
                     // Combine the followers and following arrays
                     const usersToMatch = [...followers, ...following];  
 
