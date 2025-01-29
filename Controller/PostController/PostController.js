@@ -601,7 +601,7 @@ export const typeofViewPost = async (req, res) => {
 
 export const searchAlgorithm = async (req, res) => {
     const { type, searchQuery, limit, skip } = req.body; // Get limit and skip from request body
-
+    const { id: userId, uuid: userUuid } = req.user;
     try {
         const { id } = req.user;
         const user = await UserDetails.findById(id);
@@ -687,6 +687,48 @@ export const searchAlgorithm = async (req, res) => {
                     ...(paginationLimit ? [{ $limit: paginationLimit }] : []),
                 ]);
                 break;
+
+                case "yours":
+                    // Step 1: Fetch the current user's followers and following lists
+                    const currentUser = await UserDetails.findById(userId);
+                    if (!currentUser) {
+                        return res.status(404).json({ message: "User not found" });
+                    }
+
+                    // Extract user IDs from followers and following
+                    const followers = currentUser.followers.map(f => f.follwersBy_id);  
+                    const following = currentUser.following.map(f => f.followingBy_id);  
+
+                    if (followers.length === 0 && following.length === 0) {
+                        return res.status(404).json({ message: "No followers or following found" });
+                    }
+
+                    // Combine the followers and following arrays
+                    const usersToMatch = [...followers, ...following];  
+
+                    const formate = await UserDetails.find({
+                        _id: { $in: usersToMatch },
+                        $or: [
+                            { First_Name: { $regex: regex } },  // Case-insensitive search on First_Name
+                            { Last_Name: { $regex: regex} },   // Case-insensitive search on Last_Name
+                            { "userInfo.Nickname": { $regex: regex } }  // Case-insensitive search on Nickname
+                        ]
+                    })
+                    .select("uuid First_Name Last_Name userInfo.Profile_ImgURL userInfo.Nickname")  // Select only the needed fields
+                    .skip(paginationSkip)  // Apply skip for pagination
+                    .limit(paginationLimit || 0); 
+                
+                    // Restructure the data to match the required format
+                    posts = formate.map(post => ({
+                        _id: post._id,
+                        uuid: post.uuid,
+                        First_Name: post.First_Name,
+                        Last_Name: post.Last_Name,
+                        Profile_ImgURL: post.userInfo?.Profile_ImgURL || "N/A",  // Fallback if Profile_ImgURL is missing
+                        Nickname: post.userInfo?.Nickname || "N/A"  // Fallback if Nickname is missing
+                    }));
+
+                    break;
 
             default: // Handle "people" search as the default case
                 posts = await UserDetails.aggregate([
