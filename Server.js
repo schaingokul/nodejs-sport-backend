@@ -45,8 +45,8 @@ app.use('/api/team', TeamRouter);
 app.use('/machine', machineRoute);
 app.use('/chat', userAppRoute);
 
-const socketIP = "http://localhost:4500";
-// const socketIP = "https://sportspersonz.com";
+// const socketIP = "http://localhost:4500";
+const socketIP = "https://sportspersonz.com";
 
 const io = new Server(server, {
     cors: {
@@ -86,8 +86,7 @@ io.on("connection", (socket) => {
             createdBy,
             participants,
             groupName,
-            cid,
-            url,
+            cid
           });
           
           const conversation = conversations.data.conversation;
@@ -218,7 +217,7 @@ io.on("connection", (socket) => {
     console.log(error);
 }
 
-app.get("/", (req,res) => {
+app.get("/api", (req,res) => {
     try {
         console.log("Running URL:", req.url); // Logs the URL of the request
         console.log("Inside root handler"); // Logs when the handler is triggered
