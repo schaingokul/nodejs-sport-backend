@@ -103,7 +103,7 @@ export const upload = multer({
                 // Determine the correct folder based on MIME type
                 const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
                 const allowedVideoTypes = ["video/mp4", "video/avi", "video/mkv"];
-
+                
                 if (allowedImageTypes.includes(file.mimetype)) {
                     cb(null, imagesDir);
                 } else if (allowedVideoTypes.includes(file.mimetype)) {
@@ -116,6 +116,7 @@ export const upload = multer({
                 cb(error);
             }
         },
+
         filename: function (req, file, cb) {
             const extname = path.extname(file.originalname); // Get file extension
             const filename = `${Date.now()}-${file.originalname}`; // Generate unique filename
@@ -133,3 +134,61 @@ export const upload = multer({
         }
     },
 });
+export const groupUpload = multer({
+    storage: multer.diskStorage({
+        destination: async function (req, file, cb) {
+            try {
+                const { conversationId } = req.body; // Get conversation ID from request
+
+                if (!conversationId) {
+                    return cb(new Error("Conversation ID is required for upload"), false);
+                }
+
+                const uploadDir = path.join(__dirname, `../Uploads/group/${conversationId}`);
+                
+                // Create conversation-specific folder if not exists
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                    console.log(`Group folder created: ${uploadDir}`);
+                }
+
+                cb(null, uploadDir); // Proceed to store the file
+            } catch (error) {
+                console.error("Error setting upload directory:", error.message);
+                cb(error); // Pass the error to the callback
+            }
+        },
+
+        filename: function (req, file, cb) {
+            const extname = path.extname(file.originalname); // Get file extension
+            const filename = `${Date.now()}-${file.originalname}`;
+            cb(null, filename); // Store the file with this unique name
+        },
+    }),
+
+    fileFilter: (req, file, cb) => {
+        const allowedGroupTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
+        if (allowedGroupTypes.includes(file.mimetype)) {
+            cb(null, true); // Accept file
+        } else {
+            console.error("Invalid file type:", file.mimetype); // Log invalid file type
+            cb(new Error("Invalid file type. Only images are allowed."), false); // Reject file
+        }
+    },
+});
+
+const tempStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const tempDir = path.join(__dirname, "../Uploads/temp");
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+        cb(null, tempDir);
+    },
+    filename: function (req, file, cb) {
+        const filename = `${Date.now()}-${file.originalname}`;
+        cb(null, filename);
+    },
+});
+
+export const uploadTemp = multer({ storage: tempStorage });

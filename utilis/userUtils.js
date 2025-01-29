@@ -53,16 +53,21 @@ const basePath = server === 'production' ? '/var/www/nodejs-sport-backend/Upload
 export const deleteFile = (filePath, fileType, uuid) => {
     const extractedFileName = path.basename(filePath);  // Extract file name from path
     let filePathLoc = "";
-
-    // Construct the correct path for deletion based on environment
+    console.log("extractedFileName",extractedFileName)
+    // Construct the correct path for deletion based on the file type
     if (fileType === "image") {
         filePathLoc = path.join(basePath, uuid, 'images', extractedFileName);
     } else if (fileType === "video") {
         filePathLoc = path.join(basePath, uuid, 'videos', extractedFileName);
+    } else if (fileType === "group") {
+        filePathLoc = path.join(basePath, 'group', uuid, extractedFileName);
     } else {
         console.error(`Invalid file type: ${fileType}`);
         return;
     }
+
+    // Log the full path being checked for deletion
+    console.log("Attempting to delete file at:", filePathLoc);
 
     // Check if the file exists and delete it
     if (fs.existsSync(filePathLoc)) {

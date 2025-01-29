@@ -6,26 +6,38 @@ meta {
 
 post {
   url: {{Port}}/chat
-  body: json
+  body: multipartForm
   auth: bearer
 }
 
 auth:bearer {
-  token: 
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3N2ExM2FmMTg5NmE1MGVjYjgwOGYyMiIsInV1aWQiOiJkSmxleE53MXNZd0hnMEtxU0VqNHUiLCJFbWFpbF9JRCI6Imd1ZXN0M0BnbWFpbC5jb20iLCJpYXQiOjE3MzgxMzU1NjksImV4cCI6MTc2OTY3MTU2OX0.VctoIwqCVdGjISWnRaSpadt-l7DvGAPgsk2dStvk9ro
 }
 
 body:json {
   {
-    "type": "private",
+    "type": "group",
+    "createdBy":"677a13af1896a50ecb808f22",
       "participants": [
           {
-              "userId": "677a138e1896a50ecb808f07",
+              "userId": "677a13af1896a50ecb808f22",
               "role":"admin"
           },
           {
-              "userId": "6772a4c8908e69c8b32d2a22",
+              "userId": "677a138e1896a50ecb808f07",
               "role":"admin"
           }
-      ]
+      ],"groupName": "BadBadBoys"
   }
+}
+
+body:multipart-form {
+  type: group
+  createdBy: 677a13af1896a50ecb808f22
+  groupName: BadBadBoys
+  participants[0][userId]: 677a13af1896a50ecb808f22
+  participants[0][role]: admin
+  URL: @file(C:\Users\schai\Downloads\624625ab0816272bd1c38395_SQL Admin Panel 3.jpg)
+  participants[1][userId]: 677a138e1896a50ecb808f07
+  participants[1][role]: admin
 }

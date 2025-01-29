@@ -23,7 +23,10 @@ const ensureCollectionsExist = async (db) => {
 // Function to connect to MongoDB
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(MONGO_URI);
+    const conn = await mongoose.connect(MONGO_URI,{
+      serverSelectionTimeoutMS: 30000, // Timeout after 30 seconds
+      connectTimeoutMS: 30000, // Connection timeout
+    });
     console.log(`DB successfully connected: ${conn.connection.host}`);
 
     const db = mongoose.connection.db;

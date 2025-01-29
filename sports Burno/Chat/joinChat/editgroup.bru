@@ -1,0 +1,36 @@
+meta {
+  name: editgroup
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{Port}}/chat/edit
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3N2ExM2FmMTg5NmE1MGVjYjgwOGYyMiIsInV1aWQiOiJkSmxleE53MXNZd0hnMEtxU0VqNHUiLCJFbWFpbF9JRCI6Imd1ZXN0M0BnbWFpbC5jb20iLCJpYXQiOjE3MzgxMzU1NjksImV4cCI6MTc2OTY3MTU2OX0.VctoIwqCVdGjISWnRaSpadt-l7DvGAPgsk2dStvk9ro
+}
+
+body:json {
+  {
+    "conversationId": "12345abcde",
+    "action": "add_users",
+    "users": [
+      {
+        "userId": "67890xyz",
+        "role": "member"
+      },
+      {
+        "userId": "54321abc",
+        "role": "member"
+      }
+    ]
+  }
+}
+
+body:multipart-form {
+  conversationId: 6799eb96ea5ed3fc748381c1
+}

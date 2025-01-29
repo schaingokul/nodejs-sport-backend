@@ -45,13 +45,13 @@ app.use('/api/team', TeamRouter);
 app.use('/machine', machineRoute);
 app.use('/chat', userAppRoute);
 
-// const socketIP = "http://localhost:4500";
-const socketIP = "https://sportspersonz.com";
+const socketIP = "http://localhost:4500";
+// const socketIP = "https://sportspersonz.com";
 
 const io = new Server(server, {
     cors: {
         origin: socketIP, // "*", // Replace with your React Native app's URL
-        methods: ["GET", "POST"],
+        methods: ["GET", "POST", "PUT"],
         credentials: true
     },
 });
@@ -77,7 +77,7 @@ io.on("connection", (socket) => {
 
     //onWork
     socket.on("join_chat", async (data) => {
-        const { type, createdBy, participants, groupName, cid, url, loginid } = data;
+        const { type, createdBy, participants, groupName, cid, loginid } = data;
       
         try {
           // Fetch or create the conversation
