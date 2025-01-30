@@ -165,59 +165,64 @@ router.post('/edit',  protectRoute,  groupUpload.single("URL"), async (req, res)
 });
 // 
 router.post("/",  uploadTemp.single("URL"),  async(req,res) => {
-    let { type, createdBy, participants, groupName, cid } = req.body;
+    let { type, createdBy, participants, groupName, cid , loginid} = req.body;
     
-
+console.log("participants",participants)
+console.log("Test Case 1")
     try {
        if(!cid){
         if (!type || !["private", "group"].includes(type)) {
             return res.status(400).json({ message: "Invalid or missing conversation type." });
           }
-
+          console.log("Test Case 2")
         if (!Array.isArray(participants) || participants.length === 0) {
             return res.status(400).json({ message: "Participants must be a non-empty array." });
         }
-      
-        if (type === "private" && participants.length !== 2) {
-            return res.status(400).json({ message: "Private conversations must have exactly two participants." });
-        }
+        console.log("Test Case 3")
        }
       
         let conversation;
 
         if (cid) {
+          console.log("Test Case 4")
             conversation = await Conversation.findById(cid);
         } else if (type === "private") {
+          console.log("Test Case 5")
             conversation = await Conversation.findOne({ type: 'private', "participants.userId":{ $all: participants.map(p => p.userId) }, });
+            console.log("conversation", conversation)
         } else if (type === "group") {
+          console.log("Test Case 6")
             conversation = await Conversation.findOne({ type: 'group', "participants.userId": { $all: participants.map(p => p.userId) }, groupName: groupName });
         } else {
             throw new Error('Invalid conversation type');
         }
+        console.log("Test Case 7")
 
-        console.log("Participants:", conversation.participants);
-
-        // Create a new conversation if none exists
-    if (!conversation) {
-        if (!createdBy && type === "group") {
-          return res.status(400).json({ message: "The creator's user ID is required to create a new conversation." });
+        if (!conversation || !cid) {
+          if (!createdBy && type === "group") {
+            return res.status(400).json({ message: "The creator's user ID is required to create a new group conversation." });
+          }
+  
+          if (type === "group" && !groupName) {
+            return res.status(400).json({ message: "Group name is required for a group chat." });
+          }
+          console.log("Participants:", participants);
+          // Create a new conversation object
+          conversation = new Conversation({
+            type,
+            createdBy,
+            participants: participants.map((user) => ({
+              userId: user.userId,  // Ensure correct property name for userId
+              role: user.role || "member", // Default role is member
+              joinDate: new Date(),
+            })),
+            groupName
+          });
+  
+          console.log("Conversation object:", conversation);  // Log conversation object to ensure it's being created properly
+          await conversation.save();
         }
-  
-        // Correcting this part: Mapping participants with only userId and role
-        conversation = new Conversation({
-          type,
-          createdBy,
-          participants: participants.map((user) => ({
-            userId: user.userId, // Only the userId and role are required here
-            role: user.role || "member", // Default role is member
-            joinDate: new Date(),
-          })),
-          groupName
-        });
-  
-        await conversation.save();
-      }
-      
+
       const finalConversationId = conversation._id.toString();
 
         if (req.file) {
@@ -243,7 +248,7 @@ router.post("/",  uploadTemp.single("URL"),  async(req,res) => {
             throw new Error("Failed to move file");
           }
         }
-
+        console.log("Test Case 10")
       await Promise.all(
         conversation.participants.map(async (participant) => {
           try {
