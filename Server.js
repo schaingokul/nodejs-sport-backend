@@ -78,7 +78,7 @@ io.on("connection", (socket) => {
     //onWork
     socket.on("join_chat", async (data) => {
         const { type, createdBy, participants, groupName, cid, loginid } = data;
-      
+        console.log("Joining chat")
         try {
           // Fetch or create the conversation
           const conversations = await Axios.post(`${socketIP}/chat`, {
@@ -88,7 +88,7 @@ io.on("connection", (socket) => {
             groupName,
             cid
           });
-          
+          console.log("NotConversation found")
           const conversation = conversations.data.conversation;
       
           if (conversation?._id) {
@@ -185,7 +185,6 @@ io.on("connection", (socket) => {
           const room = io.sockets.adapter.rooms.get(cid);
           console.log("room", room)
           if (room) {
-            
             // Update the message as read for all participants except the sender
             if (room.size > 1) {
               await Message.updateOne(

@@ -134,6 +134,7 @@ export const upload = multer({
         }
     },
 });
+
 export const groupUpload = multer({
     storage: multer.diskStorage({
         destination: async function (req, file, cb) {

@@ -17,7 +17,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const dirname = path.dirname(__dirname)
 const name = path.dirname(dirname)
-const router = express.Router();
+const 
+
+
+router = express.Router();
 
 router.get("/search", protectRoute, chatSearch);
 
@@ -160,8 +163,8 @@ router.post('/edit',  protectRoute,  groupUpload.single("URL"), async (req, res)
       res.status(500).json({ status: false, message: "Failed to update conversation", error: error.message });
   }
 });
-
-router.post("/", uploadTemp.single("URL"),  async(req,res) => {
+// 
+router.post("/",  uploadTemp.single("URL"),  async(req,res) => {
     let { type, createdBy, participants, groupName, cid } = req.body;
     
 
@@ -192,7 +195,7 @@ router.post("/", uploadTemp.single("URL"),  async(req,res) => {
             throw new Error('Invalid conversation type');
         }
 
-        console.log("Participants:", participants);
+        console.log("Participants:", conversation.participants);
 
         // Create a new conversation if none exists
     if (!conversation) {
